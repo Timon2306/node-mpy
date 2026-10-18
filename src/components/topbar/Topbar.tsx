@@ -368,15 +368,6 @@ export const Topbar: React.FC = () => {
           )}
         </button>
 
-        {/* Settings Button */}
-        <button
-          onClick={() => setSettingsModalOpen(true)}
-          title={language === 'ru' ? 'Настройки и обновления' : 'Settings & Updates'}
-          className="p-1.5 text-gray-300 hover:text-white hover:bg-slate-hover rounded-md transition-colors"
-        >
-          <Settings className="w-4 h-4" />
-        </button>
-
         {/* Burger Dropdown Menu (Node-RED style) */}
         <div className="relative">
           <button
