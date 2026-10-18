@@ -72,6 +72,8 @@ interface FlowState {
   isShortcutsModalOpen: boolean;
   isAboutModalOpen: boolean;
   isChangelogModalOpen: boolean;
+  isSettingsModalOpen: boolean;
+  settingsActiveTab: 'general' | 'updates';
   isSimulationOpen: boolean;
 
   // Simulation State
@@ -125,6 +127,8 @@ interface FlowState {
   setShortcutsModalOpen: (open: boolean) => void;
   setAboutModalOpen: (open: boolean) => void;
   setChangelogModalOpen: (open: boolean) => void;
+  setSettingsModalOpen: (open: boolean, tab?: 'general' | 'updates') => void;
+  setSettingsActiveTab: (tab: 'general' | 'updates') => void;
 
   // Simulation Actions
   setSimulationOpen: (open: boolean) => void;
@@ -265,6 +269,8 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   isShortcutsModalOpen: false,
   isAboutModalOpen: false,
   isChangelogModalOpen: false,
+  isSettingsModalOpen: false,
+  settingsActiveTab: 'general',
   isSimulationOpen: false,
 
   isSimRunning: false,
@@ -293,6 +299,12 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   setShortcutsModalOpen: (open) => set({ isShortcutsModalOpen: open }),
   setAboutModalOpen: (open) => set({ isAboutModalOpen: open }),
   setChangelogModalOpen: (open) => set({ isChangelogModalOpen: open }),
+  setSettingsModalOpen: (open, tab) =>
+    set({
+      isSettingsModalOpen: open,
+      ...(tab ? { settingsActiveTab: tab } : {}),
+    }),
+  setSettingsActiveTab: (tab) => set({ settingsActiveTab: tab }),
 
   setSimulationOpen: (open) => set({ isSimulationOpen: open }),
   toggleSimulation: () => set((state) => ({ isSimulationOpen: !state.isSimulationOpen })),

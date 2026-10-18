@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.1] — 2026-10-18 (MicroPython WASM, IoT Nodes & GitHub Auto-Updater)
+
+### 🚀 Highlights
+- **Real MicroPython v1.26 WebAssembly VM**: Runs real compiled MicroPython bytecode in an isolated Web Worker without UI stutter. Full virtual `machine` (Pin, ADC, PWM, I2C, SPI), `network` and `time` modules.
+- **Dual-Mode Simulator**: Instant 1-click toggle between **Visual Flow** (step-by-step canvas highlighting) and **MicroPython WASM VM** (real WebAssembly virtual processor).
+- **HTTP GET & HTTP POST IoT Nodes**: Reverse-polling nodes for college lab projects (sends photoresistor ADC readings to Node-RED on PC and receives `/on` or `/off` response commands to toggle the onboard LED). Safe `try/except` wrappers and auto-import of `urequests` & `ujson`.
+- **Cross-Platform GitHub Updates & Settings Modal**: Automatic OS detection (Windows `.exe`, Linux `.AppImage`, macOS `.dmg`) with 1-click update check and direct package download via GitHub Releases API.
+- **Virtual Bus ACK**: Virtual I2C (`0x3C`, `0x27`) and SPI bus ACK prevents missing-hardware panics (`ENODEV`) while preserving clean Python runtime semantics.
+
 ## [1.0.0] — 2026-10-18 (Official First Release)
 
 ### 🚀 Highlights

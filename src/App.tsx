@@ -8,6 +8,7 @@ import { ShortcutsModal } from './components/modals/ShortcutsModal';
 import { FunctionEditorModal } from './components/modals/FunctionEditorModal';
 import { AboutModal } from './components/modals/AboutModal';
 import { ChangelogModal } from './components/modals/ChangelogModal';
+import { SettingsModal } from './components/modals/SettingsModal';
 import { SimulationConsole } from './components/simulator/SimulationConsole';
 import { useFlowStore } from './store/useFlowStore';
 
@@ -45,6 +46,7 @@ export const App: React.FC = () => {
       <FunctionEditorModal />
       <AboutModal />
       <ChangelogModal />
+      <SettingsModal />
     </div>
   );
 };

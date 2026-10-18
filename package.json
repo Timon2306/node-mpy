@@ -1,6 +1,6 @@
 {
   "name": "node-teal",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Visual MicroPython programming environment in Node-RED style",
   "private": true,
   "type": "module",

@@ -16,6 +16,7 @@ import {
   X,
   FileCode,
   Cpu,
+  Settings,
 } from 'lucide-react';
 import { useFlowStore } from '../../store/useFlowStore';
 import { translations } from '../../i18n';
@@ -40,6 +41,7 @@ export const Topbar: React.FC = () => {
     setPaletteModalOpen,
     setShortcutsModalOpen,
     setAboutModalOpen,
+    setSettingsModalOpen,
     isSimulationOpen,
     toggleSimulation,
     isSimRunning,
@@ -366,6 +368,15 @@ export const Topbar: React.FC = () => {
           )}
         </button>
 
+        {/* Settings Button */}
+        <button
+          onClick={() => setSettingsModalOpen(true)}
+          title={language === 'ru' ? 'Настройки и обновления' : 'Settings & Updates'}
+          className="p-1.5 text-gray-300 hover:text-white hover:bg-slate-hover rounded-md transition-colors"
+        >
+          <Settings className="w-4 h-4" />
+        </button>
+
         {/* Burger Dropdown Menu (Node-RED style) */}
         <div className="relative">
           <button
@@ -409,6 +420,25 @@ export const Topbar: React.FC = () => {
                       isSimRunning ? 'bg-teal-400 animate-pulse' : isSimulationOpen ? 'bg-emerald-500' : 'bg-gray-600'
                     }`}
                   />
+                </button>
+
+                <div className="h-[1px] bg-slate-border my-1" />
+
+                {/* Settings & Updates */}
+                <button
+                  onClick={() => {
+                    setSettingsModalOpen(true);
+                    setMenuOpen(false);
+                  }}
+                  className="w-full px-3 py-2 text-left text-gray-200 hover:bg-slate-hover flex items-center gap-2"
+                >
+                  <Settings className="w-4 h-4 text-teal-400" />
+                  <div>
+                    <p className="font-semibold">{language === 'ru' ? 'Настройки' : 'Settings'}</p>
+                    <p className="text-[10px] text-gray-400">
+                      {language === 'ru' ? 'Обновления, язык, параметры' : 'Updates, language, preferences'}
+                    </p>
+                  </div>
                 </button>
 
                 <div className="h-[1px] bg-slate-border my-1" />

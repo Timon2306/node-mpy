@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { X, HelpCircle, Send } from 'lucide-react';
+import { X, HelpCircle, Send, RefreshCw } from 'lucide-react';
 import { useFlowStore } from '../../store/useFlowStore';
 import { NodeTealLogo } from '../brand/NodeTealLogo';
 
@@ -9,6 +9,7 @@ export const AboutModal: React.FC = () => {
     setAboutModalOpen,
     setChangelogModalOpen,
     setShortcutsModalOpen,
+    setSettingsModalOpen,
     language,
   } = useFlowStore();
 
@@ -85,7 +86,7 @@ export const AboutModal: React.FC = () => {
             <span className="text-[12px] font-semibold text-gray-200">
               {isRu ? 'Версия: ' : 'Version: '}
             </span>
-            <span className="font-mono text-teal-300 font-bold text-[12px]">1.1.0</span>
+            <span className="font-mono text-teal-300 font-bold text-[12px]">1.0.1</span>
           </div>
 
           {/* Author & Student Group Attribution */}
@@ -121,23 +122,35 @@ export const AboutModal: React.FC = () => {
         </div>
 
         {/* Footer Buttons */}
-        <div className="px-5 py-3 border-t border-[#2E3544] bg-[#14171E] flex items-center justify-between">
+        <div className="px-4 py-3 border-t border-[#2E3544] bg-[#14171E] flex items-center justify-between gap-2">
           {/* Patchlog / What's New Button */}
           <button
             onClick={() => {
               setAboutModalOpen(false);
               setChangelogModalOpen(true);
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#252B38] hover:bg-[#30384A] text-gray-200 hover:text-white border border-[#3A4458] transition-colors text-xs font-medium"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#252B38] hover:bg-[#30384A] text-gray-200 hover:text-white border border-[#3A4458] transition-colors text-xs font-medium"
           >
             <span>📋</span>
             <span>{isRu ? 'Что нового' : "What's New"}</span>
           </button>
 
+          {/* Check Updates Button */}
+          <button
+            onClick={() => {
+              setAboutModalOpen(false);
+              setSettingsModalOpen(true, 'updates');
+            }}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 border border-teal-500/30 transition-colors text-xs font-medium"
+          >
+            <RefreshCw className="w-3 h-3" />
+            <span>{isRu ? 'Обновления' : 'Updates'}</span>
+          </button>
+
           {/* OK Button */}
           <button
             onClick={() => setAboutModalOpen(false)}
-            className="px-5 py-1.5 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs transition-colors shadow-sm"
+            className="px-4 py-1.5 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs transition-colors shadow-sm"
           >
             OK
           </button>

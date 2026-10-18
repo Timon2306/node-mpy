@@ -45,19 +45,73 @@ export const ChangelogModal: React.FC = () => {
 
         {/* Scrollable Changelog Body */}
         <div className="p-4 space-y-4 overflow-y-auto max-h-[440px] scrollbar-thin scrollbar-thumb-gray-600 select-text">
-          {/* Version 1.0.0 Official Release */}
-          <div className="space-y-3 p-3.5 rounded-lg bg-[#161920] border border-[#2B3240]">
+          {/* Version 1.0.1 WASM & Updater Release */}
+          <div className="space-y-3 p-3.5 rounded-lg bg-[#161920] border border-teal-500/50 shadow-lg">
             <div className="flex items-center justify-between">
               <span className="px-2.5 py-0.5 rounded text-[11px] font-mono font-bold bg-teal-500/20 text-teal-300 border border-teal-500/40">
-                v1.0.0 — Official First Release
+                v1.0.1 — MicroPython WASM & Updates
               </span>
-              <span className="text-[10px] text-gray-500">18.10.2026</span>
+              <span className="text-[10px] text-teal-400 font-mono font-semibold">18.10.2026</span>
             </div>
 
             <p className="text-[11px] text-gray-300 leading-relaxed">
               {isRu
-                ? 'Первый официальный релиз визуальной среды Node-TEAL для микроконтроллеров MicroPython (ESP8266, ESP32) в строгой эстетике Node-RED.'
-                : 'Initial official release of Node-TEAL — a visual flow programming studio for MicroPython (ESP8266, ESP32) with a calm Node-RED aesthetic.'}
+                ? 'Крупное функциональное обновление: внедрение реальной виртуальной машины MicroPython v1.26 в WebAssembly, IoT-ноды HTTP GET/POST для связи с Node-RED и система автоматической проверки обновлений с GitHub.'
+                : 'Major feature release: Real MicroPython v1.26 WebAssembly VM engine, IoT HTTP GET/POST nodes for Node-RED integration, and cross-platform GitHub auto-updater.'}
+            </p>
+
+            <div className="space-y-2 text-gray-300">
+              <div className="space-y-1">
+                <span className="text-[11px] font-semibold text-teal-400 flex items-center gap-1.5">
+                  <Cpu className="w-3.5 h-3.5 text-teal-400" />
+                  {isRu ? 'MicroPython WebAssembly VM (Реальный эмулятор)' : 'MicroPython WebAssembly VM Engine'}
+                </span>
+                <p className="text-[11px] text-gray-400 pl-5 leading-snug">
+                  {isRu
+                    ? 'Запуск скомпилированного байткода MicroPython в фоновом Web Worker без фризов интерфейса. Полная виртуализация machine (Pin, ADC, PWM, I2C, SPI), network и time. Виртуальный I2C ACK исключает ошибки отсутствия физических экранов.'
+                    : 'Runs compiled MicroPython bytecode in a background Web Worker without UI frame drops. Complete virtualization of machine (Pin, ADC, PWM, I2C, SPI), network, and time. Virtual I2C ACK eliminates physical missing screen panics.'}
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-[11px] font-semibold text-blue-400 flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5 text-blue-400" />
+                  {isRu ? 'Ноды HTTP GET и HTTP POST (IoT и Node-RED)' : 'HTTP GET & HTTP POST Nodes (IoT & Node-RED)'}
+                </span>
+                <p className="text-[11px] text-gray-400 pl-5 leading-snug">
+                  {isRu
+                    ? 'Ноды для лабораторных проектов: отправка показаний фоторезистора (ADC) на ПК по локальной сети и обратный прием команд (/on, /off) с переключением встроенного светодиода. Автоматический импорт urequests и ujson.'
+                    : 'Reverse-polling IoT nodes: sends sensor ADC data to PC over LAN and receives control commands (/on, /off) in response. Automatic urequests and ujson import with crash-proof try/except wrappers.'}
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-[11px] font-semibold text-emerald-400 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                  {isRu ? 'Кроссплатформенная проверка обновлений с GitHub' : 'Cross-Platform GitHub Updates & Settings'}
+                </span>
+                <p className="text-[11px] text-gray-400 pl-5 leading-snug">
+                  {isRu
+                    ? 'Окно настроек с кнопкой проверки обновлений через GitHub Releases API. Автоматическое определение операционной системы (Windows .exe, Linux .AppImage, macOS .dmg) и загрузка нужного установочного пакета в 1 клик.'
+                    : 'New Settings modal with 1-click update check via GitHub Releases API. Automatically detects OS (Windows .exe, Linux .AppImage, macOS .dmg) and matches the correct binary installer.'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Version 1.0.0 Official Release */}
+          <div className="space-y-3 p-3.5 rounded-lg bg-[#161920] border border-[#2B3240]">
+            <div className="flex items-center justify-between">
+              <span className="px-2.5 py-0.5 rounded text-[11px] font-mono font-bold bg-gray-700/60 text-gray-300 border border-gray-600">
+                v1.0.0 — Initial Baseline
+              </span>
+              <span className="text-[10px] text-gray-500">18.10.2026</span>
+            </div>
+
+            <p className="text-[11px] text-gray-400 leading-relaxed">
+              {isRu
+                ? 'Базовый релиз визуальной среды Node-TEAL: 79 нод, Kahn компилятор, интерактивные GPIO, темная палитра Node-RED.'
+                : 'Initial baseline release of Node-TEAL: 79 nodes, Kahn dependency compiler, interactive GPIOs, calm Node-RED aesthetic.'}
             </p>
 
             <div className="space-y-2 text-gray-300">
