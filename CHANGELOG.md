@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 ### 🚀 Highlights
 - **Real MicroPython v1.26 WebAssembly VM**: Runs real compiled MicroPython bytecode in an isolated Web Worker without UI stutter. Full virtual `machine` (Pin, ADC, PWM, I2C, SPI), `network` and `time` modules.
 - **Dual-Mode Simulator**: Instant 1-click toggle between **Visual Flow** (step-by-step canvas highlighting) and **MicroPython WASM VM** (real WebAssembly virtual processor).
-- **HTTP GET & HTTP POST IoT Nodes**: Reverse-polling nodes for college lab projects (sends photoresistor ADC readings to Node-RED on PC and receives `/on` or `/off` response commands to toggle the onboard LED). Safe `try/except` wrappers and auto-import of `urequests` & `ujson`.
+- **HTTP GET & HTTP POST IoT Nodes**: Reverse-polling nodes for IoT projects (sends photoresistor ADC readings to Node-RED on PC and receives `/on` or `/off` response commands to toggle the onboard LED). Safe `try/except` wrappers and auto-import of `urequests` & `ujson`.
 - **Cross-Platform GitHub Updates & Settings Modal**: Automatic OS detection (Windows `.exe`, Linux `.AppImage`, macOS `.dmg`) with 1-click update check and direct package download via GitHub Releases API.
 - **Virtual Bus ACK**: Virtual I2C (`0x3C`, `0x27`) and SPI bus ACK prevents missing-hardware panics (`ENODEV`) while preserving clean Python runtime semantics.
 
@@ -27,7 +27,7 @@ All notable changes to this project will be documented in this file.
 ### ⚡ Dual-Mode Hardware Simulator & WebAssembly MicroPython
 - **Real MicroPython v1.26 WebAssembly VM**: Runs actual compiled MicroPython bytecode in a background Web Worker without blocking the UI, complete with virtual `machine`, `urequests`, `network`, and display drivers.
 - **Visual Flow Mode**: Step-by-step graphical node highlighting on the canvas with adjustable simulation speed (0.5x, 1x, 2x, 5x).
-- **Node-RED IoT Reverse Polling Simulation**: Automated handling of HTTP GET/POST requests and response commands (`/on`, `/off`) for college lab projects.
+- **Node-RED IoT Reverse Polling Simulation**: Automated handling of HTTP GET/POST requests and response commands (`/on`, `/off`) for IoT projects.
 - **Hardware-Resilient Virtual Buses**: Virtual I2C (`0x3C`, `0x27`) and SPI bus ACK prevents missing-hardware panics (`ENODEV`) while preserving clean Python runtime semantics.
 - **Live Interactive GPIO Pins**: Clickable GPIO indicators (`G0`, `G4`, `G5`, `G12`, `G14`, `D4`) with zero-latency concurrent memory synchronization.
 

@@ -435,7 +435,7 @@ async function getOrInitVM(): Promise<MicroPythonInstance> {
         text: `[HTTP ${method}] ➔ ${url} ${payloadStr && payloadStr !== '{}' ? `| Payload: ${payloadStr}` : ''}`,
       });
 
-      // Reverse Polling logic for Node-RED / College Lab
+      // Reverse Polling logic for Node-RED / IoT telemetry
       let responseText = '/off';
       let payloadObj: any = null;
       try {
