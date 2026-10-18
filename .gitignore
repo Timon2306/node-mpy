@@ -33,11 +33,14 @@ target
 **/*.rs.bk
 *.msi
 
-# Personal & User Flow data
-*.nodeteal.json
-*.py
+# Personal, reference & prompt files
 promt.md
 prompt_draft.md
+PLAN.md
+SCREENSHOTS.md
+Screenshot_*.png
+*.nodeteal.json
+*.py
 .system_generated/
 scratch/
 
