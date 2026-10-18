@@ -1,0 +1,654 @@
+{
+  "id": "core",
+  "name": "Core (Логика и Структура)",
+  "version": "1.0.0",
+  "description": "Базовые структурные ноды: импорты, циклы, условия, переменные и печать",
+  "isNative": true,
+  "category": "Core",
+  "color": "#3B82F6",
+  "icon": "Cpu",
+  "importSnippet": "",
+  "nodes": [
+    {
+      "id": "core:import_module",
+      "libraryId": "core",
+      "label": "Import Module",
+      "category": "Core",
+      "color": "#3B82F6",
+      "icon": "Box",
+      "description": "Импортирует библиотеку и разблокирует её ноды в палитре",
+      "inputs": [],
+      "outputs": [],
+      "properties": [
+        {
+          "id": "module",
+          "name": "module",
+          "type": "select",
+          "label": "Модуль для импорта",
+          "defaultValue": "machine",
+          "options": [
+            { "label": "machine (Аппаратная часть: Pin, PWM, ADC, I2C, SPI)", "value": "machine" },
+            { "label": "time (Тайминги и задержки)", "value": "time" },
+            { "label": "network (Wi-Fi и Сеть)", "value": "network" },
+            { "label": "neopixel (Адресные LED ленты)", "value": "neopixel" },
+            { "label": "dht (Датчики DHT11/22)", "value": "dht" },
+            { "label": "onewire (Шина OneWire & DS18B20)", "value": "onewire" },
+            { "label": "ssd1306 (OLED экран I2C)", "value": "ssd1306" },
+            { "label": "st7735 (TFT экран SPI)", "value": "st7735" },
+            { "label": "tft (TFT экран)", "value": "tft" },
+            { "label": "bmp280 (Барометр и термометр)", "value": "bmp280" },
+            { "label": "servo (Сервоприводы)", "value": "servo" },
+            { "label": "max7219 (LED матрица)", "value": "max7219" },
+            { "label": "i2c_lcd (Символьный LCD 1602/2004)", "value": "i2c_lcd" },
+            { "label": "ads1115 (16-битный АЦП I2C)", "value": "ads1115" },
+            { "label": "hx711 (Модуль тензодатчика)", "value": "hx711" },
+            { "label": "mfrc522 (RFID считыватель)", "value": "mfrc522" },
+            { "label": "stepper (Шаговый двигатель)", "value": "stepper" },
+            { "label": "ujson (Работа с JSON)", "value": "ujson" },
+            { "label": "urequests (HTTP запросы)", "value": "urequests" },
+            { "label": "uasyncio (Асинхронные задачи)", "value": "uasyncio" },
+            { "label": "math (Математические функции)", "value": "math" },
+            { "label": "urandom (Генератор случайных чисел)", "value": "urandom" }
+          ]
+        },
+        {
+          "id": "import_all",
+          "name": "import_all",
+          "type": "boolean",
+          "label": "Импортировать весь модуль (import ...)",
+          "defaultValue": true
+        },
+        {
+          "id": "classes",
+          "name": "classes",
+          "type": "text",
+          "label": "Выборочные классы (через запятую: Pin, PWM, I2C)",
+          "defaultValue": "",
+          "placeholder": "Pin, PWM, ADC, I2C"
+        }
+      ],
+      "codeTemplate": {
+        "section": "imports",
+        "template": ""
+      }
+    },
+    {
+      "id": "core:setup",
+      "libraryId": "core",
+      "label": "Start / Init",
+      "category": "Core",
+      "color": "#10B981",
+      "icon": "Play",
+      "description": "Точка старта программы (однократное выполнение перед циклом)",
+      "inputs": [],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Start" }
+      ],
+      "properties": [],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "# --- Start Execution ---"
+      }
+    },
+    {
+      "id": "core:while_loop",
+      "libraryId": "core",
+      "label": "While True Loop",
+      "category": "Core",
+      "color": "#3B82F6",
+      "icon": "Repeat",
+      "description": "Главный бесконечный цикл программы",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Enter" }
+      ],
+      "outputs": [
+        { "id": "loop_body", "name": "loop_body", "type": "flow", "label": "Loop Body" }
+      ],
+      "properties": [],
+      "codeTemplate": {
+        "section": "loop",
+        "template": "while True:"
+      }
+    },
+    {
+      "id": "core:if_else",
+      "libraryId": "core",
+      "label": "If / Else",
+      "category": "Core",
+      "color": "#EC4899",
+      "icon": "GitFork",
+      "description": "Ветвление логики по условию",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "condition", "name": "condition", "type": "boolean", "label": "Condition" }
+      ],
+      "outputs": [
+        { "id": "flow_true", "name": "flow_true", "type": "flow", "label": "True" },
+        { "id": "flow_false", "name": "flow_false", "type": "flow", "label": "False" }
+      ],
+      "properties": [],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "if {{inputs.condition}}:"
+      }
+    },
+    {
+      "id": "core:comparison",
+      "libraryId": "core",
+      "label": "Comparison",
+      "category": "Core",
+      "color": "#EC4899",
+      "icon": "CheckSquare",
+      "description": "Сравнение двух значений",
+      "inputs": [
+        { "id": "a", "name": "a", "type": "any", "label": "A" },
+        { "id": "b", "name": "b", "type": "any", "label": "B" }
+      ],
+      "outputs": [
+        { "id": "result", "name": "result", "type": "boolean", "label": "Result" }
+      ],
+      "properties": [
+        {
+          "id": "operator",
+          "name": "operator",
+          "type": "select",
+          "label": "Оператор",
+          "defaultValue": "==",
+          "options": [
+            { "label": "== (Равно)", "value": "==" },
+            { "label": "!= (Не равно)", "value": "!=" },
+            { "label": "> (Больше)", "value": ">" },
+            { "label": "< (Меньше)", "value": "<" },
+            { "label": ">= (Больше или равно)", "value": ">=" },
+            { "label": "<= (Меньше или равно)", "value": "<=" }
+          ]
+        },
+        {
+          "id": "val_a",
+          "name": "val_a",
+          "type": "text",
+          "label": "Значение A (если нет входа)",
+          "defaultValue": "0",
+          "placeholder": "0, 1, или переменная"
+        },
+        {
+          "id": "val_b",
+          "name": "val_b",
+          "type": "text",
+          "label": "Значение B (если нет входа)",
+          "defaultValue": "1",
+          "placeholder": "1 (HIGH), 0 (LOW), число или текст"
+        }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{output.result}} = ({{inputs.a || props.val_a}} {{props.operator}} {{inputs.b || props.val_b}})",
+        "outputVariables": {
+          "result": "cmp_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "core:math",
+      "libraryId": "core",
+      "label": "Math Operation",
+      "category": "Core",
+      "color": "#3B82F6",
+      "icon": "Calculator",
+      "description": "Арифметические операции над числами",
+      "inputs": [
+        { "id": "a", "name": "a", "type": "number", "label": "A" },
+        { "id": "b", "name": "b", "type": "number", "label": "B" }
+      ],
+      "outputs": [
+        { "id": "result", "name": "result", "type": "number", "label": "Result" }
+      ],
+      "properties": [
+        {
+          "id": "operator",
+          "name": "operator",
+          "type": "select",
+          "label": "Операция",
+          "defaultValue": "+",
+          "options": [
+            { "label": "+ (Сложение)", "value": "+" },
+            { "label": "- (Вычитание)", "value": "-" },
+            { "label": "* (Умножение)", "value": "*" },
+            { "label": "/ (Деление)", "value": "/" },
+            { "label": "% (Остаток от деления)", "value": "%" }
+          ]
+        },
+        { "id": "val_a", "name": "val_a", "type": "number", "label": "Значение A (если нет входа)", "defaultValue": 0 },
+        { "id": "val_b", "name": "val_b", "type": "number", "label": "Значение B (если нет входа)", "defaultValue": 1 }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{output.result}} = ({{inputs.a || props.val_a}} {{props.operator}} {{inputs.b || props.val_b}})",
+        "outputVariables": {
+          "result": "math_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "core:map_range",
+      "libraryId": "core",
+      "label": "Map Range",
+      "category": "Core",
+      "color": "#3B82F6",
+      "icon": "Maximize2",
+      "description": "Преобразование диапазона значений (например 0..4095 в 0..100)",
+      "inputs": [
+        { "id": "val", "name": "val", "type": "number", "label": "Value" }
+      ],
+      "outputs": [
+        { "id": "result", "name": "result", "type": "number", "label": "Mapped" }
+      ],
+      "properties": [
+        { "id": "default_val", "name": "default_val", "type": "number", "label": "Значение (если нет входа)", "defaultValue": 0 },
+        { "id": "in_min", "name": "in_min", "type": "number", "label": "Вход Мин", "defaultValue": 0 },
+        { "id": "in_max", "name": "in_max", "type": "number", "label": "Вход Макс", "defaultValue": 4095 },
+        { "id": "out_min", "name": "out_min", "type": "number", "label": "Выход Мин", "defaultValue": 0 },
+        { "id": "out_max", "name": "out_max", "type": "number", "label": "Выход Макс", "defaultValue": 100 }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{output.result}} = int(({{inputs.val || props.default_val}} - {{props.in_min}}) * ({{props.out_max}} - {{props.out_min}}) / ({{props.in_max}} - {{props.in_min}}) + {{props.out_min}})",
+        "outputVariables": {
+          "result": "map_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "core:print",
+      "libraryId": "core",
+      "label": "Print to Console",
+      "category": "Core",
+      "color": "#EAB308",
+      "icon": "Terminal",
+      "description": "Вывод строки или значения в консоль REPL",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "msg", "name": "msg", "type": "any", "label": "Message" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [
+        { "id": "message", "name": "message", "type": "text", "label": "Текст / Сообщение", "defaultValue": "Hello from Node-TEAL!", "placeholder": "Текст для вывода в консоль" },
+        { "id": "prefix", "name": "prefix", "type": "text", "label": "Префикс (если подключен вход)", "defaultValue": "", "placeholder": "Например: 'Значение:'" }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "print({{inputs.msg || props.message}})"
+      }
+    },
+    {
+      "id": "core:variable_set",
+      "libraryId": "core",
+      "label": "Set Variable",
+      "category": "Core",
+      "color": "#6366F1",
+      "icon": "Sliders",
+      "description": "Задать значение переменной (например: x = 10 или pin_state = True)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "val", "name": "val", "type": "any", "label": "Value" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" },
+        { "id": "val", "name": "val", "type": "any", "label": "Value" }
+      ],
+      "properties": [
+        { "id": "var_name", "name": "var_name", "type": "text", "label": "Имя переменной", "defaultValue": "x", "placeholder": "x, my_val, led_state" },
+        { "id": "default_val", "name": "default_val", "type": "text", "label": "Значение (если нет входа)", "defaultValue": "0", "placeholder": "0, 'text', True" }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{props.var_name}} = {{inputs.val || props.default_val}}",
+        "outputVariables": {
+          "val": "{{props.var_name}}"
+        }
+      }
+    },
+    {
+      "id": "core:variable_get",
+      "libraryId": "core",
+      "label": "Get Variable",
+      "category": "Core",
+      "color": "#6366F1",
+      "icon": "Type",
+      "description": "Получить значение переменной для передачи в условие, печать или вычисления",
+      "inputs": [],
+      "outputs": [
+        { "id": "val", "name": "val", "type": "any", "label": "Value" }
+      ],
+      "properties": [
+        { "id": "var_name", "name": "var_name", "type": "text", "label": "Имя переменной", "defaultValue": "x", "placeholder": "x, my_val, led_state" }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{output.val}} = {{props.var_name}}",
+        "outputVariables": {
+          "val": "{{props.var_name}}"
+        }
+      }
+    },
+    {
+      "id": "core:constant",
+      "libraryId": "core",
+      "label": "Value / Constant",
+      "category": "Core",
+      "color": "#EC4899",
+      "icon": "CheckSquare",
+      "description": "Константа: число, строка или логическое значение (True/False)",
+      "inputs": [],
+      "outputs": [
+        { "id": "val", "name": "val", "type": "any", "label": "Value" }
+      ],
+      "properties": [
+        {
+          "id": "data_type",
+          "name": "data_type",
+          "type": "select",
+          "label": "Тип данных",
+          "defaultValue": "number",
+          "options": [
+            { "label": "Число (Number)", "value": "number" },
+            { "label": "Строка (String)", "value": "string" },
+            { "label": "Логическое (Boolean True/False)", "value": "boolean" }
+          ]
+        },
+        { "id": "num_val", "name": "num_val", "type": "number", "label": "Числовое значение", "defaultValue": 1 },
+        { "id": "str_val", "name": "str_val", "type": "text", "label": "Текстовое значение", "defaultValue": "Hello" },
+        {
+          "id": "bool_val",
+          "name": "bool_val",
+          "type": "select",
+          "label": "Логическое значение",
+          "defaultValue": "True",
+          "options": [
+            { "label": "True (Истина / 1 / HIGH)", "value": "True" },
+            { "label": "False (Ложь / 0 / LOW)", "value": "False" }
+          ]
+        }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{output.val}} = {{props.constant_value}}",
+        "outputVariables": {
+          "val": "const_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "core:custom_function",
+      "libraryId": "core",
+      "label": "Custom Function",
+      "category": "Core",
+      "color": "#8B5CF6",
+      "icon": "Code2",
+      "description": "Пользовательская Python функция для секции 3",
+      "inputs": [],
+      "outputs": [],
+      "properties": [
+        { "id": "func_name", "name": "func_name", "type": "text", "label": "Имя функции", "defaultValue": "my_function" },
+        { "id": "params", "name": "params", "type": "text", "label": "Параметры", "defaultValue": "value" },
+        { "id": "code", "name": "code", "type": "code", "label": "Тело функции", "defaultValue": "    # Напишите код\n    return value" }
+      ],
+      "codeTemplate": {
+        "section": "functions",
+        "template": "def {{props.func_name}}({{props.params}}):\n{{props.code}}"
+      }
+    },
+    {
+      "id": "core:logic",
+      "libraryId": "core",
+      "label": "Logic Gate (AND / OR / NOT)",
+      "category": "Core",
+      "color": "#EC4899",
+      "icon": "CheckSquare",
+      "description": "Логические операции AND, OR, NOT над условиями и флагами",
+      "inputs": [
+        { "id": "a", "name": "a", "type": "boolean", "label": "A" },
+        { "id": "b", "name": "b", "type": "boolean", "label": "B" }
+      ],
+      "outputs": [
+        { "id": "result", "name": "result", "type": "boolean", "label": "Result" }
+      ],
+      "properties": [
+        {
+          "id": "operator",
+          "name": "operator",
+          "type": "select",
+          "label": "Логическая операция",
+          "defaultValue": "and",
+          "options": [
+            { "label": "AND (И — оба True)", "value": "and" },
+            { "label": "OR (ИЛИ — хотя бы один True)", "value": "or" },
+            { "label": "NOT (НЕ — инверсия входа A)", "value": "not" }
+          ]
+        },
+        {
+          "id": "val_a",
+          "name": "val_a",
+          "type": "select",
+          "label": "Значение A (если нет входа)",
+          "defaultValue": "True",
+          "options": [
+            { "label": "True", "value": "True" },
+            { "label": "False", "value": "False" }
+          ]
+        },
+        {
+          "id": "val_b",
+          "name": "val_b",
+          "type": "select",
+          "label": "Значение B (если нет входа)",
+          "defaultValue": "True",
+          "options": [
+            { "label": "True", "value": "True" },
+            { "label": "False", "value": "False" }
+          ]
+        }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{output.result}} = ({{inputs.a || props.val_a}} {{props.operator}} {{inputs.b || props.val_b}})",
+        "outputVariables": {
+          "result": "logic_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "core:string_format",
+      "libraryId": "core",
+      "label": "Format String",
+      "category": "Core",
+      "color": "#EAB308",
+      "icon": "Type",
+      "description": "Склеивание и форматирование строк с префиксом и суффиксом",
+      "inputs": [
+        { "id": "val", "name": "val", "type": "any", "label": "Value" }
+      ],
+      "outputs": [
+        { "id": "result", "name": "result", "type": "string", "label": "Text" }
+      ],
+      "properties": [
+        { "id": "prefix", "name": "prefix", "type": "text", "label": "Префикс (до значения)", "defaultValue": "Val: " },
+        { "id": "suffix", "name": "suffix", "type": "text", "label": "Суффикс (после значения)", "defaultValue": "" },
+        { "id": "default_val", "name": "default_val", "type": "text", "label": "Значение по умолч.", "defaultValue": "0" }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{output.result}} = str({{props.prefix}}) + str({{inputs.val || props.default_val}}) + str({{props.suffix}})",
+        "outputVariables": {
+          "result": "str_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "core:random",
+      "libraryId": "core",
+      "label": "Random Number",
+      "category": "Core",
+      "color": "#3B82F6",
+      "icon": "Hash",
+      "description": "Генерация случайного целого числа в заданном диапазоне",
+      "inputs": [
+        { "id": "min", "name": "min", "type": "number", "label": "Min" },
+        { "id": "max", "name": "max", "type": "number", "label": "Max" }
+      ],
+      "outputs": [
+        { "id": "result", "name": "result", "type": "number", "label": "Random" }
+      ],
+      "properties": [
+        { "id": "min_val", "name": "min_val", "type": "number", "label": "Минимум", "defaultValue": 0 },
+        { "id": "max_val", "name": "max_val", "type": "number", "label": "Максимум", "defaultValue": 100 }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "imports": [
+          "import urandom"
+        ],
+        "template": "{{output.result}} = urandom.randint({{inputs.min || props.min_val}}, {{inputs.max || props.max_val}})",
+        "outputVariables": {
+          "result": "rnd_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "core:for_range",
+      "libraryId": "core",
+      "label": "For Range Loop",
+      "category": "Core",
+      "color": "#3B82F6",
+      "icon": "Repeat",
+      "description": "Цикл со счетчиком (for i in range(...)) для повторения действий N раз",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Enter" },
+        { "id": "count", "name": "count", "type": "number", "label": "Count" }
+      ],
+      "outputs": [
+        { "id": "loop_body", "name": "loop_body", "type": "flow", "label": "Loop Body" },
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Exit" },
+        { "id": "index", "name": "index", "type": "number", "label": "Index (i)" }
+      ],
+      "properties": [
+        { "id": "count", "name": "count", "type": "number", "label": "Число повторений", "defaultValue": 5, "min": 1, "max": 100000 },
+        { "id": "var_name", "name": "var_name", "type": "text", "label": "Имя переменной счетчика", "defaultValue": "i" }
+      ],
+      "codeTemplate": {
+        "section": "loop",
+        "template": "for {{props.var_name}} in range({{inputs.count || props.count}}):",
+        "outputVariables": {
+          "index": "{{props.var_name}}"
+        }
+      }
+    },
+    {
+      "id": "core:math_func",
+      "libraryId": "core",
+      "label": "Math Function",
+      "category": "Core",
+      "color": "#3B82F6",
+      "icon": "Calculator",
+      "description": "Математические функции: abs, round, min, max, pow, sqrt",
+      "inputs": [
+        { "id": "val", "name": "val", "type": "number", "label": "Value" },
+        { "id": "val2", "name": "val2", "type": "number", "label": "Value 2" }
+      ],
+      "outputs": [
+        { "id": "result", "name": "result", "type": "number", "label": "Result" }
+      ],
+      "properties": [
+        {
+          "id": "func",
+          "name": "func",
+          "type": "select",
+          "label": "Функция",
+          "defaultValue": "round",
+          "options": [
+            { "label": "round (Округление)", "value": "round" },
+            { "label": "abs (Модуль числа)", "value": "abs" },
+            { "label": "min (Минимум из двух)", "value": "min" },
+            { "label": "max (Максимум из двух)", "value": "max" },
+            { "label": "pow (Степень val ** val2)", "value": "pow" },
+            { "label": "sqrt (Квадратный корень)", "value": "sqrt" }
+          ]
+        },
+        { "id": "default_val", "name": "default_val", "type": "number", "label": "Значение (если нет входа)", "defaultValue": 0 },
+        { "id": "default_val2", "name": "default_val2", "type": "number", "label": "Значение 2 (для min/max/pow)", "defaultValue": 2 }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "imports": [
+          "import math"
+        ],
+        "template": "{{output.result}} = {{props.func}}({{inputs.val || props.default_val}})",
+        "outputVariables": {
+          "result": "mfunc_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "core:type_cast",
+      "libraryId": "core",
+      "label": "Type Cast",
+      "category": "Core",
+      "color": "#3B82F6",
+      "icon": "Type",
+      "description": "Преобразование типа данных: int(), float(), str(), bool()",
+      "inputs": [
+        { "id": "val", "name": "val", "type": "any", "label": "Value" }
+      ],
+      "outputs": [
+        { "id": "result", "name": "result", "type": "any", "label": "Result" }
+      ],
+      "properties": [
+        {
+          "id": "target_type",
+          "name": "target_type",
+          "type": "select",
+          "label": "Целевой тип",
+          "defaultValue": "int",
+          "options": [
+            { "label": "int (Целое число)", "value": "int" },
+            { "label": "float (Число с точкой)", "value": "float" },
+            { "label": "str (Строка текста)", "value": "str" },
+            { "label": "bool (Логическое)", "value": "bool" }
+          ]
+        },
+        { "id": "default_val", "name": "default_val", "type": "text", "label": "Значение по умолч.", "defaultValue": "0" }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{output.result}} = {{props.target_type}}({{inputs.val || props.default_val}})",
+        "outputVariables": {
+          "result": "cast_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "core:comment",
+      "libraryId": "core",
+      "label": "Comment / Note",
+      "category": "Core",
+      "color": "#64748B",
+      "icon": "Code2",
+      "description": "Текстовая заметка или комментарий для документации схемы",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [
+        { "id": "text", "name": "text", "type": "text", "label": "Комментарий", "defaultValue": "Пояснение к логике программы..." }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "# {{props.text}}"
+      }
+    }
+  ]
+}

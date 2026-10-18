@@ -1,0 +1,139 @@
+{
+  "id": "neopixel",
+  "name": "NeoPixel (Адресные светодиоды WS2812)",
+  "version": "1.0.0",
+  "description": "Управление адресными светодиодными лентами и кольцами WS2812B",
+  "isNative": true,
+  "category": "Lighting",
+  "color": "#EC4899",
+  "icon": "Sun",
+  "importSnippet": "import neopixel",
+  "nodes": [
+    {
+      "id": "neopixel:init",
+      "libraryId": "neopixel",
+      "label": "NeoPixel Init",
+      "category": "Lighting",
+      "color": "#EC4899",
+      "icon": "Sun",
+      "description": "Инициализация адресной ленты на цифровом выводе",
+      "inputs": [
+        { "id": "pin", "name": "pin", "type": "pin", "label": "Pin" }
+      ],
+      "outputs": [
+        { "id": "strip", "name": "strip", "type": "device", "label": "NeoPixel Strip" }
+      ],
+      "properties": [
+        { "id": "pin", "name": "pin", "type": "number", "label": "GPIO Pin (если не подключен)", "defaultValue": 12, "min": 0, "max": 48 },
+        { "id": "num_pixels", "name": "num_pixels", "type": "number", "label": "Количество светодиодов", "defaultValue": 8, "min": 1, "max": 1024 }
+      ],
+      "codeTemplate": {
+        "section": "init",
+        "template": "np_strip_{{id}} = neopixel.NeoPixel({{inputs.pin || props.pin}}, {{props.num_pixels}})",
+        "outputVariables": {
+          "strip": "np_strip_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "neopixel:set_pixel",
+      "libraryId": "neopixel",
+      "label": "Set Pixel Color",
+      "category": "Lighting",
+      "color": "#EC4899",
+      "icon": "Disc",
+      "description": "Установка RGB цвета конкретного светодиода по индексу",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "strip", "name": "strip", "type": "device", "label": "Strip" },
+        { "id": "index", "name": "index", "type": "number", "label": "Index" },
+        { "id": "r", "name": "r", "type": "number", "label": "R" },
+        { "id": "g", "name": "g", "type": "number", "label": "G" },
+        { "id": "b", "name": "b", "type": "number", "label": "B" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [
+        { "id": "def_index", "name": "def_index", "type": "number", "label": "Индекс (0-N)", "defaultValue": 0 },
+        { "id": "def_r", "name": "def_r", "type": "number", "label": "Red (0-255)", "defaultValue": 255 },
+        { "id": "def_g", "name": "def_g", "type": "number", "label": "Green (0-255)", "defaultValue": 0 },
+        { "id": "def_b", "name": "def_b", "type": "number", "label": "Blue (0-255)", "defaultValue": 0 }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{inputs.strip}}[{{inputs.index || props.def_index}}] = ({{inputs.r || props.def_r}}, {{inputs.g || props.def_g}}, {{inputs.b || props.def_b}})"
+      }
+    },
+    {
+      "id": "neopixel:fill",
+      "libraryId": "neopixel",
+      "label": "Fill All Pixels",
+      "category": "Lighting",
+      "color": "#EC4899",
+      "icon": "Palette",
+      "description": "Заливка всей ленты одним RGB цветом",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "strip", "name": "strip", "type": "device", "label": "Strip" },
+        { "id": "r", "name": "r", "type": "number", "label": "R" },
+        { "id": "g", "name": "g", "type": "number", "label": "G" },
+        { "id": "b", "name": "b", "type": "number", "label": "B" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [
+        { "id": "def_r", "name": "def_r", "type": "number", "label": "Red", "defaultValue": 0 },
+        { "id": "def_g", "name": "def_g", "type": "number", "label": "Green", "defaultValue": 255 },
+        { "id": "def_b", "name": "def_b", "type": "number", "label": "Blue", "defaultValue": 128 }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{inputs.strip}}.fill(({{inputs.r || props.def_r}}, {{inputs.g || props.def_g}}, {{inputs.b || props.def_b}}))"
+      }
+    },
+    {
+      "id": "neopixel:write",
+      "libraryId": "neopixel",
+      "label": "NeoPixel Write (Show)",
+      "category": "Lighting",
+      "color": "#EC4899",
+      "icon": "Sparkles",
+      "description": "Отправка обновлённого буфера цветов на физическую ленту",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "strip", "name": "strip", "type": "device", "label": "Strip" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{inputs.strip}}.write()"
+      }
+    },
+    {
+      "id": "neopixel:clear",
+      "libraryId": "neopixel",
+      "label": "NeoPixel Clear",
+      "category": "Lighting",
+      "color": "#EC4899",
+      "icon": "Sun",
+      "description": "Погасить все светодиоды ленты (заливка черным)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "strip", "name": "strip", "type": "device", "label": "Strip" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{inputs.strip}}.fill((0, 0, 0))\n{{inputs.strip}}.write()"
+      }
+    }
+  ]
+}

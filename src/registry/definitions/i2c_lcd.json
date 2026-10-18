@@ -1,0 +1,112 @@
+{
+  "id": "i2c_lcd",
+  "name": "I2C LCD (Символьный экран 1602 / 2004)",
+  "version": "1.0.0",
+  "description": "Символьные дисплеи LCD 1602 и 2004 с I2C-адаптером PCF8574",
+  "isNative": false,
+  "category": "Displays",
+  "color": "#10B981",
+  "icon": "Grid",
+  "importSnippet": "from i2c_lcd import I2cLcd",
+  "nodes": [
+    {
+      "id": "i2c_lcd:init",
+      "libraryId": "i2c_lcd",
+      "label": "I2C LCD Init",
+      "category": "Displays",
+      "color": "#10B981",
+      "icon": "Grid",
+      "description": "Инициализация символьного экрана на шине I2C",
+      "inputs": [
+        { "id": "bus", "name": "bus", "type": "bus", "label": "I2C Bus" }
+      ],
+      "outputs": [
+        { "id": "lcd", "name": "lcd", "type": "device", "label": "LCD Screen" }
+      ],
+      "properties": [
+        { "id": "addr", "name": "addr", "type": "text", "label": "I2C Адрес", "defaultValue": "0x27" },
+        { "id": "lines", "name": "lines", "type": "number", "label": "Количество строк", "defaultValue": 2 },
+        { "id": "cols", "name": "cols", "type": "number", "label": "Количество столбцов", "defaultValue": 16 }
+      ],
+      "codeTemplate": {
+        "section": "init",
+        "template": "lcd_{{id}} = I2cLcd({{inputs.bus}}, {{props.addr}}, {{props.lines}}, {{props.cols}})",
+        "outputVariables": {
+          "lcd": "lcd_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "i2c_lcd:put_str",
+      "libraryId": "i2c_lcd",
+      "label": "LCD Put String",
+      "category": "Displays",
+      "color": "#10B981",
+      "icon": "Type",
+      "description": "Вывод строки текста на экран LCD",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "lcd", "name": "lcd", "type": "device", "label": "LCD" },
+        { "id": "text", "name": "text", "type": "any", "label": "Text" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [
+        { "id": "def_text", "name": "def_text", "type": "text", "label": "Текст по умолч.", "defaultValue": "Hello MicroPython" },
+        { "id": "clear_first", "name": "clear_first", "type": "boolean", "label": "Очистить перед выводом", "defaultValue": false }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{% if props.clear_first %}{{inputs.lcd}}.clear()\n{% endif %}{{inputs.lcd}}.putstr(str({{inputs.text || props.def_text}}))"
+      }
+    },
+    {
+      "id": "i2c_lcd:move_to",
+      "libraryId": "i2c_lcd",
+      "label": "LCD Move Cursor",
+      "category": "Displays",
+      "color": "#10B981",
+      "icon": "Type",
+      "description": "Перемещение курсора на позицию (колонка, строка)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "lcd", "name": "lcd", "type": "device", "label": "LCD" },
+        { "id": "col", "name": "col", "type": "number", "label": "Col" },
+        { "id": "row", "name": "row", "type": "number", "label": "Row" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [
+        { "id": "col", "name": "col", "type": "number", "label": "Колонка (0-15)", "defaultValue": 0 },
+        { "id": "row", "name": "row", "type": "number", "label": "Строка (0-1)", "defaultValue": 0 }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{inputs.lcd}}.move_to({{inputs.col || props.col}}, {{inputs.row || props.row}})"
+      }
+    },
+    {
+      "id": "i2c_lcd:clear",
+      "libraryId": "i2c_lcd",
+      "label": "LCD Clear",
+      "category": "Displays",
+      "color": "#10B981",
+      "icon": "Square",
+      "description": "Очистка экрана дисплея",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "lcd", "name": "lcd", "type": "device", "label": "LCD" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{inputs.lcd}}.clear()"
+      }
+    }
+  ]
+}

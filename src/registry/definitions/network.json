@@ -1,0 +1,144 @@
+{
+  "id": "network",
+  "name": "Network (Wi-Fi и Сеть)",
+  "version": "1.0.0",
+  "description": "Подключение к Wi-Fi сети (STA) и создание точки доступа (AP)",
+  "isNative": true,
+  "category": "Network",
+  "color": "#06B6D4",
+  "icon": "Wifi",
+  "importSnippet": "import network",
+  "nodes": [
+    {
+      "id": "network:wlan_connect",
+      "libraryId": "network",
+      "label": "WLAN Connect",
+      "category": "Network",
+      "color": "#06B6D4",
+      "icon": "Wifi",
+      "description": "Подключение контроллера к домашней Wi-Fi сети в режиме Station",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" },
+        { "id": "wlan_obj", "name": "wlan_obj", "type": "device", "label": "WLAN" }
+      ],
+      "properties": [
+        { "id": "ssid", "name": "ssid", "type": "text", "label": "Имя сети (SSID)", "defaultValue": "MyWiFi" },
+        { "id": "password", "name": "password", "type": "text", "label": "Пароль сети", "defaultValue": "12345678" }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{output.wlan_obj}} = network.WLAN(network.STA_IF)\n{{output.wlan_obj}}.active(True)\n{{output.wlan_obj}}.connect('{{props.ssid}}', '{{props.password}}')",
+        "outputVariables": {
+          "wlan_obj": "wlan_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "network:is_connected",
+      "libraryId": "network",
+      "label": "WLAN Is Connected?",
+      "category": "Network",
+      "color": "#06B6D4",
+      "icon": "Radio",
+      "description": "Проверка наличия активного подключения к Wi-Fi",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "wlan", "name": "wlan", "type": "device", "label": "WLAN" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" },
+        { "id": "status", "name": "status", "type": "boolean", "label": "Connected?" }
+      ],
+      "properties": [],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{output.status}} = {{inputs.wlan || wlan}}.isconnected()",
+        "outputVariables": {
+          "status": "wlan_ok_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "network:ifconfig",
+      "libraryId": "network",
+      "label": "WLAN IP Config",
+      "category": "Network",
+      "color": "#06B6D4",
+      "icon": "Wifi",
+      "description": "Получение сетевого IP-адреса, маски подсети, шлюза и DNS",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "wlan", "name": "wlan", "type": "device", "label": "WLAN" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" },
+        { "id": "ip", "name": "ip", "type": "string", "label": "IP Address" },
+        { "id": "subnet", "name": "subnet", "type": "string", "label": "Subnet Mask" },
+        { "id": "gateway", "name": "gateway", "type": "string", "label": "Gateway" },
+        { "id": "dns", "name": "dns", "type": "string", "label": "DNS" }
+      ],
+      "properties": [],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{output.ip}}, {{output.subnet}}, {{output.gateway}}, {{output.dns}} = {{inputs.wlan || wlan}}.ifconfig()",
+        "outputVariables": {
+          "ip": "ip_{{id}}",
+          "subnet": "mask_{{id}}",
+          "gateway": "gw_{{id}}",
+          "dns": "dns_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "network:ap_active",
+      "libraryId": "network",
+      "label": "WLAN AP (Access Point)",
+      "category": "Network",
+      "color": "#06B6D4",
+      "icon": "Wifi",
+      "description": "Создание собственной точки доступа Wi-Fi (режим AP)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" },
+        { "id": "ap_obj", "name": "ap_obj", "type": "device", "label": "AP Object" }
+      ],
+      "properties": [
+        { "id": "ssid", "name": "ssid", "type": "text", "label": "Имя точки доступа (SSID)", "defaultValue": "ESP-AccessPoint" },
+        { "id": "password", "name": "password", "type": "text", "label": "Пароль (пусто для открытой)", "defaultValue": "12345678" }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{output.ap_obj}} = network.WLAN(network.AP_IF)\n{{output.ap_obj}}.active(True)\n{{output.ap_obj}}.config(essid='{{props.ssid}}', password='{{props.password}}')",
+        "outputVariables": {
+          "ap_obj": "ap_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "network:disconnect",
+      "libraryId": "network",
+      "label": "WLAN Disconnect",
+      "category": "Network",
+      "color": "#06B6D4",
+      "icon": "Power",
+      "description": "Отключение от Wi-Fi сети и деактивация интерфейса",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "wlan", "name": "wlan", "type": "device", "label": "WLAN" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "({{inputs.wlan || wlan}}).disconnect()\n({{inputs.wlan || wlan}}).active(False)"
+      }
+    }
+  ]
+}

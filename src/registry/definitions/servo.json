@@ -1,0 +1,84 @@
+{
+  "id": "servo",
+  "name": "Servo (Сервоприводы SG90 / MG996R)",
+  "version": "1.0.0",
+  "description": "Управление углом поворота сервоприводов (0–180 градусов) через ШИМ",
+  "isNative": false,
+  "category": "Actuators",
+  "color": "#F59E0B",
+  "icon": "RotateCw",
+  "importSnippet": "from servo import Servo",
+  "nodes": [
+    {
+      "id": "servo:init",
+      "libraryId": "servo",
+      "label": "Servo Init",
+      "category": "Actuators",
+      "color": "#F59E0B",
+      "icon": "RotateCw",
+      "description": "Инициализация сервопривода на сигнальном выводе",
+      "inputs": [
+        { "id": "pin", "name": "pin", "type": "pin", "label": "Signal Pin" }
+      ],
+      "outputs": [
+        { "id": "servo_obj", "name": "servo_obj", "type": "device", "label": "Servo Motor" }
+      ],
+      "properties": [
+        { "id": "pin", "name": "pin", "type": "number", "label": "GPIO Pin (если не подключен)", "defaultValue": 14, "min": 0, "max": 48 },
+        { "id": "freq", "name": "freq", "type": "number", "label": "Частота ШИМ (Гц)", "defaultValue": 50 }
+      ],
+      "codeTemplate": {
+        "section": "init",
+        "template": "servo_{{id}} = Servo({{inputs.pin || props.pin}}, freq={{props.freq}})",
+        "outputVariables": {
+          "servo_obj": "servo_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "servo:write_angle",
+      "libraryId": "servo",
+      "label": "Servo Write Angle",
+      "category": "Actuators",
+      "color": "#F59E0B",
+      "icon": "Compass",
+      "description": "Поворот вала сервопривода на заданный угол (0–180°)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "servo", "name": "servo", "type": "device", "label": "Servo" },
+        { "id": "angle", "name": "angle", "type": "number", "label": "Angle (0-180)" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [
+        { "id": "def_angle", "name": "def_angle", "type": "number", "label": "Угол по умолч. (°)", "defaultValue": 90, "min": 0, "max": 180 }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{inputs.servo}}.write_angle({{inputs.angle || props.def_angle}})"
+      }
+    },
+    {
+      "id": "servo:detach",
+      "libraryId": "servo",
+      "label": "Servo Detach (Off)",
+      "category": "Actuators",
+      "color": "#F59E0B",
+      "icon": "Slash",
+      "description": "Отключение сигнала ШИМ (вал свободен для вращения)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "servo", "name": "servo", "type": "device", "label": "Servo" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{inputs.servo}}.detach()"
+      }
+    }
+  ]
+}

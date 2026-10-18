@@ -1,0 +1,543 @@
+{
+  "id": "machine",
+  "name": "Machine (Аппаратная часть)",
+  "version": "1.0.0",
+  "description": "Управление пинами GPIO, ШИМ (PWM), АЦП (ADC), шинами I2C и SPI",
+  "isNative": true,
+  "category": "Hardware",
+  "color": "#10B981",
+  "icon": "Zap",
+  "importSnippet": "import machine",
+  "nodes": [
+    {
+      "id": "machine:pin_init",
+      "libraryId": "machine",
+      "label": "Pin Config",
+      "category": "Hardware",
+      "color": "#10B981",
+      "icon": "ToggleLeft",
+      "description": "Настройка цифрового вывода GPIO (вход/выход/подтяжка)",
+      "inputs": [],
+      "outputs": [
+        { "id": "pin_obj", "name": "pin_obj", "type": "pin", "label": "Pin" }
+      ],
+      "properties": [
+        { "id": "pin", "name": "pin", "type": "number", "label": "Номер GPIO", "defaultValue": 2, "min": 0, "max": 48 },
+        {
+          "id": "mode",
+          "name": "mode",
+          "type": "select",
+          "label": "Режим работы",
+          "defaultValue": "OUT",
+          "options": [
+            { "label": "OUT (Цифровой выход)", "value": "OUT" },
+            { "label": "IN (Цифровой вход)", "value": "IN" },
+            { "label": "OPEN_DRAIN (Открытый коллектор)", "value": "OPEN_DRAIN" }
+          ]
+        },
+        {
+          "id": "pull",
+          "name": "pull",
+          "type": "select",
+          "label": "Подтяжка резистором",
+          "defaultValue": "None",
+          "options": [
+            { "label": "Нет подтяжки", "value": "None" },
+            { "label": "PULL_UP (К питанию 3.3V)", "value": "PULL_UP" },
+            { "label": "PULL_DOWN (К земле GND)", "value": "PULL_DOWN" }
+          ]
+        }
+      ],
+      "codeTemplate": {
+        "section": "init",
+        "template": "pin_{{props.pin}} = machine.Pin({{props.pin}}, machine.Pin.{{props.mode}}{% if props.pull != 'None' %}, machine.Pin.{{props.pull}}{% endif %})",
+        "outputVariables": {
+          "pin_obj": "pin_{{props.pin}}"
+        }
+      }
+    },
+    {
+      "id": "machine:pin_write",
+      "libraryId": "machine",
+      "label": "Pin Write",
+      "category": "Hardware",
+      "color": "#10B981",
+      "icon": "ArrowUpRight",
+      "description": "Запись логического уровня (0 или 1) на пин",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "pin", "name": "pin", "type": "pin", "label": "Pin" },
+        { "id": "val", "name": "val", "type": "any", "label": "Level" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [
+        { "id": "pin", "name": "pin", "type": "number", "label": "GPIO Pin (если нет входа)", "defaultValue": 2, "min": 0, "max": 48 },
+        {
+          "id": "level",
+          "name": "level",
+          "type": "select",
+          "label": "Уровень (если нет входа)",
+          "defaultValue": "1",
+          "options": [
+            { "label": "1 (ВКЛ / HIGH)", "value": "1" },
+            { "label": "0 (ВЫКЛ / LOW)", "value": "0" }
+          ]
+        }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{inputs.pin}}.value({{inputs.val || props.level}})"
+      }
+    },
+    {
+      "id": "machine:pin_read",
+      "libraryId": "machine",
+      "label": "Pin Read",
+      "category": "Hardware",
+      "color": "#10B981",
+      "icon": "Eye",
+      "description": "Чтение цифрового значения с пина (0 или 1)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "pin", "name": "pin", "type": "pin", "label": "Pin" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" },
+        { "id": "val", "name": "val", "type": "number", "label": "Value (0/1)" },
+        { "id": "is_active", "name": "is_active", "type": "boolean", "label": "Active (High)" }
+      ],
+      "properties": [
+        { "id": "pin", "name": "pin", "type": "number", "label": "GPIO Pin (если нет входа)", "defaultValue": 2, "min": 0, "max": 48 }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{output.val}} = {{inputs.pin}}.value()\n{{output.is_active}} = ({{output.val}} == 1)",
+        "outputVariables": {
+          "val": "val_{{id}}",
+          "is_active": "active_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "machine:pin_is_active",
+      "libraryId": "machine",
+      "label": "Pin State / Is Active",
+      "category": "Hardware",
+      "color": "#10B981",
+      "icon": "CheckSquare",
+      "description": "Проверка состояния пина (возвращает True если уровень 1 / HIGH, иначе False)",
+      "inputs": [
+        { "id": "pin", "name": "pin", "type": "pin", "label": "Pin" }
+      ],
+      "outputs": [
+        { "id": "is_active", "name": "is_active", "type": "boolean", "label": "Is Active (1)" },
+        { "id": "val", "name": "val", "type": "number", "label": "Value (0/1)" }
+      ],
+      "properties": [
+        { "id": "pin", "name": "pin", "type": "number", "label": "GPIO Pin (если нет входа)", "defaultValue": 2, "min": 0, "max": 48 }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{output.val}} = {{inputs.pin}}.value()\n{{output.is_active}} = ({{output.val}} == 1)",
+        "outputVariables": {
+          "val": "pin_val_{{id}}",
+          "is_active": "pin_act_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "machine:pin_toggle",
+      "libraryId": "machine",
+      "label": "Pin Toggle",
+      "category": "Hardware",
+      "color": "#10B981",
+      "icon": "RefreshCw",
+      "description": "Инвертирование состояния пина (0 -> 1 или 1 -> 0)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "pin", "name": "pin", "type": "pin", "label": "Pin" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [
+        { "id": "pin", "name": "pin", "type": "number", "label": "GPIO Pin (если нет входа)", "defaultValue": 2, "min": 0, "max": 48 }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{inputs.pin}}.value(not {{inputs.pin}}.value())"
+      }
+    },
+    {
+      "id": "machine:pwm_init",
+      "libraryId": "machine",
+      "label": "PWM Init",
+      "category": "Hardware",
+      "color": "#10B981",
+      "icon": "Activity",
+      "description": "Инициализация ШИМ-генератора на выводе",
+      "inputs": [
+        { "id": "pin", "name": "pin", "type": "pin", "label": "Pin" }
+      ],
+      "outputs": [
+        { "id": "pwm_obj", "name": "pwm_obj", "type": "device", "label": "PWM" }
+      ],
+      "properties": [
+        { "id": "pin", "name": "pin", "type": "number", "label": "GPIO Pin (если не подключен)", "defaultValue": 2, "min": 0, "max": 48 },
+        { "id": "freq", "name": "freq", "type": "number", "label": "Частота (Hz)", "defaultValue": 1000 },
+        { "id": "duty", "name": "duty", "type": "number", "label": "Скважность (0-1023)", "defaultValue": 512 }
+      ],
+      "codeTemplate": {
+        "section": "init",
+        "template": "pwm_{{id}} = machine.PWM({{inputs.pin || props.pin}}, freq={{props.freq}}, duty={{props.duty}})",
+        "outputVariables": {
+          "pwm_obj": "pwm_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "machine:pwm_set",
+      "libraryId": "machine",
+      "label": "PWM Set Duty",
+      "category": "Hardware",
+      "color": "#10B981",
+      "icon": "Sliders",
+      "description": "Изменение скважности ШИМ (яркость, обороты)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "pwm", "name": "pwm", "type": "device", "label": "PWM" },
+        { "id": "duty", "name": "duty", "type": "number", "label": "Duty" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [
+        { "id": "default_duty", "name": "default_duty", "type": "number", "label": "Скважность (по умолч.)", "defaultValue": 512 }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{inputs.pwm}}.duty({{inputs.duty || props.default_duty}})"
+      }
+    },
+    {
+      "id": "machine:adc_init",
+      "libraryId": "machine",
+      "label": "ADC Init",
+      "category": "Hardware",
+      "color": "#10B981",
+      "icon": "BarChart2",
+      "description": "Инициализация аналогово-цифрового преобразователя",
+      "inputs": [
+        { "id": "pin", "name": "pin", "type": "pin", "label": "Pin" }
+      ],
+      "outputs": [
+        { "id": "adc_obj", "name": "adc_obj", "type": "device", "label": "ADC" }
+      ],
+      "properties": [
+        {
+          "id": "atten",
+          "name": "atten",
+          "type": "select",
+          "label": "Диапазон напряжений (ESP32)",
+          "defaultValue": "ATTN_11DB",
+          "options": [
+            { "label": "0 - 3.6V (ATTN_11DB)", "value": "ATTN_11DB" },
+            { "label": "0 - 2.2V (ATTN_6DB)", "value": "ATTN_6DB" },
+            { "label": "0 - 1.5V (ATTN_2_5DB)", "value": "ATTN_2_5DB" },
+            { "label": "0 - 1.0V (ATTN_0DB)", "value": "ATTN_0DB" }
+          ]
+        }
+      ],
+      "codeTemplate": {
+        "section": "init",
+        "template": "adc_{{id}} = machine.ADC({{inputs.pin || 0}})\nif hasattr(adc_{{id}}, 'atten'): adc_{{id}}.atten(machine.ADC.{{props.atten}})",
+        "outputVariables": {
+          "adc_obj": "adc_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "machine:adc_read",
+      "libraryId": "machine",
+      "label": "ADC Read U16",
+      "category": "Hardware",
+      "color": "#10B981",
+      "icon": "Activity",
+      "description": "Чтение аналогового значения (0-65535)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "adc", "name": "adc", "type": "device", "label": "ADC" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" },
+        { "id": "val", "name": "val", "type": "number", "label": "Raw 16-bit" }
+      ],
+      "properties": [],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{output.val}} = {{inputs.adc}}.read_u16() if hasattr({{inputs.adc}}, 'read_u16') else {{inputs.adc}}.read()",
+        "outputVariables": {
+          "val": "adc_val_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "machine:i2c_init",
+      "libraryId": "machine",
+      "label": "I2C Bus Init",
+      "category": "Hardware",
+      "color": "#8B5CF6",
+      "icon": "Cpu",
+      "description": "Инициализация шины I2C (для дисплеев и датчиков)",
+      "inputs": [],
+      "outputs": [
+        { "id": "bus", "name": "bus", "type": "bus", "label": "I2C Bus" }
+      ],
+      "properties": [
+        { "id": "bus_id", "name": "bus_id", "type": "number", "label": "I2C Номер (0 или 1)", "defaultValue": 0 },
+        { "id": "scl", "name": "scl", "type": "number", "label": "SCL Пин", "defaultValue": 22 },
+        { "id": "sda", "name": "sda", "type": "number", "label": "SDA Пин", "defaultValue": 21 },
+        { "id": "freq", "name": "freq", "type": "number", "label": "Частота шины (Hz)", "defaultValue": 400000 }
+      ],
+      "codeTemplate": {
+        "section": "init",
+        "template": "i2c_{{id}} = machine.I2C({{props.bus_id}}, scl=machine.Pin({{props.scl}}), sda=machine.Pin({{props.sda}}), freq={{props.freq}})",
+        "outputVariables": {
+          "bus": "i2c_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "machine:spi_init",
+      "libraryId": "machine",
+      "label": "SPI Bus Init",
+      "category": "Hardware",
+      "color": "#8B5CF6",
+      "icon": "Cpu",
+      "description": "Инициализация аппаратной шины SPI (TFT экраны, SD-карты)",
+      "inputs": [],
+      "outputs": [
+        { "id": "bus", "name": "bus", "type": "bus", "label": "SPI Bus" }
+      ],
+      "properties": [
+        { "id": "spi_id", "name": "spi_id", "type": "number", "label": "SPI Номер (1 или 2)", "defaultValue": 1 },
+        { "id": "baudrate", "name": "baudrate", "type": "number", "label": "Baudrate (Hz)", "defaultValue": 10000000 },
+        { "id": "sck", "name": "sck", "type": "number", "label": "SCK Пин", "defaultValue": 18 },
+        { "id": "mosi", "name": "mosi", "type": "number", "label": "MOSI Пин", "defaultValue": 23 },
+        { "id": "miso", "name": "miso", "type": "number", "label": "MISO Пин", "defaultValue": 19 }
+      ],
+      "codeTemplate": {
+        "section": "init",
+        "template": "spi_{{id}} = machine.SPI({{props.spi_id}}, baudrate={{props.baudrate}}, sck=machine.Pin({{props.sck}}), mosi=machine.Pin({{props.mosi}}), miso=machine.Pin({{props.miso}}))",
+        "outputVariables": {
+          "bus": "spi_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "machine:reset",
+      "libraryId": "machine",
+      "label": "Machine Reset",
+      "category": "Hardware",
+      "color": "#EF4444",
+      "icon": "Power",
+      "description": "Программный перезапуск микроконтроллера",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" }
+      ],
+      "outputs": [],
+      "properties": [],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "machine.reset()"
+      }
+    },
+    {
+      "id": "machine:pwm_freq",
+      "libraryId": "machine",
+      "label": "PWM Set Frequency",
+      "category": "Hardware",
+      "color": "#10B981",
+      "icon": "Activity",
+      "description": "Изменение частоты ШИМ сигнала (Гц)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "pwm", "name": "pwm", "type": "device", "label": "PWM" },
+        { "id": "freq", "name": "freq", "type": "number", "label": "Freq (Hz)" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [
+        { "id": "freq", "name": "freq", "type": "number", "label": "Частота (Hz)", "defaultValue": 1000 }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{inputs.pwm}}.freq({{inputs.freq || props.freq}})"
+      }
+    },
+    {
+      "id": "machine:tone",
+      "libraryId": "machine",
+      "label": "Play Tone (Buzzer)",
+      "category": "Hardware",
+      "color": "#10B981",
+      "icon": "Zap",
+      "description": "Воспроизведение звукового тона / ноты на пьезоизлучателе через ШИМ",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "pwm", "name": "pwm", "type": "device", "label": "PWM" },
+        { "id": "freq", "name": "freq", "type": "number", "label": "Freq (Hz)" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [
+        { "id": "freq", "name": "freq", "type": "number", "label": "Частота тона (Гц)", "defaultValue": 440 },
+        {
+          "id": "state",
+          "name": "state",
+          "type": "select",
+          "label": "Состояние звука",
+          "defaultValue": "ON",
+          "options": [
+            { "label": "ВКЛ (Звучать)", "value": "ON" },
+            { "label": "ВЫКЛ (Тишина)", "value": "OFF" }
+          ]
+        }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{inputs.pwm}}.freq({{inputs.freq || props.freq}})\n{{inputs.pwm}}.duty(512 if '{{props.state}}' == 'ON' else 0)"
+      }
+    },
+    {
+      "id": "machine:pwm_deinit",
+      "libraryId": "machine",
+      "label": "PWM Stop / Deinit",
+      "category": "Hardware",
+      "color": "#10B981",
+      "icon": "Slash",
+      "description": "Остановка ШИМ сигнала и освобождение канала таймера",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "pwm", "name": "pwm", "type": "device", "label": "PWM" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{inputs.pwm}}.deinit()"
+      }
+    },
+    {
+      "id": "machine:timer",
+      "libraryId": "machine",
+      "label": "Timer Init (Periodic/OneShot)",
+      "category": "Hardware",
+      "color": "#10B981",
+      "icon": "Clock",
+      "description": "Аппаратный таймер для периодического или однократного вызова функции",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" },
+        { "id": "timer", "name": "timer", "type": "device", "label": "Timer" }
+      ],
+      "properties": [
+        { "id": "period", "name": "period", "type": "number", "label": "Период (мс)", "defaultValue": 1000 },
+        {
+          "id": "mode",
+          "name": "mode",
+          "type": "select",
+          "label": "Режим",
+          "defaultValue": "PERIODIC",
+          "options": [
+            { "label": "PERIODIC (Периодический)", "value": "PERIODIC" },
+            { "label": "ONE_SHOT (Однократный)", "value": "ONE_SHOT" }
+          ]
+        },
+        { "id": "callback", "name": "callback", "type": "text", "label": "Функция callback", "defaultValue": "on_timer" }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "tim_{{id}} = machine.Timer(-1)\ntim_{{id}}.init(period={{props.period}}, mode=machine.Timer.{{props.mode}}, callback={{props.callback}})",
+        "outputVariables": {
+          "timer": "tim_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "machine:timer_deinit",
+      "libraryId": "machine",
+      "label": "Timer Stop / Deinit",
+      "category": "Hardware",
+      "color": "#10B981",
+      "icon": "Clock",
+      "description": "Остановка и сброс аппаратного таймера",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "timer", "name": "timer", "type": "device", "label": "Timer" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{inputs.timer}}.deinit()"
+      }
+    },
+    {
+      "id": "machine:i2c_scan",
+      "libraryId": "machine",
+      "label": "I2C Bus Scan",
+      "category": "Hardware",
+      "color": "#8B5CF6",
+      "icon": "Eye",
+      "description": "Поиск I2C устройств на шине (возвращает список hex адресов)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "bus", "name": "bus", "type": "bus", "label": "I2C Bus" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" },
+        { "id": "devices", "name": "devices", "type": "any", "label": "Addresses" }
+      ],
+      "properties": [],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{output.devices}} = [hex(x) for x in {{inputs.bus}}.scan()]",
+        "outputVariables": {
+          "devices": "i2c_devs_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "machine:deep_sleep",
+      "libraryId": "machine",
+      "label": "Deep Sleep",
+      "category": "Hardware",
+      "color": "#EF4444",
+      "icon": "Power",
+      "description": "Перевод микроконтроллера в режим глубокого сна для экономии батареи",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "ms", "name": "ms", "type": "number", "label": "Sleep (ms)" }
+      ],
+      "outputs": [],
+      "properties": [
+        { "id": "duration", "name": "duration", "type": "number", "label": "Длительность сна (мс)", "defaultValue": 10000 }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "machine.deepsleep({{inputs.ms || props.duration}})"
+      }
+    }
+  ]
+}

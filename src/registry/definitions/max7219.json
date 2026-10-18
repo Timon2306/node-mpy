@@ -1,0 +1,85 @@
+{
+  "id": "max7219",
+  "name": "MAX7219 (Светодиодная матрица 8x8 SPI)",
+  "version": "1.0.0",
+  "description": "Управление матрицами 8x8 на чипе MAX7219 через шину SPI",
+  "isNative": false,
+  "category": "Displays",
+  "color": "#EF4444",
+  "icon": "Grid",
+  "importSnippet": "from max7219 import Matrix8x8\nimport machine",
+  "nodes": [
+    {
+      "id": "max7219:init",
+      "libraryId": "max7219",
+      "label": "MAX7219 Matrix Init",
+      "category": "Displays",
+      "color": "#EF4444",
+      "icon": "Grid",
+      "description": "Инициализация каскада матриц MAX7219 на шине SPI",
+      "inputs": [
+        { "id": "spi_bus", "name": "spi_bus", "type": "bus", "label": "SPI Bus" }
+      ],
+      "outputs": [
+        { "id": "display", "name": "display", "type": "device", "label": "Matrix Display" }
+      ],
+      "properties": [
+        { "id": "cs_pin", "name": "cs_pin", "type": "number", "label": "CS Пин", "defaultValue": 5 },
+        { "id": "num_matrices", "name": "num_matrices", "type": "number", "label": "Число матриц", "defaultValue": 4 }
+      ],
+      "codeTemplate": {
+        "section": "init",
+        "template": "matrix_{{id}} = Matrix8x8({{inputs.spi_bus}}, machine.Pin({{props.cs_pin}}, machine.Pin.OUT), {{props.num_matrices}})",
+        "outputVariables": {
+          "display": "matrix_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "max7219:text",
+      "libraryId": "max7219",
+      "label": "Matrix Show Text",
+      "category": "Displays",
+      "color": "#EF4444",
+      "icon": "Type",
+      "description": "Вывод строки текста на светодиодную матрицу",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "display", "name": "display", "type": "device", "label": "Matrix" },
+        { "id": "text", "name": "text", "type": "any", "label": "Text" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [
+        { "id": "def_text", "name": "def_text", "type": "text", "label": "Текст по умолч.", "defaultValue": "TEAL" },
+        { "id": "brightness", "name": "brightness", "type": "number", "label": "Яркость (1-15)", "defaultValue": 5 }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{inputs.display}}.brightness({{props.brightness}})\n{{inputs.display}}.fill(0)\n{{inputs.display}}.text(str({{inputs.text || props.def_text}}), 0, 0, 1)\n{{inputs.display}}.show()"
+      }
+    },
+    {
+      "id": "max7219:clear",
+      "libraryId": "max7219",
+      "label": "Matrix Clear",
+      "category": "Displays",
+      "color": "#EF4444",
+      "icon": "Square",
+      "description": "Очистка всех пикселей светодиодной матрицы",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "display", "name": "display", "type": "device", "label": "Matrix" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{inputs.display}}.fill(0)\n{{inputs.display}}.show()"
+      }
+    }
+  ]
+}

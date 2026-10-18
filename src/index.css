@@ -1,0 +1,128 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    background-color: #181B20;
+    color: #E2E8F0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    user-select: none;
+    overflow: hidden;
+  }
+
+  /* Custom dark scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #1C2027;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #333A46;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #475060;
+  }
+}
+
+/* React Flow custom styling for Node-TEAL */
+.react-flow__background {
+  background-color: #181B20 !important;
+}
+
+.react-flow__background-pattern dots {
+  fill: #2B3240 !important;
+}
+
+/* Node-RED style compact rectangular socket tabs */
+.react-flow__handle {
+  width: 9px !important;
+  height: 9px !important;
+  border-radius: 2px !important;
+  border: 1.5px solid #242832 !important;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+  z-index: 10;
+}
+
+.react-flow__handle:hover {
+  transform: scale(1.25) !important;
+  box-shadow: none !important;
+}
+
+.react-flow__handle-left {
+  left: -5px !important;
+}
+
+.react-flow__handle-right {
+  right: -5px !important;
+}
+
+/* Reactive Handle Highlighting during wire drag */
+.react-flow__handle.react-flow__handle-valid {
+  outline: 2.5px solid #00D4B2 !important;
+  box-shadow: 0 0 10px rgba(0, 212, 178, 0.8) !important;
+  transform: scale(1.4) !important;
+  cursor: crosshair !important;
+  z-index: 30;
+}
+
+.react-flow__handle.react-flow__handle-invalid {
+  opacity: 0.25 !important;
+  cursor: not-allowed !important;
+}
+
+.react-flow__handle.react-flow__handle-connecting {
+  outline: 2px solid #38BDF8 !important;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.75) !important;
+  z-index: 30;
+}
+
+/* LMB Selection Marquee Box (Box Multi-Select) */
+.react-flow__selection {
+  background: rgba(56, 189, 248, 0.08) !important;
+  border: 1.5px dashed #38BDF8 !important;
+  border-radius: 4px !important;
+  box-shadow: none !important;
+}
+
+.react-flow__nodesselection-rect {
+  border: 1px dashed rgba(56, 189, 248, 0.5) !important;
+  background: rgba(56, 189, 248, 0.04) !important;
+  border-radius: 4px !important;
+}
+
+/* Edges / Wires (Bézier curves) */
+.react-flow__edge-path {
+  stroke-linecap: round;
+  transition: stroke-width 0.15s ease, stroke 0.15s ease;
+}
+
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke-width: 3px !important;
+  filter: none !important;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: #38BDF8 !important;
+  stroke-width: 3px !important;
+  filter: none !important;
+}
+
+/* Node Selected State */
+.react-flow__node.selected {
+  z-index: 20;
+}
+
+/* Minimap */
+.react-flow__minimap {
+  background-color: #21252D !important;
+  border: 1px solid #333A46 !important;
+  border-radius: 6px !important;
+}

@@ -1,0 +1,184 @@
+{
+  "id": "time",
+  "name": "Time (Тайминги и Задержки)",
+  "version": "1.0.0",
+  "description": "Задержки, неблокирующие таймеры и системное время",
+  "isNative": true,
+  "category": "Timing",
+  "color": "#3B82F6",
+  "icon": "Clock",
+  "importSnippet": "import time",
+  "nodes": [
+    {
+      "id": "time:sleep_ms",
+      "libraryId": "time",
+      "label": "Sleep (ms)",
+      "category": "Timing",
+      "color": "#3B82F6",
+      "icon": "PauseCircle",
+      "description": "Приостановка выполнения на указанное число миллисекунд",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "ms", "name": "ms", "type": "number", "label": "ms" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [
+        { "id": "duration", "name": "duration", "type": "number", "label": "Длительность (мс)", "defaultValue": 500 }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "time.sleep_ms({{inputs.ms || props.duration}})"
+      }
+    },
+    {
+      "id": "time:sleep_s",
+      "libraryId": "time",
+      "label": "Sleep (sec)",
+      "category": "Timing",
+      "color": "#3B82F6",
+      "icon": "Clock",
+      "description": "Приостановка выполнения на указанное число секунд",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "s", "name": "s", "type": "number", "label": "sec" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [
+        { "id": "duration", "name": "duration", "type": "number", "label": "Длительность (сек)", "defaultValue": 1 }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "time.sleep({{inputs.s || props.duration}})"
+      }
+    },
+    {
+      "id": "time:sleep_us",
+      "libraryId": "time",
+      "label": "Sleep (µs)",
+      "category": "Timing",
+      "color": "#3B82F6",
+      "icon": "PauseCircle",
+      "description": "Точная микросекундная пауза (для протоколов и импульсов)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "us", "name": "us", "type": "number", "label": "µs" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [
+        { "id": "duration", "name": "duration", "type": "number", "label": "Длительность (мкс)", "defaultValue": 100 }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "time.sleep_us({{inputs.us || props.duration}})"
+      }
+    },
+    {
+      "id": "time:ticks_ms",
+      "libraryId": "time",
+      "label": "Ticks MS",
+      "category": "Timing",
+      "color": "#3B82F6",
+      "icon": "Watch",
+      "description": "Возвращает текущую отметку времени в миллисекундах",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" },
+        { "id": "ticks", "name": "ticks", "type": "number", "label": "Ticks MS" }
+      ],
+      "properties": [],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{output.ticks}} = time.ticks_ms()",
+        "outputVariables": {
+          "ticks": "ticks_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "time:ticks_diff",
+      "libraryId": "time",
+      "label": "Ticks Diff",
+      "category": "Timing",
+      "color": "#3B82F6",
+      "icon": "GitCommit",
+      "description": "Разница между двумя отметками времени (для неблокирующих таймеров)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "t1", "name": "t1", "type": "number", "label": "Ticks Now" },
+        { "id": "t2", "name": "t2", "type": "number", "label": "Ticks Prev" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" },
+        { "id": "diff", "name": "diff", "type": "number", "label": "Diff (ms)" }
+      ],
+      "properties": [],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{output.diff}} = time.ticks_diff({{inputs.t1}}, {{inputs.t2}})",
+        "outputVariables": {
+          "diff": "diff_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "time:ticks_us",
+      "libraryId": "time",
+      "label": "Ticks US",
+      "category": "Timing",
+      "color": "#3B82F6",
+      "icon": "Watch",
+      "description": "Возвращает текущую отметку времени в микросекундах (µs)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" },
+        { "id": "ticks", "name": "ticks", "type": "number", "label": "Ticks US" }
+      ],
+      "properties": [],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{output.ticks}} = time.ticks_us()",
+        "outputVariables": {
+          "ticks": "ticks_us_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "time:ticks_add",
+      "libraryId": "time",
+      "label": "Ticks Add",
+      "category": "Timing",
+      "color": "#3B82F6",
+      "icon": "GitCommit",
+      "description": "Вычисление дедлайна с защитой от переполнения счетчика",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "ticks", "name": "ticks", "type": "number", "label": "Base Ticks" },
+        { "id": "delta", "name": "delta", "type": "number", "label": "Delta (ms)" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" },
+        { "id": "result", "name": "result", "type": "number", "label": "Deadline" }
+      ],
+      "properties": [
+        { "id": "delta", "name": "delta", "type": "number", "label": "Прибавка (мс)", "defaultValue": 1000 }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{output.result}} = time.ticks_add({{inputs.ticks || time.ticks_ms()}}, {{inputs.delta || props.delta}})",
+        "outputVariables": {
+          "result": "deadline_{{id}}"
+        }
+      }
+    }
+  ]
+}

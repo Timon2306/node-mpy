@@ -1,0 +1,76 @@
+{
+  "id": "dht",
+  "name": "DHT (Датчики температуры и влажности)",
+  "version": "1.0.0",
+  "description": "Драйвер для популярных датчиков DHT11 и DHT22 / AM2302",
+  "isNative": true,
+  "category": "Sensors",
+  "color": "#F59E0B",
+  "icon": "Thermometer",
+  "importSnippet": "import dht",
+  "nodes": [
+    {
+      "id": "dht:init",
+      "libraryId": "dht",
+      "label": "DHT Init",
+      "category": "Sensors",
+      "color": "#F59E0B",
+      "icon": "Thermometer",
+      "description": "Инициализация датчика DHT на указанном цифровом выводе",
+      "inputs": [
+        { "id": "pin", "name": "pin", "type": "pin", "label": "Pin" }
+      ],
+      "outputs": [
+        { "id": "device", "name": "device", "type": "device", "label": "DHT Sensor" }
+      ],
+      "properties": [
+        {
+          "id": "model",
+          "name": "model",
+          "type": "select",
+          "label": "Модель датчика",
+          "defaultValue": "DHT22",
+          "options": [
+            { "label": "DHT22 / AM2302 (Высокая точность)", "value": "DHT22" },
+            { "label": "DHT11 (Синий корпус, 0-50°C)", "value": "DHT11" }
+          ]
+        },
+        { "id": "pin", "name": "pin", "type": "number", "label": "GPIO Pin (если не подключен)", "defaultValue": 4, "min": 0, "max": 48 }
+      ],
+      "codeTemplate": {
+        "section": "init",
+        "template": "dht_sensor_{{id}} = dht.{{props.model}}({{inputs.pin || props.pin}})",
+        "outputVariables": {
+          "device": "dht_sensor_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "dht:read",
+      "libraryId": "dht",
+      "label": "DHT Measure & Read",
+      "category": "Sensors",
+      "color": "#F59E0B",
+      "icon": "Activity",
+      "description": "Опрос датчика DHT и получение температуры (°C) и влажности (%)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "device", "name": "device", "type": "device", "label": "DHT Sensor" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" },
+        { "id": "temperature", "name": "temperature", "type": "number", "label": "Temp (°C)" },
+        { "id": "humidity", "name": "humidity", "type": "number", "label": "Humidity (%)" }
+      ],
+      "properties": [],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{inputs.device}}.measure()\n{{output.temperature}} = {{inputs.device}}.temperature()\n{{output.humidity}} = {{inputs.device}}.humidity()",
+        "outputVariables": {
+          "temperature": "temp_{{id}}",
+          "humidity": "hum_{{id}}"
+        }
+      }
+    }
+  ]
+}

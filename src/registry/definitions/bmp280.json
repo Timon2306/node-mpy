@@ -1,0 +1,77 @@
+{
+  "id": "bmp280",
+  "name": "BMP280 (Барометр и термометр I2C)",
+  "version": "1.0.0",
+  "description": "Измерение атмосферного давления (гПа), температуры (°C) и высоты по I2C",
+  "isNative": false,
+  "category": "Sensors",
+  "color": "#F59E0B",
+  "icon": "Gauge",
+  "importSnippet": "from bmp280 import BMP280",
+  "nodes": [
+    {
+      "id": "bmp280:init",
+      "libraryId": "bmp280",
+      "label": "BMP280 Init",
+      "category": "Sensors",
+      "color": "#F59E0B",
+      "icon": "Gauge",
+      "description": "Инициализация датчика давления BMP280 на шине I2C",
+      "inputs": [
+        { "id": "bus", "name": "bus", "type": "bus", "label": "I2C Bus" }
+      ],
+      "outputs": [
+        { "id": "sensor", "name": "sensor", "type": "device", "label": "BMP280 Sensor" }
+      ],
+      "properties": [
+        {
+          "id": "addr",
+          "name": "addr",
+          "type": "select",
+          "label": "I2C Адрес",
+          "defaultValue": "0x76",
+          "options": [
+            { "label": "0x76 (SDO к GND)", "value": "0x76" },
+            { "label": "0x77 (SDO к VCC)", "value": "0x77" }
+          ]
+        }
+      ],
+      "codeTemplate": {
+        "section": "init",
+        "template": "bmp280_{{id}} = BMP280({{inputs.bus}}, addr={{props.addr}})",
+        "outputVariables": {
+          "sensor": "bmp280_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "bmp280:read",
+      "libraryId": "bmp280",
+      "label": "BMP280 Read Values",
+      "category": "Sensors",
+      "color": "#F59E0B",
+      "icon": "Activity",
+      "description": "Чтение температуры (°C), давления (гПа) и высоты (м)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "sensor", "name": "sensor", "type": "device", "label": "Sensor" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" },
+        { "id": "temperature", "name": "temperature", "type": "number", "label": "Temp (°C)" },
+        { "id": "pressure", "name": "pressure", "type": "number", "label": "Press (hPa)" },
+        { "id": "altitude", "name": "altitude", "type": "number", "label": "Altitude (m)" }
+      ],
+      "properties": [],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{output.temperature}} = {{inputs.sensor}}.temperature\n{{output.pressure}} = {{inputs.sensor}}.pressure\n{{output.altitude}} = {{inputs.sensor}}.altitude",
+        "outputVariables": {
+          "temperature": "bmp_temp_{{id}}",
+          "pressure": "bmp_press_{{id}}",
+          "altitude": "bmp_alt_{{id}}"
+        }
+      }
+    }
+  ]
+}

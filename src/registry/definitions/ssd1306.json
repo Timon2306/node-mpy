@@ -1,0 +1,229 @@
+{
+  "id": "ssd1306",
+  "name": "SSD1306 (OLED Дисплей I2C)",
+  "version": "1.0.0",
+  "description": "Драйвер монохромных OLED дисплеев 128x64 и 128x32 по шине I2C",
+  "isNative": false,
+  "category": "Displays",
+  "color": "#0284C7",
+  "icon": "Tv",
+  "importSnippet": "import ssd1306",
+  "nodes": [
+    {
+      "id": "ssd1306:init_i2c",
+      "libraryId": "ssd1306",
+      "label": "SSD1306 I2C Init",
+      "category": "Displays",
+      "color": "#0284C7",
+      "icon": "Tv",
+      "description": "Инициализация OLED дисплея на шине I2C",
+      "inputs": [
+        { "id": "bus", "name": "bus", "type": "bus", "label": "I2C Bus" }
+      ],
+      "outputs": [
+        { "id": "oled", "name": "oled", "type": "device", "label": "OLED Display" }
+      ],
+      "properties": [
+        { "id": "width", "name": "width", "type": "number", "label": "Ширина (px)", "defaultValue": 128 },
+        { "id": "height", "name": "height", "type": "number", "label": "Высота (px)", "defaultValue": 64 },
+        { "id": "addr", "name": "addr", "type": "text", "label": "I2C Адрес", "defaultValue": "0x3C" }
+      ],
+      "codeTemplate": {
+        "section": "init",
+        "template": "oled_{{id}} = ssd1306.SSD1306_I2C({{props.width}}, {{props.height}}, {{inputs.bus}}, addr={{props.addr}})",
+        "outputVariables": {
+          "oled": "oled_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "ssd1306:clear",
+      "libraryId": "ssd1306",
+      "label": "OLED Clear (Fill 0)",
+      "category": "Displays",
+      "color": "#0284C7",
+      "icon": "Square",
+      "description": "Очистка буфера экрана (заливка черным)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "oled", "name": "oled", "type": "device", "label": "OLED" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{inputs.oled}}.fill(0)"
+      }
+    },
+    {
+      "id": "ssd1306:text",
+      "libraryId": "ssd1306",
+      "label": "OLED Text",
+      "category": "Displays",
+      "color": "#0284C7",
+      "icon": "Type",
+      "description": "Отрисовка текста на экране в координатах (X, Y)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "oled", "name": "oled", "type": "device", "label": "OLED" },
+        { "id": "text", "name": "text", "type": "any", "label": "Text" },
+        { "id": "x", "name": "x", "type": "number", "label": "X" },
+        { "id": "y", "name": "y", "type": "number", "label": "Y" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [
+        { "id": "def_text", "name": "def_text", "type": "text", "label": "Текст (по умолч.)", "defaultValue": "Node-TEAL" },
+        { "id": "def_x", "name": "def_x", "type": "number", "label": "X координата", "defaultValue": 0 },
+        { "id": "def_y", "name": "def_y", "type": "number", "label": "Y координата", "defaultValue": 0 }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{inputs.oled}}.text(str({{inputs.text || props.def_text}}), {{inputs.x || props.def_x}}, {{inputs.y || props.def_y}})"
+      }
+    },
+    {
+      "id": "ssd1306:rect",
+      "libraryId": "ssd1306",
+      "label": "OLED Fill Rect",
+      "category": "Displays",
+      "color": "#0284C7",
+      "icon": "Square",
+      "description": "Отрисовка залитого прямоугольника (индикаторы, полосы прогресса)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "oled", "name": "oled", "type": "device", "label": "OLED" },
+        { "id": "x", "name": "x", "type": "number", "label": "X" },
+        { "id": "y", "name": "y", "type": "number", "label": "Y" },
+        { "id": "w", "name": "w", "type": "number", "label": "W" },
+        { "id": "h", "name": "h", "type": "number", "label": "H" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [
+        { "id": "x", "name": "x", "type": "number", "label": "X координата", "defaultValue": 0 },
+        { "id": "y", "name": "y", "type": "number", "label": "Y координата", "defaultValue": 0 },
+        { "id": "w", "name": "w", "type": "number", "label": "Ширина (px)", "defaultValue": 32 },
+        { "id": "h", "name": "h", "type": "number", "label": "Высота (px)", "defaultValue": 16 },
+        {
+          "id": "fill",
+          "name": "fill",
+          "type": "select",
+          "label": "Цвет (1 - белый, 0 - черный)",
+          "defaultValue": "1",
+          "options": [
+            { "label": "1 (Белый / Заливка)", "value": "1" },
+            { "label": "0 (Черный / Стирание)", "value": "0" }
+          ]
+        }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{inputs.oled}}.fill_rect({{inputs.x || props.x}}, {{inputs.y || props.y}}, {{inputs.w || props.w}}, {{inputs.h || props.h}}, {{props.fill}})"
+      }
+    },
+    {
+      "id": "ssd1306:show",
+      "libraryId": "ssd1306",
+      "label": "OLED Show",
+      "category": "Displays",
+      "color": "#0284C7",
+      "icon": "CheckCircle",
+      "description": "Передача данных из буфера на физический экран OLED",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "oled", "name": "oled", "type": "device", "label": "OLED" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{inputs.oled}}.show()"
+      }
+    },
+    {
+      "id": "ssd1306:line",
+      "libraryId": "ssd1306",
+      "label": "OLED Draw Line",
+      "category": "Displays",
+      "color": "#0284C7",
+      "icon": "Slash",
+      "description": "Отрисовка линии от точки (x0, y0) до (x1, y1)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "oled", "name": "oled", "type": "device", "label": "OLED" },
+        { "id": "x0", "name": "x0", "type": "number", "label": "X0" },
+        { "id": "y0", "name": "y0", "type": "number", "label": "Y0" },
+        { "id": "x1", "name": "x1", "type": "number", "label": "X1" },
+        { "id": "y1", "name": "y1", "type": "number", "label": "Y1" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [
+        { "id": "x0", "name": "x0", "type": "number", "label": "X0", "defaultValue": 0 },
+        { "id": "y0", "name": "y0", "type": "number", "label": "Y0", "defaultValue": 0 },
+        { "id": "x1", "name": "x1", "type": "number", "label": "X1", "defaultValue": 127 },
+        { "id": "y1", "name": "y1", "type": "number", "label": "Y1", "defaultValue": 63 },
+        {
+          "id": "color",
+          "name": "color",
+          "type": "select",
+          "label": "Цвет",
+          "defaultValue": "1",
+          "options": [
+            { "label": "1 (Белый)", "value": "1" },
+            { "label": "0 (Черный)", "value": "0" }
+          ]
+        }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{inputs.oled}}.line({{inputs.x0 || props.x0}}, {{inputs.y0 || props.y0}}, {{inputs.x1 || props.x1}}, {{inputs.y1 || props.y1}}, {{props.color}})"
+      }
+    },
+    {
+      "id": "ssd1306:pixel",
+      "libraryId": "ssd1306",
+      "label": "OLED Draw Pixel",
+      "category": "Displays",
+      "color": "#0284C7",
+      "icon": "Square",
+      "description": "Установка пикселя в заданных координатах (x, y)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "oled", "name": "oled", "type": "device", "label": "OLED" },
+        { "id": "x", "name": "x", "type": "number", "label": "X" },
+        { "id": "y", "name": "y", "type": "number", "label": "Y" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [
+        { "id": "x", "name": "x", "type": "number", "label": "X координата", "defaultValue": 64 },
+        { "id": "y", "name": "y", "type": "number", "label": "Y координата", "defaultValue": 32 },
+        {
+          "id": "color",
+          "name": "color",
+          "type": "select",
+          "label": "Цвет",
+          "defaultValue": "1",
+          "options": [
+            { "label": "1 (Белый)", "value": "1" },
+            { "label": "0 (Черный)", "value": "0" }
+          ]
+        }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{inputs.oled}}.pixel({{inputs.x || props.x}}, {{inputs.y || props.y}}, {{props.color}})"
+      }
+    }
+  ]
+}
