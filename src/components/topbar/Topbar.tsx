@@ -11,7 +11,6 @@ import {
   Keyboard,
   Info,
   Check,
-  Globe,
   Plus,
   X,
   FileCode,
@@ -184,10 +183,6 @@ export const Topbar: React.FC = () => {
     }
   };
 
-  const toggleLanguage = () => {
-    setLanguage(language === 'ru' ? 'en' : 'ru');
-  };
-
   return (
     <header className="h-[48px] bg-slate-topbar border-b border-slate-border px-3 sm:px-4 flex items-center justify-between z-20 flex-shrink-0 gap-2">
       {/* Hidden file input for opening projects */}
@@ -337,16 +332,6 @@ export const Topbar: React.FC = () => {
           className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-slate-hover rounded-md border border-slate-border transition-colors"
         >
           <RotateCcw className="w-3.5 h-3.5" />
-        </button>
-
-        {/* Language Switcher RU / EN */}
-        <button
-          onClick={toggleLanguage}
-          title={language === 'ru' ? 'Switch to English' : 'Переключить на Русский'}
-          className="flex items-center gap-1 px-2 py-1 rounded-md bg-slate-panel border border-slate-border hover:border-slate-subtle text-xs font-mono font-semibold text-gray-300 hover:text-white transition-colors"
-        >
-          <Globe className="w-3.5 h-3.5 text-teal-400" />
-          <span>{language.toUpperCase()}</span>
         </button>
 
         {/* Main Export Button (Electric Teal / Emerald) */}
