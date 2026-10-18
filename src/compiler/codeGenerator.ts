@@ -166,6 +166,13 @@ export class CodeGenerator {
           });
         }
       }
+
+      if (node.data.definitionId === 'network:http_get' || node.data.definitionId === 'network:http_post') {
+        importSet.add('import urequests');
+        if (node.data.properties?.payload_format === 'json') {
+          importSet.add('import ujson');
+        }
+      }
     }
 
     return Array.from(importSet).join('\n');
@@ -628,6 +635,36 @@ export class CodeGenerator {
     if (node.data.definitionId === 'core:comment') {
       const text = props.text !== undefined ? String(props.text) : '';
       return `# ${text}`;
+    }
+
+    // 12. Dedicated handler for HTTP GET Request
+    if (node.data.definitionId === 'network:http_get') {
+      const resVar = outputVarMap.get(`${node.id}:response`) || `http_res_${cleanId}`;
+      const codeVar = outputVarMap.get(`${node.id}:status_code`) || `http_code_${cleanId}`;
+      const urlEdge = edges.find(e => e.target === node.id && e.targetHandle === 'url');
+      const urlVal = urlEdge ? (outputVarMap.get(`${urlEdge.source}:${urlEdge.sourceHandle}`) || `'${props.url}'`) : JSON.stringify(props.url || 'http://192.168.1.100:1880/api');
+      const timeout = Number(props.timeout ?? 5);
+
+      return `try:\n    _res_${cleanId} = urequests.get(${urlVal}, timeout=${timeout})\n    ${resVar} = _res_${cleanId}.text\n    ${codeVar} = _res_${cleanId}.status_code\n    _res_${cleanId}.close()\nexcept Exception as _e_${cleanId}:\n    ${resVar} = ""\n    ${codeVar} = -1`;
+    }
+
+    // 13. Dedicated handler for HTTP POST Request (Node-RED Reverse Polling)
+    if (node.data.definitionId === 'network:http_post') {
+      const resVar = outputVarMap.get(`${node.id}:response`) || `post_res_${cleanId}`;
+      const codeVar = outputVarMap.get(`${node.id}:status_code`) || `post_code_${cleanId}`;
+      const urlEdge = edges.find(e => e.target === node.id && e.targetHandle === 'url');
+      const dataEdge = edges.find(e => e.target === node.id && e.targetHandle === 'data');
+      const urlVal = urlEdge ? (outputVarMap.get(`${urlEdge.source}:${urlEdge.sourceHandle}`) || `'${props.url}'`) : JSON.stringify(props.url || 'http://192.168.1.100:1880/sensor');
+      const dataVal = dataEdge ? (outputVarMap.get(`${dataEdge.source}:${dataEdge.sourceHandle}`) || '0') : '0';
+      const timeout = Number(props.timeout ?? 5);
+      const isJson = props.payload_format === 'json';
+      const jsonKey = props.json_key || 'value';
+
+      if (isJson) {
+        return `try:\n    _res_${cleanId} = urequests.post(${urlVal}, json={${JSON.stringify(jsonKey)}: ${dataVal}}, timeout=${timeout})\n    ${resVar} = _res_${cleanId}.text\n    ${codeVar} = _res_${cleanId}.status_code\n    _res_${cleanId}.close()\nexcept Exception as _e_${cleanId}:\n    ${resVar} = ""\n    ${codeVar} = -1`;
+      } else {
+        return `try:\n    _res_${cleanId} = urequests.post(${urlVal}, data=str(${dataVal}), timeout=${timeout})\n    ${resVar} = _res_${cleanId}.text\n    ${codeVar} = _res_${cleanId}.status_code\n    _res_${cleanId}.close()\nexcept Exception as _e_${cleanId}:\n    ${resVar} = ""\n    ${codeVar} = -1`;
+      }
     }
 
     let template = def.codeTemplate.template;

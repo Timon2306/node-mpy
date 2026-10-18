@@ -929,6 +929,27 @@ class ESP8266SimulatorEngine {
         store.addSimLog('info', 'Wi-Fi отключен (wlan.disconnect())');
       }
 
+      // 53. Network HTTP GET
+      else if (defId === 'network:http_get') {
+        const urlEdge = edges.find((e) => e.target === currentNode.id && e.targetHandle === 'url');
+        const urlVal = urlEdge ? String(this.resolveNodeOutputValue(urlEdge.source, urlEdge.sourceHandle || 'val', nodes, edges)) : (props.url || 'http://192.168.1.100:1880/api');
+        const simulatedText = '{"status": "ok", "cmd": "/on"}';
+        this.nodeOutputs.set(currentNode.id, { response: simulatedText, status_code: 200 });
+        store.addSimLog('info', `HTTP GET ${urlVal} ➔ 200 OK (${simulatedText})`);
+      }
+
+      // 54. Network HTTP POST (Node-RED reverse polling)
+      else if (defId === 'network:http_post') {
+        const urlEdge = edges.find((e) => e.target === currentNode.id && e.targetHandle === 'url');
+        const dataEdge = edges.find((e) => e.target === currentNode.id && e.targetHandle === 'data');
+        const urlVal = urlEdge ? String(this.resolveNodeOutputValue(urlEdge.source, urlEdge.sourceHandle || 'val', nodes, edges)) : (props.url || 'http://192.168.1.100:1880/sensor');
+        const dataVal = dataEdge ? this.resolveNodeOutputValue(dataEdge.source, dataEdge.sourceHandle || 'val', nodes, edges) : 512;
+        const isHigh = Number(dataVal) > 500;
+        const simulatedResponse = isHigh ? '/on' : '/off';
+        this.nodeOutputs.set(currentNode.id, { response: simulatedResponse, status_code: 200 });
+        store.addSimLog('info', `HTTP POST ${urlVal} [Data: ${dataVal}] ➔ Node-RED Ответ: "${simulatedResponse}" (200 OK)`);
+      }
+
       // 49. SSD1306 Line
       else if (defId === 'ssd1306:line') {
         store.addSimLog('print', `OLED.line(${props.x0 ?? 0}, ${props.y0 ?? 0}, ${props.x1 ?? 127}, ${props.y1 ?? 63}, ${props.color ?? 1})`);

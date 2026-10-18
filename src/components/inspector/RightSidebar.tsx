@@ -412,6 +412,11 @@ export const RightSidebar: React.FC = () => {
                       if (prop.id === 'default_val2' && (currentFunc === 'abs' || currentFunc === 'round' || currentFunc === 'sqrt')) return null;
                     }
 
+                    if (activeSelectedNode.data.definitionId === 'network:http_post') {
+                      const currentFormat = activeSelectedNode.data.properties?.payload_format || 'text';
+                      if (prop.id === 'json_key' && currentFormat !== 'json') return null;
+                    }
+
                     const currentValue =
                       activeSelectedNode.data.properties?.[prop.id] !== undefined
                         ? activeSelectedNode.data.properties[prop.id]

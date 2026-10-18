@@ -137,7 +137,80 @@
       "properties": [],
       "codeTemplate": {
         "section": "flow",
-        "template": "({{inputs.wlan || wlan}}).disconnect()\n({{inputs.wlan || wlan}}).active(False)"
+        "template": "{{inputs.wlan || wlan}}.disconnect()\n{{inputs.wlan || wlan}}.active(False)"
+      }
+    },
+    {
+      "id": "network:http_get",
+      "libraryId": "network",
+      "label": "HTTP GET Request",
+      "category": "Network",
+      "color": "#06B6D4",
+      "icon": "ArrowUpRight",
+      "description": "Отправка HTTP GET запроса на сервер (например в Node-RED)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "url", "name": "url", "type": "string", "label": "URL (если провод)" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" },
+        { "id": "response", "name": "response", "type": "string", "label": "Response Text" },
+        { "id": "status_code", "name": "status_code", "type": "number", "label": "Status Code" }
+      ],
+      "properties": [
+        { "id": "url", "name": "url", "type": "text", "label": "URL сервера", "defaultValue": "http://192.168.1.100:1880/api" },
+        { "id": "timeout", "name": "timeout", "type": "number", "label": "Таймаут (сек)", "defaultValue": 5 }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "try:\n    _res_{{id}} = urequests.get({{inputs.url || '{{props.url}}'}}, timeout={{props.timeout}})\n    {{output.response}} = _res_{{id}}.text\n    {{output.status_code}} = _res_{{id}}.status_code\n    _res_{{id}}.close()\nexcept Exception as _e_{{id}}:\n    {{output.response}} = \"\"\n    {{output.status_code}} = -1",
+        "outputVariables": {
+          "response": "http_res_{{id}}",
+          "status_code": "http_code_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "network:http_post",
+      "libraryId": "network",
+      "label": "HTTP POST Request",
+      "category": "Network",
+      "color": "#06B6D4",
+      "icon": "Radio",
+      "description": "Отправка показаний датчиков (АЦП) в Node-RED с получением ответа",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "url", "name": "url", "type": "string", "label": "URL (если провод)" },
+        { "id": "data", "name": "data", "type": "any", "label": "Data / Sensor Val" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" },
+        { "id": "response", "name": "response", "type": "string", "label": "Response Text" },
+        { "id": "status_code", "name": "status_code", "type": "number", "label": "Status Code" }
+      ],
+      "properties": [
+        { "id": "url", "name": "url", "type": "text", "label": "URL сервера Node-RED", "defaultValue": "http://192.168.1.100:1880/sensor" },
+        {
+          "id": "payload_format",
+          "name": "payload_format",
+          "type": "select",
+          "label": "Формат отправки",
+          "defaultValue": "text",
+          "options": [
+            { "label": "Plain Text / Number (Сырой текст/число)", "value": "text" },
+            { "label": "JSON Объект ({\"value\": ...})", "value": "json" }
+          ]
+        },
+        { "id": "json_key", "name": "json_key", "type": "text", "label": "Ключ JSON (для формата JSON)", "defaultValue": "value" },
+        { "id": "timeout", "name": "timeout", "type": "number", "label": "Таймаут (сек)", "defaultValue": 5 }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "try:\n    _res_{{id}} = urequests.post({{inputs.url || '{{props.url}}'}}, data=str({{inputs.data || 0}}), timeout={{props.timeout}})\n    {{output.response}} = _res_{{id}}.text\n    {{output.status_code}} = _res_{{id}}.status_code\n    _res_{{id}}.close()\nexcept Exception as _e_{{id}}:\n    {{output.response}} = \"\"\n    {{output.status_code}} = -1",
+        "outputVariables": {
+          "response": "post_res_{{id}}",
+          "status_code": "post_code_{{id}}"
+        }
       }
     }
   ]

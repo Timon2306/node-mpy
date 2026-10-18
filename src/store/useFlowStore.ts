@@ -78,6 +78,7 @@ interface FlowState {
   isSimRunning: boolean;
   isSimPaused: boolean;
   simSpeed: number;
+  simEngineMode: 'visual' | 'wasm';
   activeSimNodeId: string | null;
   errorSimNodeId: string | null;
   simLogs: SimLogEntry[];
@@ -131,6 +132,7 @@ interface FlowState {
   setSimRunning: (running: boolean) => void;
   setSimPaused: (paused: boolean) => void;
   setSimSpeed: (speed: number) => void;
+  setSimEngineMode: (mode: 'visual' | 'wasm') => void;
   setActiveSimNodeId: (id: string | null) => void;
   setErrorSimNodeId: (id: string | null) => void;
   addSimLog: (type: SimLogEntry['type'], text: string) => void;
@@ -268,6 +270,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   isSimRunning: false,
   isSimPaused: false,
   simSpeed: 1,
+  simEngineMode: 'visual',
   activeSimNodeId: null,
   errorSimNodeId: null,
   simLogs: [],
@@ -296,6 +299,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   setSimRunning: (running) => set({ isSimRunning: running }),
   setSimPaused: (paused) => set({ isSimPaused: paused }),
   setSimSpeed: (speed) => set({ simSpeed: speed }),
+  setSimEngineMode: (mode) => set({ simEngineMode: mode }),
   setActiveSimNodeId: (id) => set({ activeSimNodeId: id }),
   setErrorSimNodeId: (id) => set({ errorSimNodeId: id }),
   addSimLog: (type, text) => {

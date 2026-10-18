@@ -6,19 +6,21 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Highlights
 - **Visual Flow Programming Studio for MicroPython**: Designed in the aesthetic of Node-RED for ESP8266, ESP32, Raspberry Pi Pico, and compatible boards.
-- **79 Pre-packaged Nodes across 12 Libraries**:
+- **81 Pre-packaged Nodes across 12 Libraries**:
   - **Core (19 nodes)**: Start/Init, While Loop, For Range Loop, If/Else, Comparison, Math Operation, Math Functions (abs, round, sqrt, min, max, pow), Map Range, Print to Console, Set Variable, Get Variable, Value/Constant, Custom Function, Logic Gates (AND/OR/NOT), String Formatter, Random Number, Type Cast, Comments.
   - **Hardware & GPIO (19 nodes)**: Pin Init, Pin Write, Pin Read, Pin Toggle, Pin Is Active, ADC Init/Read, PWM Init/Freq/Duty/Deinit, Tone Buzzer, I2C Init/Scan, SPI Init, UART Init, Hardware Timer Init/Deinit, Deep Sleep.
   - **Timing (7 nodes)**: Sleep (sec/ms/us), Ticks MS/US, Ticks Diff, Ticks Add.
-  - **Network (5 nodes)**: Wi-Fi STA Connect, Access Point Create, Connection Status, IP Config (`ifconfig`), Disconnect.
+  - **Network & IoT (7 nodes)**: Wi-Fi STA Connect, Access Point Create, Connection Status, IP Config (`ifconfig`), Disconnect, **HTTP GET** and **HTTP POST** (with JSON & Raw formatting, safe `try/except` wrappers and auto-import of `urequests` & `ujson`).
   - **Displays (14 nodes)**: SSD1306 OLED (Init, Clear, Text, Line, Pixel, Rect, Show), ST7735 SPI Color TFT, MAX7219 8x8 LED Matrix, I2C 1602/2004 LCD.
   - **Sensors (4 nodes)**: DHT11/DHT22 (Temperature & Humidity), BMP280 (Temperature, Pressure & Altitude).
   - **Actuators & Lighting (8 nodes)**: Servo Motor Controller, WS2812 NeoPixel Addressable LEDs.
 
-### ⚡ Interactive Hardware Simulator
-- **Live Interactive GPIO Pins**: Clickable GPIO indicators (`G0`, `G4`, `G5`, `G12`, `G14`, `D4`) to toggle pin voltages in real-time during live simulation.
-- **Crash-Proof Execution Engine**: Universal safe fallback handlers for custom JSON-defined nodes, division-by-zero protection, and step throttling.
-- **Real-Time Canvas Step Tracing**: Visual highlighting of active and error nodes during simulation execution.
+### ⚡ Dual-Mode Hardware Simulator & WebAssembly MicroPython
+- **Real MicroPython v1.26 WebAssembly VM**: Runs actual compiled MicroPython bytecode in a background Web Worker without blocking the UI, complete with virtual `machine`, `urequests`, `network`, and display drivers.
+- **Visual Flow Mode**: Step-by-step graphical node highlighting on the canvas with adjustable simulation speed (0.5x, 1x, 2x, 5x).
+- **Node-RED IoT Reverse Polling Simulation**: Automated handling of HTTP GET/POST requests and response commands (`/on`, `/off`) for college lab projects.
+- **Hardware-Resilient Virtual Buses**: Virtual I2C (`0x3C`, `0x27`) and SPI bus ACK prevents missing-hardware panics (`ENODEV`) while preserving clean Python runtime semantics.
+- **Live Interactive GPIO Pins**: Clickable GPIO indicators (`G0`, `G4`, `G5`, `G12`, `G14`, `D4`) with zero-latency concurrent memory synchronization.
 
 ### 🛠️ MicroPython Compiler Engine
 - **Deterministic 4-Section Python Generation**: `1. IMPORTS`, `2. HARDWARE & INIT`, `3. FUNCTIONS & CALLBACKS`, `4. MAIN EXECUTION & LOOP`.

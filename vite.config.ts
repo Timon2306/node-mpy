@@ -10,6 +10,12 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  worker: {
+    format: 'es',
+  },
+  build: {
+    target: 'es2022',
+  },
   server: {
     port: 1420,
     strictPort: true,

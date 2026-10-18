@@ -64,24 +64,24 @@ export const ChangelogModal: React.FC = () => {
               <div className="space-y-1">
                 <span className="text-[11px] font-semibold text-teal-400 flex items-center gap-1.5">
                   <Layers className="w-3.5 h-3.5 text-teal-400" />
-                  {isRu ? '79 нод и 12 библиотек MicroPython' : '79 Nodes & 12 MicroPython Libraries'}
+                  {isRu ? '81 нода и 12 библиотек MicroPython' : '81 Nodes & 12 MicroPython Libraries'}
                 </span>
                 <p className="text-[11px] text-gray-400 pl-5 leading-snug">
                   {isRu
-                    ? 'Полный набор нод: Core (19 нод), Hardware GPIO/I2C/SPI/PWM (19 нод), Timing (7 нод), Sensors DHT/BMP280, Displays OLED/TFT/LCD/MAX7219, Network Wi-Fi, Actuators, Addressable LEDs.'
-                    : 'Comprehensive library: Core (19 nodes), Hardware GPIO/I2C/SPI/PWM (19 nodes), Timing (7 nodes), Sensors DHT/BMP280, Displays OLED/TFT/LCD/MAX7219, Network Wi-Fi, Actuators, Lighting.'}
+                    ? 'Полный набор нод: Core (19 нод), Hardware GPIO/I2C/SPI/PWM (19 нод), Timing (7 нод), Sensors DHT/BMP280, Displays OLED/TFT/LCD/MAX7219, Network Wi-Fi + HTTP GET/POST для IoT-лабораторных, Actuators, Addressable LEDs.'
+                    : 'Comprehensive library: Core (19 nodes), Hardware GPIO/I2C/SPI/PWM (19 nodes), Timing (7 nodes), Sensors DHT/BMP280, Displays OLED/TFT/LCD/MAX7219, Network Wi-Fi + HTTP GET/POST for IoT lab reverse polling, Actuators, Lighting.'}
                 </p>
               </div>
 
               <div className="space-y-1">
                 <span className="text-[11px] font-semibold text-blue-400 flex items-center gap-1.5">
                   <Cpu className="w-3.5 h-3.5 text-blue-400" />
-                  {isRu ? 'Интерактивный симулятор ESP8266' : 'Interactive ESP8266 Simulator'}
+                  {isRu ? 'Двухрежимный симулятор: Visual Flow + MicroPython WASM VM' : 'Dual-Mode Simulator: Visual Flow + MicroPython WASM VM'}
                 </span>
                 <p className="text-[11px] text-gray-400 pl-5 leading-snug">
                   {isRu
-                    ? 'Кликабельные GPIO в консоли (переключение уровней на лету), симуляция датчиков, OLED, зуммера и полная защита от зависаний с безопасным fallback для любых нод.'
-                    : 'Clickable real-time GPIO pins, simulated sensors, OLED screen commands, buzzer tone simulation, and crash-proof execution with universal node fallbacks.'}
+                    ? 'Переключатель 1 кликом: визуальный пошаговый обход графа или реальная виртуальная машина MicroPython v1.26 в WebAssembly без зависаний, с интерактивными GPIO, симуляцией Node-RED reverse polling и виртуальным I2C ACK без сбоев железа.'
+                    : 'One-click toggle: Visual step-by-step flow traversal or real MicroPython v1.26 WebAssembly VM execution, with interactive live GPIO, Node-RED reverse polling simulation, and crash-proof virtual I2C ACK.'}
                 </p>
               </div>
 

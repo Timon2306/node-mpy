@@ -228,6 +228,13 @@ export const NodeTealNode = memo(({ id, data, selected }: NodeProps) => {
     subtitle = `AP: ${nodeData.properties?.ssid ?? 'ESP-AccessPoint'}`;
   } else if (nodeData.definitionId === 'network:disconnect') {
     subtitle = `Disconnect`;
+  } else if (nodeData.definitionId === 'network:http_get') {
+    const url = String(nodeData.properties?.url || '/api');
+    subtitle = `GET ${url.replace(/^https?:\/\/[^/]+/, '') || url}`;
+  } else if (nodeData.definitionId === 'network:http_post') {
+    const url = String(nodeData.properties?.url || '/sensor');
+    const fmt = nodeData.properties?.payload_format === 'json' ? 'JSON' : 'RAW';
+    subtitle = `POST (${fmt}) ${url.replace(/^https?:\/\/[^/]+/, '') || url}`;
   } else if (nodeData.definitionId === 'ssd1306:line') {
     subtitle = `Line (${nodeData.properties?.x0 ?? 0},${nodeData.properties?.y0 ?? 0})➔(${nodeData.properties?.x1 ?? 127},${nodeData.properties?.y1 ?? 63})`;
   } else if (nodeData.definitionId === 'ssd1306:pixel') {

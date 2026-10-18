@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useFlowStore } from '../../store/useFlowStore';
 import { esp8266Simulator } from '../../simulator/esp8266Simulator';
+import { wasmSimulator } from '../../simulator/wasmSimulator';
 
 export const SimulationConsole: React.FC = () => {
   const {
@@ -22,6 +23,8 @@ export const SimulationConsole: React.FC = () => {
     isSimPaused,
     simSpeed,
     setSimSpeed,
+    simEngineMode,
+    setSimEngineMode,
     simLogs,
     clearSimLogs,
     virtualPins,
@@ -30,6 +33,8 @@ export const SimulationConsole: React.FC = () => {
 
   const logContainerRef = useRef<HTMLDivElement>(null);
   const isRu = language === 'ru';
+
+  const activeSimulator = simEngineMode === 'wasm' ? wasmSimulator : esp8266Simulator;
 
   // Autoscroll to bottom when new logs arrive
   useEffect(() => {
@@ -42,20 +47,41 @@ export const SimulationConsole: React.FC = () => {
 
   const handlePlayPause = () => {
     if (!isSimRunning) {
-      esp8266Simulator.start();
+      activeSimulator.start();
     } else if (isSimPaused) {
-      esp8266Simulator.resume();
+      activeSimulator.resume();
     } else {
-      esp8266Simulator.pause();
+      activeSimulator.pause();
     }
   };
 
   const handleStep = () => {
-    esp8266Simulator.step();
+    activeSimulator.step();
   };
 
   const handleStop = () => {
-    esp8266Simulator.stop();
+    activeSimulator.stop();
+  };
+
+  const handleModeSwitch = (mode: 'visual' | 'wasm') => {
+    if (mode === simEngineMode) return;
+    if (isSimRunning) {
+      activeSimulator.stop();
+    }
+    setSimEngineMode(mode);
+    useFlowStore.getState().addSimLog(
+      'boot',
+      isRu
+        ? `Режим симулятора: ${mode === 'wasm' ? '⚡ MicroPython WebAssembly VM (Реальный MicroPython v1.26)' : '📊 Визуальный граф (Пошаговый Flow)'}`
+        : `Simulator engine: ${mode === 'wasm' ? '⚡ MicroPython WebAssembly VM (Real MicroPython v1.26)' : '📊 Visual Flow (Step-by-step)'}`
+    );
+  };
+
+  const handleSpeedSelect = (spd: number) => {
+    setSimSpeed(spd);
+    if (simEngineMode === 'wasm') {
+      wasmSimulator.setSpeed(spd);
+    }
   };
 
   const ledPin = virtualPins[2];
@@ -128,7 +154,7 @@ export const SimulationConsole: React.FC = () => {
             {[0.5, 1, 2, 5].map((spd) => (
               <button
                 key={spd}
-                onClick={() => setSimSpeed(spd)}
+                onClick={() => handleSpeedSelect(spd)}
                 className={`px-1.5 py-0.5 rounded text-[10px] font-mono transition-colors ${
                   simSpeed === spd
                     ? 'bg-teal-500 text-slate-900 font-bold'
@@ -138,6 +164,47 @@ export const SimulationConsole: React.FC = () => {
                 {spd}x
               </button>
             ))}
+          </div>
+
+          {/* Engine Mode Toggle Switch */}
+          <div className="flex items-center bg-[#12141A] rounded p-0.5 border border-[#2E3646] ml-1">
+            <button
+              type="button"
+              onClick={() => handleModeSwitch('visual')}
+              title={
+                isRu
+                  ? 'Визуальный граф: пошаговая анимация блоков схемы на холсте'
+                  : 'Visual Flow: step-by-step canvas block highlighting'
+              }
+              className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                simEngineMode === 'visual'
+                  ? 'bg-blue-600 text-white font-semibold shadow-sm'
+                  : 'text-gray-400 hover:text-gray-200'
+              }`}
+            >
+              <Activity className="w-3 h-3" />
+              <span>{isRu ? 'Flow граф' : 'Visual Flow'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleModeSwitch('wasm')}
+              title={
+                isRu
+                  ? 'MicroPython WebAssembly VM: запуск реального MicroPython v1.26'
+                  : 'MicroPython WebAssembly VM: real MicroPython v1.26 VM'
+              }
+              className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                simEngineMode === 'wasm'
+                  ? 'bg-teal-600 text-white font-semibold shadow-sm'
+                  : 'text-gray-400 hover:text-gray-200'
+              }`}
+            >
+              <Cpu className="w-3 h-3 text-teal-200" />
+              <span>MicroPython VM</span>
+              <span className="px-1 py-0.2 rounded text-[8px] bg-teal-950 text-teal-300 border border-teal-400/40 uppercase font-mono font-bold">
+                WASM
+              </span>
+            </button>
           </div>
         </div>
 
@@ -155,6 +222,9 @@ export const SimulationConsole: React.FC = () => {
               const currentVal = ledPin?.value ?? 1;
               const nextVal: 0 | 1 = currentVal === 1 ? 0 : 1;
               useFlowStore.getState().updateVirtualPin(2, { value: nextVal });
+              if (simEngineMode === 'wasm') {
+                wasmSimulator.updatePinInput(2, nextVal);
+              }
               useFlowStore.getState().addSimLog(
                 'gpio',
                 isRu
@@ -193,6 +263,9 @@ export const SimulationConsole: React.FC = () => {
                   const currentVal = p?.value ?? 0;
                   const nextVal: 0 | 1 = currentVal === 1 ? 0 : 1;
                   useFlowStore.getState().updateVirtualPin(pinNum, { value: nextVal });
+                  if (simEngineMode === 'wasm') {
+                    wasmSimulator.updatePinInput(pinNum, nextVal);
+                  }
                   useFlowStore.getState().addSimLog(
                     'gpio',
                     isRu
@@ -251,8 +324,12 @@ export const SimulationConsole: React.FC = () => {
             <Activity className="w-5 h-5 text-gray-600 animate-pulse" />
             <span>
               {isRu
-                ? 'Консоль симуляции готова. Нажмите [Запуск] для исполнения схемы.'
-                : 'Simulation ready. Click [Run] to execute flow.'}
+                ? simEngineMode === 'wasm'
+                  ? 'MicroPython WASM VM готов. Нажмите [Запуск] для исполнения скомпилированного байткода.'
+                  : 'Консоль симуляции готова. Нажмите [Запуск] для пошагового обхода схемы.'
+                : simEngineMode === 'wasm'
+                  ? 'MicroPython WASM VM ready. Click [Run] to execute compiled bytecode.'
+                  : 'Simulation ready. Click [Run] to execute flow.'}
             </span>
           </div>
         ) : (
