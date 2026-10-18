@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Default permissions for Node-TEAL",
+  "description": "Default permissions for Node-MPY",
   "windows": ["main"],
   "permissions": [
     "core:default",

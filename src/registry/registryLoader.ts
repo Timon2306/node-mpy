@@ -30,7 +30,8 @@ const BUILTIN_LIBRARIES: LibraryPackageJSON[] = [
   max7219Lib as unknown as LibraryPackageJSON,
 ];
 
-const STORAGE_KEY = 'node_teal_custom_libraries_v1';
+const STORAGE_KEY = 'node_mpy_custom_libraries_v1';
+const LEGACY_STORAGE_KEY = 'node_teal_custom_libraries_v1';
 
 export class LibraryRegistry {
   private static customLibraries: LibraryPackageJSON[] = [];
@@ -42,7 +43,7 @@ export class LibraryRegistry {
   private static loadCustomLibraries(): void {
     if (typeof localStorage === 'undefined') return;
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
       if (stored) {
         this.customLibraries = JSON.parse(stored);
       }
@@ -163,13 +164,13 @@ export class LibraryRegistry {
    * Ready-to-copy Prompt template for AI (ChatGPT / Claude / DeepSeek)
    */
   public static getAiPromptTemplate(): string {
-    return `# ИНСТРУКЦИЯ ДЛЯ НЕЙРОСЕТИ: СОЗДАНИЕ ПАКЕТА НОД ДЛЯ Node-TEAL
+    return `# ИНСТРУКЦИЯ ДЛЯ НЕЙРОСЕТИ: СОЗДАНИЕ ПАКЕТА НОД ДЛЯ Node-MPY
 
-Ты — специализированный генератор конфигурационных JSON-пакетов для среды визуального программирования "Node-TEAL" (визуальная среда MicroPython в стиле Node-RED).
+Ты — специализированный генератор конфигурационных JSON-пакетов для среды визуального программирования "Node-MPY" (визуальная среда MicroPython в стиле Node-RED).
 
 ## ТВОЯ ЗАДАЧА:
 Ниже прикреплен исходный код драйвера/библиотеки MicroPython (.py файл).
-Проанализируй методы, конструктор (__init__) и параметры класса в этой библиотеке и сгенерируй ГОТОВЫЙ JSON-пакет нод для импорта в Node-TEAL.
+Проанализируй методы, конструктор (__init__) и параметры класса в этой библиотеке и сгенерируй ГОТОВЫЙ JSON-пакет нод для импорта в Node-MPY.
 
 ---
 

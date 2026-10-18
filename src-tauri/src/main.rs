@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    node_teal_lib::run();
+    node_mpy_lib::run();
 }

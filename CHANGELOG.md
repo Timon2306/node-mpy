@@ -1,4 +1,4 @@
-# Changelog — Node-TEAL
+# Changelog — Node-MPY
 
 All notable changes to this project will be documented in this file.
 

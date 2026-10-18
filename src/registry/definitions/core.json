@@ -274,7 +274,7 @@
         { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
       ],
       "properties": [
-        { "id": "message", "name": "message", "type": "text", "label": "Текст / Сообщение", "defaultValue": "Hello from Node-TEAL!", "placeholder": "Текст для вывода в консоль" },
+        { "id": "message", "name": "message", "type": "text", "label": "Текст / Сообщение", "defaultValue": "Hello from Node-MPY!", "placeholder": "Текст для вывода в консоль" },
         { "id": "prefix", "name": "prefix", "type": "text", "label": "Префикс (если подключен вход)", "defaultValue": "", "placeholder": "Например: 'Значение:'" }
       ],
       "codeTemplate": {

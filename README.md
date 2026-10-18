@@ -1,4 +1,4 @@
-# Node-TEAL — MicroPython Visual Flow Studio
+# Node-MPY — MicroPython Visual Flow Studio
 
 Визуальная среда блочного программирования в эстетике **Node-RED** специально для **MicroPython** (ESP32, ESP8266, Raspberry Pi Pico). Спроектирована на стеке **Tauri v2 + React 18 (TypeScript) + React Flow (@xyflow/react) + TailwindCSS + Zustand + Rust**.
 
@@ -46,7 +46,7 @@ npm run preview
 # Запуск в десктопном окне
 npm run tauri dev
 
-# Сборка установочного пакета (.deb/.AppImage для Linux или .msi/.exe для Windows)
+# Сборка установочного пакета (.deb/.AppImage для Linux или .exe NSIS для Windows)
 npm run tauri build
 ```
 

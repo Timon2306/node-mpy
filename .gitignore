@@ -39,6 +39,7 @@ prompt_draft.md
 PLAN.md
 SCREENSHOTS.md
 Screenshot_*.png
+*.nodempy.json
 *.nodeteal.json
 *.py
 .system_generated/

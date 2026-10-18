@@ -13,13 +13,14 @@ import {
 import '@xyflow/react/dist/style.css';
 import { AlertCircle, X } from 'lucide-react';
 import { useFlowStore } from '../../store/useFlowStore';
-import { NodeTealNode } from './NodeTealNode';
+import { NodeMpyNode } from './NodeMpyNode';
 import { NodeContextMenu, ContextMenuState } from './NodeContextMenu';
 import { arePortsCompatible } from '../../types/ports';
 import { LibraryRegistry } from '../../registry/registryLoader';
 
 const nodeTypes = {
-  nodeTeal: NodeTealNode,
+  nodeMpy: NodeMpyNode,
+  nodeTeal: NodeMpyNode,
 };
 
 function FlowCanvasInner() {
@@ -168,6 +169,7 @@ function FlowCanvasInner() {
       event.stopPropagation();
 
       const definitionId =
+        event.dataTransfer.getData('application/node-mpy-definition') ||
         event.dataTransfer.getData('application/node-teal-definition') ||
         event.dataTransfer.getData('text/plain') ||
         event.dataTransfer.getData('text') ||

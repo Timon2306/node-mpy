@@ -9,9 +9,9 @@ export interface FlowTab {
   edges: Edge[];
 }
 
-export interface NodeTealProject {
+export interface NodeMpyProject {
   formatVersion: '1.0';
-  appName: 'Node-TEAL';
+  appName: 'Node-MPY' | 'Node-TEAL';
   projectName: string;
   createdAt: string;
   updatedAt: string;
@@ -21,3 +21,6 @@ export interface NodeTealProject {
   edges: Edge[];
   customLibraries?: LibraryPackageJSON[]; // User-imported libraries saved with the project
 }
+
+export type NodeTealProject = NodeMpyProject;
+

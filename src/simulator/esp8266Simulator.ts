@@ -790,7 +790,7 @@ class ESP8266SimulatorEngine {
       // 27. SSD1306 OLED Text
       else if (defId === 'ssd1306:text') {
         const textEdge = edges.find((e) => e.target === currentNode.id && e.targetHandle === 'text');
-        const textVal = textEdge ? this.resolveNodeOutputValue(textEdge.source, textEdge.sourceHandle || 'val', nodes, edges) : (props.def_text ?? 'Node-TEAL');
+        const textVal = textEdge ? this.resolveNodeOutputValue(textEdge.source, textEdge.sourceHandle || 'val', nodes, edges) : (props.def_text ?? 'Node-MPY');
         const x = props.def_x ?? 0;
         const y = props.def_y ?? 0;
         store.addSimLog('print', `OLED.text("${textVal}", ${x}, ${y})`);
@@ -865,7 +865,7 @@ class ESP8266SimulatorEngine {
       // 39. MAX7219 Text
       else if (defId === 'max7219:text') {
         const textEdge = edges.find((e) => e.target === currentNode.id && e.targetHandle === 'text');
-        const textVal = textEdge ? this.resolveNodeOutputValue(textEdge.source, textEdge.sourceHandle || 'val', nodes, edges) : (props.def_text ?? 'TEAL');
+        const textVal = textEdge ? this.resolveNodeOutputValue(textEdge.source, textEdge.sourceHandle || 'val', nodes, edges) : (props.def_text ?? 'MPY');
         store.addSimLog('print', `MAX7219 Матрица: Вывод "${textVal}" (яркость ${props.brightness ?? 5})`);
       }
 

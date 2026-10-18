@@ -11,7 +11,7 @@ import {
 } from '@xyflow/react';
 import { NodeInstanceData, extractImportsFromNode } from '../types/nodes';
 import { PaletteCategory } from '../types/registry';
-import { NodeTealProject, FlowTab } from '../types/project';
+import { NodeMpyProject, NodeTealProject, FlowTab } from '../types/project';
 import { arePortsCompatible, PORT_COLORS, getIncompatibleConnectionReason } from '../types/ports';
 import { LibraryRegistry } from '../registry/registryLoader';
 import { CodeGenerator } from '../compiler/codeGenerator';
@@ -102,7 +102,7 @@ interface FlowState {
   clearCanvas: () => void;
   recalculate: () => void;
   loadProject: (project: any) => void;
-  exportProject: (projectName?: string) => NodeTealProject;
+  exportProject: (projectName?: string) => NodeMpyProject;
   loadDemoProject: () => void;
 
   // Multi-Flow Tab Actions
@@ -145,14 +145,18 @@ interface FlowState {
   resetVirtualPins: () => void;
 }
 
-const AUTOSAVE_STORAGE_KEY = 'node_teal_autosave_v1';
-const savedLang = (typeof localStorage !== 'undefined' ? (localStorage.getItem('node_teal_lang') as Language) : null) || 'ru';
+const AUTOSAVE_STORAGE_KEY = 'node_mpy_autosave_v1';
+const LEGACY_AUTOSAVE_KEY = 'node_teal_autosave_v1';
+const savedLang =
+  (typeof localStorage !== 'undefined'
+    ? ((localStorage.getItem('node_mpy_lang') || localStorage.getItem('node_teal_lang')) as Language)
+    : null) || 'ru';
 
 // Helper to load autosaved flows from localStorage or create initial empty Flow 1
 const loadAutoSavedState = (): { flows: FlowTab[]; activeFlowId: string } => {
   if (typeof localStorage !== 'undefined') {
     try {
-      const raw = localStorage.getItem(AUTOSAVE_STORAGE_KEY);
+      const raw = localStorage.getItem(AUTOSAVE_STORAGE_KEY) || localStorage.getItem(LEGACY_AUTOSAVE_KEY);
       if (raw) {
         const data = JSON.parse(raw);
         if (Array.isArray(data.flows) && data.flows.length > 0) {
@@ -284,6 +288,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
 
   setLanguage: (lang) => {
     if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('node_mpy_lang', lang);
       localStorage.setItem('node_teal_lang', lang);
     }
     set({ language: lang });
@@ -818,7 +823,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
 
     const newNode: Node<NodeInstanceData> = {
       id,
-      type: 'nodeTeal',
+      type: 'nodeMpy',
       position: finalPosition,
       selected: true,
       data: {
@@ -1034,13 +1039,13 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     get().recalculate();
   },
 
-  exportProject: (projectName = 'my_nodeteal_project') => {
+  exportProject: (projectName = 'my_nodempy_project') => {
     const { flows, activeFlowId, nodes, edges } = get();
     const updatedFlows = syncFlows(flows, activeFlowId, nodes, edges);
 
     return {
       formatVersion: '1.0',
-      appName: 'Node-TEAL',
+      appName: 'Node-MPY',
       projectName,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -1056,7 +1061,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     const demoNodes: Node<NodeInstanceData>[] = [
       {
         id: 'imp_all',
-        type: 'nodeTeal',
+        type: 'nodeMpy',
         position: { x: 40, y: 40 },
         data: {
           definitionId: 'core:import_module',
@@ -1077,7 +1082,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       },
       {
         id: 'pin_dht',
-        type: 'nodeTeal',
+        type: 'nodeMpy',
         position: { x: 280, y: 40 },
         data: {
           definitionId: 'machine:pin_init',
@@ -1090,7 +1095,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       },
       {
         id: 'dht_init',
-        type: 'nodeTeal',
+        type: 'nodeMpy',
         position: { x: 520, y: 40 },
         data: {
           definitionId: 'dht:init',
@@ -1103,7 +1108,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       },
       {
         id: 'i2c_bus',
-        type: 'nodeTeal',
+        type: 'nodeMpy',
         position: { x: 280, y: 140 },
         data: {
           definitionId: 'machine:i2c_init',
@@ -1116,7 +1121,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       },
       {
         id: 'oled_init',
-        type: 'nodeTeal',
+        type: 'nodeMpy',
         position: { x: 520, y: 140 },
         data: {
           definitionId: 'ssd1306:init_i2c',
@@ -1129,7 +1134,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       },
       {
         id: 'while_loop',
-        type: 'nodeTeal',
+        type: 'nodeMpy',
         position: { x: 280, y: 280 },
         data: {
           definitionId: 'core:while_loop',
@@ -1142,7 +1147,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       },
       {
         id: 'dht_read',
-        type: 'nodeTeal',
+        type: 'nodeMpy',
         position: { x: 520, y: 280 },
         data: {
           definitionId: 'dht:read',
@@ -1155,7 +1160,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       },
       {
         id: 'oled_clear',
-        type: 'nodeTeal',
+        type: 'nodeMpy',
         position: { x: 780, y: 280 },
         data: {
           definitionId: 'ssd1306:clear',
@@ -1168,7 +1173,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       },
       {
         id: 'oled_text',
-        type: 'nodeTeal',
+        type: 'nodeMpy',
         position: { x: 1020, y: 280 },
         data: {
           definitionId: 'ssd1306:text',
@@ -1181,7 +1186,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       },
       {
         id: 'oled_show',
-        type: 'nodeTeal',
+        type: 'nodeMpy',
         position: { x: 1260, y: 280 },
         data: {
           definitionId: 'ssd1306:show',
@@ -1194,7 +1199,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       },
       {
         id: 'sleep_node',
-        type: 'nodeTeal',
+        type: 'nodeMpy',
         position: { x: 1500, y: 280 },
         data: {
           definitionId: 'time:sleep_ms',

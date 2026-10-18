@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { useFlowStore } from '../../store/useFlowStore';
 import { translations } from '../../i18n';
-import { NodeTealLogo } from '../brand/NodeTealLogo';
+import { NodeMpyLogo } from '../brand/NodeMpyLogo';
 
 export const Topbar: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -136,10 +136,10 @@ export const Topbar: React.FC = () => {
     }
   };
 
-  // Save Project as .nodeteal.json
+  // Save Project as .nodempy.json
   const handleSaveProject = () => {
     const activeFlow = flows.find((f) => f.id === activeFlowId);
-    const projectName = activeFlow?.name || 'nodeteal_project';
+    const projectName = activeFlow?.name || 'nodempy_project';
     const project = exportProject(projectName);
     const jsonStr = JSON.stringify(project, null, 2);
 
@@ -147,14 +147,14 @@ export const Topbar: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${projectName.toLowerCase().replace(/\s+/g, '_')}.nodeteal.json`;
+    link.download = `${projectName.toLowerCase().replace(/\s+/g, '_')}.nodempy.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
 
-  // Open Project .nodeteal.json
+  // Open Project (.nodempy.json or .nodeteal.json)
   const handleOpenProjectFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -167,7 +167,7 @@ export const Topbar: React.FC = () => {
         if (parsed.nodes || parsed.flows) {
           loadProject(parsed);
         } else {
-          alert(language === 'ru' ? 'Файл не содержит корректной структуры схемы Node-TEAL' : 'File does not contain valid Node-TEAL schema');
+          alert(language === 'ru' ? 'Файл не содержит корректной структуры схемы Node-MPY' : 'File does not contain valid Node-MPY schema');
         }
       } catch (err: any) {
         alert((language === 'ru' ? 'Ошибка чтения файла проекта: ' : 'Error reading project file: ') + (err.message || err));
@@ -189,7 +189,7 @@ export const Topbar: React.FC = () => {
       <input
         ref={fileInputRef}
         type="file"
-        accept=".json"
+        accept=".json,.nodempy.json,.nodeteal.json"
         className="hidden"
         onChange={handleOpenProjectFile}
       />
@@ -198,9 +198,9 @@ export const Topbar: React.FC = () => {
       <div className="flex items-center gap-3 overflow-hidden flex-1 max-w-[65%]">
         {/* Brand Logo & Name */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          <NodeTealLogo size={24} className="flex-shrink-0" />
+          <NodeMpyLogo size={24} className="flex-shrink-0" />
           <span className="text-sm font-bold tracking-tight text-white hidden sm:flex items-center select-none">
-            Node<span className="text-teal-brand">-TEAL</span>
+            Node<span className="text-teal-brand">-MPY</span>
           </span>
         </div>
 
@@ -457,7 +457,7 @@ export const Topbar: React.FC = () => {
                   className="w-full px-3 py-2 text-left text-gray-200 hover:bg-slate-hover flex items-center gap-2"
                 >
                   <Info className="w-4 h-4 text-teal-400" />
-                  <span>{language === 'ru' ? 'О программе' : 'About Node-TEAL'}</span>
+                  <span>{language === 'ru' ? 'О программе' : 'About Node-MPY'}</span>
                 </button>
               </div>
             </>

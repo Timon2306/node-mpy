@@ -52,7 +52,7 @@
         { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
       ],
       "properties": [
-        { "id": "def_text", "name": "def_text", "type": "text", "label": "Текст по умолч.", "defaultValue": "TEAL" },
+        { "id": "def_text", "name": "def_text", "type": "text", "label": "Текст по умолч.", "defaultValue": "MPY" },
         { "id": "brightness", "name": "brightness", "type": "number", "label": "Яркость (1-15)", "defaultValue": 5 }
       ],
       "codeTemplate": {

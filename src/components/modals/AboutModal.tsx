@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { X, HelpCircle, Send } from 'lucide-react';
 import { useFlowStore } from '../../store/useFlowStore';
-import { NodeTealLogo } from '../brand/NodeTealLogo';
+import { NodeMpyLogo } from '../brand/NodeMpyLogo';
 
 export const AboutModal: React.FC = () => {
   const {
@@ -37,9 +37,9 @@ export const AboutModal: React.FC = () => {
         {/* Title Bar (Windows window header style) */}
         <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-[#2E3544] bg-[#14171E]">
           <div className="flex items-center gap-2">
-            <NodeTealLogo size={18} />
+            <NodeMpyLogo size={18} />
             <span className="text-[12px] font-medium text-gray-200">
-              {isRu ? 'О программе Node-TEAL' : 'About Node-TEAL'}
+              {isRu ? 'О программе Node-MPY' : 'About Node-MPY'}
             </span>
           </div>
 
@@ -71,7 +71,7 @@ export const AboutModal: React.FC = () => {
           {/* Main Title & Subtitle */}
           <div>
             <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-1.5">
-              Node<span className="text-teal-400">-TEAL</span>
+              Node<span className="text-teal-400">-MPY</span>
             </h2>
             <p className="text-[12px] text-gray-400 mt-1 leading-snug">
               {isRu

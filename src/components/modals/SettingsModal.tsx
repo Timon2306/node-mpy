@@ -24,7 +24,7 @@ import {
   APP_CURRENT_VERSION,
   detectPlatform,
 } from '../../services/updateService';
-import { NodeTealLogo } from '../brand/NodeTealLogo';
+import { NodeMpyLogo } from '../brand/NodeMpyLogo';
 
 export const SettingsModal: React.FC = () => {
   const {
@@ -101,7 +101,7 @@ export const SettingsModal: React.FC = () => {
           <div className="flex items-center gap-2">
             <Settings className="w-4 h-4 text-teal-400" />
             <h2 className="text-sm font-bold text-gray-100">
-              {isRu ? 'Настройки Node-TEAL' : 'Node-TEAL Settings'}
+              {isRu ? 'Настройки Node-MPY' : 'Node-MPY Settings'}
             </h2>
           </div>
           <button
@@ -259,10 +259,10 @@ export const SettingsModal: React.FC = () => {
               {/* App Version & Platform Card */}
               <div className="p-4 rounded-lg bg-[#14171E] border border-[#2B3240] flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <NodeTealLogo size={28} />
+                  <NodeMpyLogo size={28} />
                   <div>
                     <h3 className="font-bold text-white text-sm">
-                      Node-TEAL <span className="font-mono text-teal-400 font-bold">v{APP_CURRENT_VERSION}</span>
+                      Node-MPY <span className="font-mono text-teal-400 font-bold">v{APP_CURRENT_VERSION}</span>
                     </h3>
                     <p className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1.5">
                       <span>{isRu ? 'Платформа:' : 'Platform:'}</span>
@@ -289,7 +289,7 @@ export const SettingsModal: React.FC = () => {
                     <p className="font-semibold text-xs">{isRu ? 'Ошибка проверки' : 'Update Check Error'}</p>
                     <p className="text-[11px] text-red-300 mt-0.5">{errorMsg}</p>
                     <button
-                      onClick={() => openExternalUrl('https://github.com/Timon2306/node-teal/releases')}
+                      onClick={() => openExternalUrl('https://github.com/Timon2306/node-mpy/releases')}
                       className="mt-2 inline-flex items-center gap-1 text-[11px] text-teal-400 hover:underline"
                     >
                       <span>{isRu ? 'Открыть страницу релизов на GitHub вручную' : 'Open GitHub Releases manually'}</span>
@@ -309,8 +309,8 @@ export const SettingsModal: React.FC = () => {
                     </p>
                     <p className="text-[11px] text-emerald-300/80 leading-snug">
                       {isRu
-                        ? `Версия Node-TEAL v${updateInfo.currentVersion} является актуальной. Обновлений не требуется.`
-                        : `Node-TEAL v${updateInfo.currentVersion} is up-to-date. No new updates available.`}
+                        ? `Версия Node-MPY v${updateInfo.currentVersion} является актуальной. Обновлений не требуется.`
+                        : `Node-MPY v${updateInfo.currentVersion} is up-to-date. No new updates available.`}
                     </p>
                   </div>
                 </div>
@@ -418,12 +418,12 @@ export const SettingsModal: React.FC = () => {
               {!updateInfo && !checking && !errorMsg && (
                 <div className="p-3.5 rounded-lg bg-[#14171E] border border-[#2B3240] text-[11px] text-gray-400 space-y-1 leading-snug">
                   <p className="text-gray-300 font-semibold">
-                    {isRu ? 'Как работают обновления в Node-TEAL?' : 'How do updates work in Node-TEAL?'}
+                    {isRu ? 'Как работают обновления в Node-MPY?' : 'How do updates work in Node-MPY?'}
                   </p>
                   <p>
                     {isRu
-                      ? 'При нажатии на кнопку проверки приложение обращается к официальному GitHub API репозитория Timon2306/node-teal, сравнивает семантическую версию с установленной и автоматически подбирает готовый установочный пакет под вашу операционную систему (Windows .exe, Linux .AppImage или macOS .dmg).'
-                      : 'When checking for updates, Node-TEAL queries the official GitHub API for Timon2306/node-teal, compares the semver with your current installation, and automatically matches the correct cross-platform binary (Windows .exe, Linux .AppImage, or macOS .dmg).'}
+                      ? 'При нажатии на кнопку проверки приложение обращается к официальному GitHub API репозитория Timon2306/node-mpy, сравнивает семантическую версию с установленной и автоматически подбирает готовый установочный пакет под вашу операционную систему (Windows .exe, Linux .AppImage или macOS .dmg).'
+                      : 'When checking for updates, Node-MPY queries the official GitHub API for Timon2306/node-mpy, compares the semver with your current installation, and automatically matches the correct cross-platform binary (Windows .exe, Linux .AppImage, or macOS .dmg).'}
                   </p>
                 </div>
               )}
@@ -434,7 +434,7 @@ export const SettingsModal: React.FC = () => {
         {/* Footer */}
         <div className="px-4 py-2.5 border-t border-[#2E3544] bg-[#14171E] flex justify-between items-center flex-shrink-0">
           <span className="text-[10px] text-gray-500 font-mono">
-            Node-TEAL • MicroPython Visual Studio
+            Node-MPY • MicroPython Visual Studio
           </span>
           <button
             onClick={() => setSettingsModalOpen(false)}

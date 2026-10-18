@@ -3,7 +3,7 @@ import { LibraryRegistry } from '../src/registry/registryLoader';
 import { Node, Edge } from '@xyflow/react';
 import { NodeInstanceData } from '../src/types/nodes';
 
-console.log('=== RUNNING NODE-TEAL COMPILER & REGISTRY TESTS ===\n');
+console.log('=== RUNNING NODE-MPY COMPILER & REGISTRY TESTS ===\n');
 
 // 1. Test all 65 nodes individually
 console.log('--- TEST 1: Individual Node Code Generation ---');
@@ -19,7 +19,7 @@ for (const lib of allLibs) {
 
     const testNode: Node<NodeInstanceData> = {
       id: `test_${nodeDef.id.replace(/[^a-zA-Z0-9]/g, '_')}`,
-      type: 'nodeTeal',
+      type: 'nodeMpy',
       position: { x: 0, y: 0 },
       data: {
         definitionId: nodeDef.id,
@@ -38,7 +38,7 @@ for (const lib of allLibs) {
     if (nodeDef.inputs.some(i => i.type === 'flow')) {
       const loopNode: Node<NodeInstanceData> = {
         id: 'main_loop',
-        type: 'nodeTeal',
+        type: 'nodeMpy',
         position: { x: 0, y: 0 },
         data: {
           definitionId: 'core:while_loop',
@@ -86,7 +86,7 @@ console.log('--- TEST 2: Demo Project Compilation ---');
 const demoNodes: Node<NodeInstanceData>[] = [
   {
     id: 'pin_dht',
-    type: 'nodeTeal',
+    type: 'nodeMpy',
     position: { x: 0, y: 0 },
     data: {
       definitionId: 'machine:pin_init',
@@ -99,7 +99,7 @@ const demoNodes: Node<NodeInstanceData>[] = [
   },
   {
     id: 'dht_init',
-    type: 'nodeTeal',
+    type: 'nodeMpy',
     position: { x: 0, y: 0 },
     data: {
       definitionId: 'dht:init',
@@ -112,7 +112,7 @@ const demoNodes: Node<NodeInstanceData>[] = [
   },
   {
     id: 'i2c_bus',
-    type: 'nodeTeal',
+    type: 'nodeMpy',
     position: { x: 0, y: 0 },
     data: {
       definitionId: 'machine:i2c_init',
@@ -125,7 +125,7 @@ const demoNodes: Node<NodeInstanceData>[] = [
   },
   {
     id: 'oled_init',
-    type: 'nodeTeal',
+    type: 'nodeMpy',
     position: { x: 0, y: 0 },
     data: {
       definitionId: 'ssd1306:init_i2c',
@@ -138,7 +138,7 @@ const demoNodes: Node<NodeInstanceData>[] = [
   },
   {
     id: 'while_loop',
-    type: 'nodeTeal',
+    type: 'nodeMpy',
     position: { x: 0, y: 0 },
     data: {
       definitionId: 'core:while_loop',
@@ -151,7 +151,7 @@ const demoNodes: Node<NodeInstanceData>[] = [
   },
   {
     id: 'dht_read',
-    type: 'nodeTeal',
+    type: 'nodeMpy',
     position: { x: 0, y: 0 },
     data: {
       definitionId: 'dht:read',
@@ -164,7 +164,7 @@ const demoNodes: Node<NodeInstanceData>[] = [
   },
   {
     id: 'oled_clear',
-    type: 'nodeTeal',
+    type: 'nodeMpy',
     position: { x: 0, y: 0 },
     data: {
       definitionId: 'ssd1306:clear',
@@ -177,7 +177,7 @@ const demoNodes: Node<NodeInstanceData>[] = [
   },
   {
     id: 'oled_text',
-    type: 'nodeTeal',
+    type: 'nodeMpy',
     position: { x: 0, y: 0 },
     data: {
       definitionId: 'ssd1306:text',
@@ -190,7 +190,7 @@ const demoNodes: Node<NodeInstanceData>[] = [
   },
   {
     id: 'oled_show',
-    type: 'nodeTeal',
+    type: 'nodeMpy',
     position: { x: 0, y: 0 },
     data: {
       definitionId: 'ssd1306:show',
@@ -203,7 +203,7 @@ const demoNodes: Node<NodeInstanceData>[] = [
   },
   {
     id: 'sleep_node',
-    type: 'nodeTeal',
+    type: 'nodeMpy',
     position: { x: 0, y: 0 },
     data: {
       definitionId: 'time:sleep_ms',
@@ -269,7 +269,7 @@ console.log('--- TEST 3: Logic, Math, Strings, Tone, Random Flow ---');
 const complexNodes: Node<NodeInstanceData>[] = [
   {
     id: 'setup_node',
-    type: 'nodeTeal',
+    type: 'nodeMpy',
     position: { x: 0, y: 0 },
     data: {
       definitionId: 'core:setup',
@@ -282,7 +282,7 @@ const complexNodes: Node<NodeInstanceData>[] = [
   },
   {
     id: 'wifi_conn',
-    type: 'nodeTeal',
+    type: 'nodeMpy',
     position: { x: 0, y: 0 },
     data: {
       definitionId: 'network:wlan_connect',
@@ -295,7 +295,7 @@ const complexNodes: Node<NodeInstanceData>[] = [
   },
   {
     id: 'wifi_ip',
-    type: 'nodeTeal',
+    type: 'nodeMpy',
     position: { x: 0, y: 0 },
     data: {
       definitionId: 'network:ifconfig',
@@ -308,7 +308,7 @@ const complexNodes: Node<NodeInstanceData>[] = [
   },
   {
     id: 'while_loop',
-    type: 'nodeTeal',
+    type: 'nodeMpy',
     position: { x: 0, y: 0 },
     data: {
       definitionId: 'core:while_loop',
@@ -321,7 +321,7 @@ const complexNodes: Node<NodeInstanceData>[] = [
   },
   {
     id: 'rand_gen',
-    type: 'nodeTeal',
+    type: 'nodeMpy',
     position: { x: 0, y: 0 },
     data: {
       definitionId: 'core:random',
@@ -334,7 +334,7 @@ const complexNodes: Node<NodeInstanceData>[] = [
   },
   {
     id: 'math_op',
-    type: 'nodeTeal',
+    type: 'nodeMpy',
     position: { x: 0, y: 0 },
     data: {
       definitionId: 'core:math',
@@ -347,7 +347,7 @@ const complexNodes: Node<NodeInstanceData>[] = [
   },
   {
     id: 'cmp_op',
-    type: 'nodeTeal',
+    type: 'nodeMpy',
     position: { x: 0, y: 0 },
     data: {
       definitionId: 'core:comparison',
@@ -360,7 +360,7 @@ const complexNodes: Node<NodeInstanceData>[] = [
   },
   {
     id: 'logic_op',
-    type: 'nodeTeal',
+    type: 'nodeMpy',
     position: { x: 0, y: 0 },
     data: {
       definitionId: 'core:logic',
@@ -373,7 +373,7 @@ const complexNodes: Node<NodeInstanceData>[] = [
   },
   {
     id: 'if_branch',
-    type: 'nodeTeal',
+    type: 'nodeMpy',
     position: { x: 0, y: 0 },
     data: {
       definitionId: 'core:if_else',
@@ -386,7 +386,7 @@ const complexNodes: Node<NodeInstanceData>[] = [
   },
   {
     id: 'print_true',
-    type: 'nodeTeal',
+    type: 'nodeMpy',
     position: { x: 0, y: 0 },
     data: {
       definitionId: 'core:print',
@@ -399,7 +399,7 @@ const complexNodes: Node<NodeInstanceData>[] = [
   },
   {
     id: 'print_false',
-    type: 'nodeTeal',
+    type: 'nodeMpy',
     position: { x: 0, y: 0 },
     data: {
       definitionId: 'core:print',

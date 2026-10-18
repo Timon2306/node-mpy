@@ -1,5 +1,5 @@
 {
-  "name": "node-teal",
+  "name": "node-mpy",
   "version": "1.0.1",
   "description": "Visual MicroPython programming environment in Node-RED style",
   "private": true,

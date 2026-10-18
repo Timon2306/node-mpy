@@ -94,7 +94,7 @@
         { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
       ],
       "properties": [
-        { "id": "def_text", "name": "def_text", "type": "text", "label": "Текст по умолч.", "defaultValue": "Node-TEAL" },
+        { "id": "def_text", "name": "def_text", "type": "text", "label": "Текст по умолч.", "defaultValue": "Node-MPY" },
         { "id": "def_x", "name": "def_x", "type": "number", "label": "X", "defaultValue": 10 },
         { "id": "def_y", "name": "def_y", "type": "number", "label": "Y", "defaultValue": 10 },
         { "id": "size", "name": "size", "type": "number", "label": "Масштаб шрифта", "defaultValue": 1 }

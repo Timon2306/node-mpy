@@ -128,6 +128,7 @@ export const LeftSidebar: React.FC = () => {
   }, [categories, searchQuery]);
 
   const onDragStart = (e: React.DragEvent, node: NodeDefinition) => {
+    e.dataTransfer.setData('application/node-mpy-definition', node.id);
     e.dataTransfer.setData('application/node-teal-definition', node.id);
     e.dataTransfer.setData('text/plain', node.id);
     e.dataTransfer.setData('text', node.id);

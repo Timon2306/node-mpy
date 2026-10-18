@@ -1,12 +1,12 @@
 [package]
-name = "node-teal"
+name = "node-mpy"
 version = "1.0.1"
-description = "Node-TEAL - MicroPython Visual Flow Studio"
-authors = ["Node-TEAL Team"]
+description = "Node-MPY - MicroPython Visual Flow Studio"
+authors = ["Node-MPY Team"]
 edition = "2021"
 
 [lib]
-name = "node_teal_lib"
+name = "node_mpy_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

@@ -110,8 +110,8 @@ export const ChangelogModal: React.FC = () => {
 
             <p className="text-[11px] text-gray-400 leading-relaxed">
               {isRu
-                ? 'Базовый релиз визуальной среды Node-TEAL: 79 нод, Kahn компилятор, интерактивные GPIO, темная палитра Node-RED.'
-                : 'Initial baseline release of Node-TEAL: 79 nodes, Kahn dependency compiler, interactive GPIOs, calm Node-RED aesthetic.'}
+                ? 'Базовый релиз визуальной среды Node-MPY: 79 нод, Kahn компилятор, интерактивные GPIO, темная палитра Node-RED.'
+                : 'Initial baseline release of Node-MPY: 79 nodes, Kahn dependency compiler, interactive GPIOs, calm Node-RED aesthetic.'}
             </p>
 
             <div className="space-y-2 text-gray-300">

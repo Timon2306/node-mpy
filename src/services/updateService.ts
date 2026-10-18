@@ -1,7 +1,7 @@
-// GitHub Release and Cross-Platform Update Service for Node-TEAL
+// GitHub Release and Cross-Platform Update Service for Node-MPY
 
 export const APP_CURRENT_VERSION = '1.0.1';
-export const GITHUB_REPO = 'Timon2306/node-teal';
+export const GITHUB_REPO = 'Timon2306/node-mpy';
 
 export interface ReleaseAsset {
   name: string;
@@ -137,7 +137,7 @@ function findMatchingAsset(
 }
 
 /**
- * Check GitHub Releases API for the latest version of Node-TEAL
+ * Check GitHub Releases API for the latest version of Node-MPY
  */
 export async function checkForUpdates(): Promise<UpdateInfo> {
   const currentVersion = APP_CURRENT_VERSION;
