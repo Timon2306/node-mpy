@@ -538,6 +538,36 @@
         "section": "flow",
         "template": "machine.deepsleep({{inputs.ms || props.duration}})"
       }
+    },
+    {
+      "id": "machine:buzzer_tone",
+      "libraryId": "machine",
+      "label": "Buzzer / Tone (Пищалка)",
+      "category": "Hardware",
+      "color": "#10B981",
+      "icon": "Volume2",
+      "description": "Воспроизведение звуковой частоты заданной длительности на пьезодинамике (зуммере)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "pin", "name": "pin", "type": "pin", "label": "Pin" },
+        { "id": "freq", "name": "freq", "type": "number", "label": "Frequency (Hz)" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [
+        { "id": "pin", "name": "pin", "type": "number", "label": "GPIO Pin зуммера", "defaultValue": 15, "min": 0, "max": 48 },
+        { "id": "freq", "name": "freq", "type": "number", "label": "Частота звука (Гц)", "defaultValue": 440, "min": 20, "max": 10000 },
+        { "id": "duration_ms", "name": "duration_ms", "type": "number", "label": "Длительность (мс)", "defaultValue": 500, "min": 10, "max": 10000 }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "imports": [
+          "import machine",
+          "import time"
+        ],
+        "template": "_buzz_{{id}} = machine.PWM(machine.Pin({{inputs.pin || props.pin}}), freq=int({{inputs.freq || props.freq}}), duty=512)\ntime.sleep_ms({{props.duration_ms}})\n_buzz_{{id}}.duty(0)\n_buzz_{{id}}.deinit()"
+      }
     }
   ]
 }

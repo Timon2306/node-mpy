@@ -1,0 +1,76 @@
+{
+  "id": "ds18b20",
+  "name": "DS18B20 (Датчик температуры 1-Wire)",
+  "version": "1.0.0",
+  "description": "Цифровой термометр DS18B20 на шине 1-Wire (диапазон от -55°C до +125°C)",
+  "isNative": true,
+  "category": "Sensors",
+  "color": "#EF4444",
+  "icon": "Thermometer",
+  "importSnippet": "import onewire\nimport ds18x20\nimport time\nimport machine",
+  "nodes": [
+    {
+      "id": "ds18b20:init",
+      "libraryId": "ds18b20",
+      "label": "DS18B20 Init",
+      "category": "Sensors",
+      "color": "#EF4444",
+      "icon": "Thermometer",
+      "description": "Инициализация шины 1-Wire и поиск подключенных датчиков DS18B20",
+      "inputs": [
+        { "id": "pin", "name": "pin", "type": "pin", "label": "Data Pin" }
+      ],
+      "outputs": [
+        { "id": "sensor", "name": "sensor", "type": "device", "label": "DS18B20 Sensor" }
+      ],
+      "properties": [
+        { "id": "pin", "name": "pin", "type": "number", "label": "GPIO Pin (Data)", "defaultValue": 12, "min": 0, "max": 48 }
+      ],
+      "codeTemplate": {
+        "section": "init",
+        "imports": [
+          "import onewire",
+          "import ds18x20",
+          "import machine",
+          "import time"
+        ],
+        "template": "ow_bus_{{id}} = onewire.OneWire(machine.Pin({{inputs.pin || props.pin}}))\nds_sensor_{{id}} = ds18x20.DS18X20(ow_bus_{{id}})\nds_sensor_{{id}}.roms = ds_sensor_{{id}}.scan()",
+        "outputVariables": {
+          "sensor": "ds_sensor_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "ds18b20:read_temp",
+      "libraryId": "ds18b20",
+      "label": "DS18B20 Read Temp",
+      "category": "Sensors",
+      "color": "#EF4444",
+      "icon": "Activity",
+      "description": "Запуск конверсии и измерение температуры в градусах Цельсия",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "sensor", "name": "sensor", "type": "device", "label": "Sensor" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" },
+        { "id": "temp", "name": "temp", "type": "number", "label": "Temp (°C)" },
+        { "id": "temp_str", "name": "temp_str", "type": "string", "label": "Temp (Str)" }
+      ],
+      "properties": [
+        { "id": "sensor_index", "name": "sensor_index", "type": "number", "label": "Индекс датчика на шине", "defaultValue": 0 }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "imports": [
+          "import time"
+        ],
+        "template": "if not getattr({{inputs.sensor}}, 'roms', None):\n    {{inputs.sensor}}.roms = {{inputs.sensor}}.scan()\n{{inputs.sensor}}.convert_temp()\ntime.sleep_ms(750)\n{{output.temp}} = round({{inputs.sensor}}.read_temp({{inputs.sensor}}.roms[{{props.sensor_index}}]), 2) if (getattr({{inputs.sensor}}, 'roms', None) and len({{inputs.sensor}}.roms) > {{props.sensor_index}}) else 0.0\n{{output.temp_str}} = str({{output.temp}})",
+        "outputVariables": {
+          "temp": "temp_{{id}}",
+          "temp_str": "temp_str_{{id}}"
+        }
+      }
+    }
+  ]
+}

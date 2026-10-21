@@ -27,16 +27,23 @@ export class CodeGenerator {
     this.assignOutputVariables(nodes, outputVarMap);
 
     // 2. Section 1: IMPORTS
-    const importsCode = this.generateImports(nodes, outputVarMap);
+    const { importsCode, selectiveImports } = this.generateImports(nodes, outputVarMap);
 
     // 3. Section 2: HARDWARE & OBJECTS INIT
-    const initCode = this.generateInits(nodes, edges, nodeMap, outputVarMap, errors);
+    let initCode = this.generateInits(nodes, edges, nodeMap, outputVarMap, errors);
 
     // 4. Section 3: FUNCTIONS & CALLBACKS
-    const functionsCode = this.generateFunctions(nodes);
+    let functionsCode = this.generateFunctions(nodes, edges, nodeMap, outputVarMap);
 
     // 5. Section 4: MAIN EXECUTION & LOOP
-    const executionCode = this.generateExecution(nodes, edges, nodeMap, outputVarMap, errors);
+    let executionCode = this.generateExecution(nodes, edges, nodeMap, outputVarMap, errors);
+
+    // Apply selective class replacements if any modules were imported selectively
+    if (selectiveImports.size > 0) {
+      initCode = this.applySelectiveImports(initCode, selectiveImports);
+      functionsCode = this.applySelectiveImports(functionsCode, selectiveImports);
+      executionCode = this.applySelectiveImports(executionCode, selectiveImports);
+    }
 
     // Combine into final main.py
     const fullCode = [
@@ -121,20 +128,98 @@ export class CodeGenerator {
   }
 
   /**
-   * Section 1: Unique imports collection
+   * Section 1: Unique imports collection with selective imports support
    */
   private static generateImports(
     nodes: Node<NodeInstanceData>[],
     _outputVarMap: Map<string, string>
-  ): string {
+  ): { importsCode: string; selectiveImports: Map<string, Set<string>> } {
     const importSet = new Set<string>();
+    const selectiveImports = new Map<string, Set<string>>();
+    const explicitlyImportedModules = new Set<string>();
 
+    // 1. Gather all explicit imports from core:import_module nodes first
     for (const node of nodes) {
-      // 1. Explicit import definitions on nodes
+      if (node.data.definitionId === 'core:import_module') {
+        const importList = extractImportsFromNode(node.data.properties);
+        for (const item of importList) {
+          const mod = item.module?.trim();
+          if (!mod) continue;
+          explicitlyImportedModules.add(mod);
+
+          if (!item.import_all && item.classes) {
+            const classSet = selectiveImports.get(mod) || new Set<string>();
+            item.classes.split(',').forEach((c) => {
+              const trimmed = c.trim();
+              if (trimmed) classSet.add(trimmed);
+            });
+            selectiveImports.set(mod, classSet);
+          }
+        }
+      }
+    }
+
+    // 2. Scan nodes on canvas: if a node uses a module that is in selectiveImports,
+    // ensure the class needed by that node is included in the selective import
+    for (const node of nodes) {
+      const defId = node.data.definitionId;
+      const libId = node.data.libraryId;
+
+      if (selectiveImports.has(libId)) {
+        const classSet = selectiveImports.get(libId)!;
+        if (libId === 'machine') {
+          if (defId.includes('pin')) classSet.add('Pin');
+          if (defId.includes('pwm') || defId === 'machine:tone') {
+            classSet.add('PWM');
+            if (defId === 'machine:tone') classSet.add('Pin');
+          }
+          if (defId.includes('adc')) classSet.add('ADC');
+          if (defId.includes('i2c')) {
+            classSet.add('I2C');
+            classSet.add('Pin');
+          }
+          if (defId.includes('spi')) {
+            classSet.add('SPI');
+            classSet.add('Pin');
+          }
+          if (defId.includes('timer')) classSet.add('Timer');
+          if (defId.includes('reset')) classSet.add('reset');
+          if (defId.includes('deep_sleep')) classSet.add('deepsleep');
+        } else if (libId === 'dht') {
+          if (node.data.properties?.model === 'DHT11') classSet.add('DHT11');
+          else classSet.add('DHT22');
+        } else if (libId === 'time') {
+          if (defId === 'time:sleep_ms') classSet.add('sleep_ms');
+          if (defId === 'time:sleep_s') classSet.add('sleep');
+          if (defId === 'time:sleep_us') classSet.add('sleep_us');
+          if (defId === 'time:ticks_ms') classSet.add('ticks_ms');
+          if (defId === 'time:ticks_diff') classSet.add('ticks_diff');
+        }
+      }
+    }
+
+    // 3. Emit selective imports
+    for (const [mod, classSet] of selectiveImports.entries()) {
+      if (classSet.size > 0) {
+        const sorted = Array.from(classSet).sort().join(', ');
+        importSet.add(`from ${mod} import ${sorted}`);
+      }
+    }
+
+    // 4. Now process remaining imports from nodes
+    for (const node of nodes) {
+      // Explicit node imports (if library is not selectively imported)
       const def = LibraryRegistry.getNodeDefinition(node.data.definitionId);
       if (def?.codeTemplate?.imports) {
         for (const imp of def.codeTemplate.imports) {
-          if (imp.trim()) importSet.add(imp.trim());
+          if (imp.trim()) {
+            const isForSelective = Array.from(selectiveImports.keys()).some(
+              (mod) => imp.trim() === `import ${mod}` || imp.trim().startsWith(`from ${mod} import`)
+            );
+            if (!isForSelective) {
+              importSet.add(imp.trim());
+            }
+          }
         }
       }
 
@@ -144,12 +229,11 @@ export class CodeGenerator {
           const mod = item.module?.trim();
           if (!mod) continue;
 
-          if (!item.import_all && item.classes) {
-            importSet.add(`from ${mod} import ${item.classes}`);
-          } else {
+          if (item.import_all !== false) {
+            // Full import requested
             const lib = LibraryRegistry.getLibraryById(mod);
             if (lib && lib.importSnippet) {
-              lib.importSnippet.split('\n').forEach(line => {
+              lib.importSnippet.split('\n').forEach((line) => {
                 if (line.trim()) importSet.add(line.trim());
               });
             } else {
@@ -158,12 +242,16 @@ export class CodeGenerator {
           }
         }
       } else {
-        // Also check if the node's library provides an import snippet
-        const lib = LibraryRegistry.getLibraryById(node.data.libraryId);
-        if (lib && lib.id !== 'core' && lib.importSnippet) {
-          lib.importSnippet.split('\n').forEach(line => {
-            if (line.trim()) importSet.add(line.trim());
-          });
+        // Check if the node's library provides an import snippet
+        const libId = node.data.libraryId;
+        // DO NOT add import machine if machine is already selectively imported or explicitly imported!
+        if (!selectiveImports.has(libId) && !explicitlyImportedModules.has(libId)) {
+          const lib = LibraryRegistry.getLibraryById(libId);
+          if (lib && lib.id !== 'core' && lib.importSnippet) {
+            lib.importSnippet.split('\n').forEach((line) => {
+              if (line.trim()) importSet.add(line.trim());
+            });
+          }
         }
       }
 
@@ -175,7 +263,28 @@ export class CodeGenerator {
       }
     }
 
-    return Array.from(importSet).join('\n');
+    return {
+      importsCode: Array.from(importSet).join('\n'),
+      selectiveImports,
+    };
+  }
+
+  /**
+   * Replaces module-prefixed names with direct class names when selective imports are active
+   * (e.g. machine.Pin -> Pin, machine.PWM -> PWM)
+   */
+  private static applySelectiveImports(
+    code: string,
+    selectiveImports: Map<string, Set<string>>
+  ): string {
+    let result = code;
+    for (const [mod, classSet] of selectiveImports.entries()) {
+      for (const cls of classSet) {
+        const reg = new RegExp(`\\b${mod}\\.${cls}\\b`, 'g');
+        result = result.replace(reg, cls);
+      }
+    }
+    return result;
   }
 
   /**
@@ -261,13 +370,18 @@ export class CodeGenerator {
   }
 
   /**
-   * Section 3: Custom functions and IRQ callbacks
+   * Section 3: Custom functions, route handlers, and callbacks
    */
-  private static generateFunctions(nodes: Node<NodeInstanceData>[]): string {
-    const fnNodes = nodes.filter(n => n.data.definitionId === 'core:custom_function');
-    if (fnNodes.length === 0) return '';
-
+  private static generateFunctions(
+    nodes: Node<NodeInstanceData>[],
+    edges: Edge[],
+    nodeMap: Map<string, Node<NodeInstanceData>>,
+    outputVarMap: Map<string, string>
+  ): string {
     const lines: string[] = [];
+
+    // 1. Custom function nodes
+    const fnNodes = nodes.filter(n => n.data.definitionId === 'core:custom_function');
     for (const node of fnNodes) {
       const name = node.data.properties?.func_name || 'custom_fn';
       const params = node.data.properties?.params || '';
@@ -280,6 +394,23 @@ export class CodeGenerator {
         .join('\n');
 
       lines.push(`def ${name}(${params}):\n${formattedBody}\n`);
+    }
+
+    // 2. MicroPyServer route handlers
+    const routeNodes = nodes.filter(n => n.data.definitionId === 'micropyserver:route');
+    for (const node of routeNodes) {
+      const cleanId = node.id.replace(/[^a-zA-Z0-9]/g, '_');
+      const funcName = `${node.data.properties?.func_name || 'handle_route'}_${cleanId}`;
+      const paramsVar = outputVarMap.get(`${node.id}:params`) || `params_${cleanId}`;
+      const reqVar = outputVarMap.get(`${node.id}:request`) || `req_${cleanId}`;
+
+      const routeFlow = this.traverseFlow(node.id, 'flow_out', edges, nodeMap, outputVarMap, 1, new Set());
+      const bodyLines = [
+        `    ${reqVar} = request`,
+        `    ${paramsVar} = params`,
+        ...(routeFlow.length > 0 ? routeFlow : ['    pass'])
+      ];
+      lines.push(`def ${funcName}(request, params):\n${bodyLines.join('\n')}\n`);
     }
 
     return lines.join('\n');
@@ -297,7 +428,35 @@ export class CodeGenerator {
   ): string {
     const lines: string[] = [];
 
-    // 1. Flow starting from Start / Init node (if present)
+    // 1. Register Web Routes (if MicroPyServer route nodes exist)
+    const routeNodes = nodes.filter(n => n.data.definitionId === 'micropyserver:route');
+    if (routeNodes.length > 0) {
+      lines.push('# Register Web Routes');
+      for (const rNode of routeNodes) {
+        const cleanId = rNode.id.replace(/[^a-zA-Z0-9]/g, '_');
+        const funcName = `${rNode.data.properties?.func_name || 'handle_route'}_${cleanId}`;
+        const path = rNode.data.properties?.path || '/';
+
+        // Find server variable
+        const srvEdge = edges.find(e => e.target === rNode.id && e.targetHandle === 'server');
+        let srvVar = '';
+        if (srvEdge) {
+          srvVar = outputVarMap.get(`${srvEdge.source}:${srvEdge.sourceHandle}`) || '';
+        }
+        if (!srvVar) {
+          const srvNode = nodes.find(n => n.data.definitionId === 'micropyserver:init');
+          if (srvNode) {
+            srvVar = outputVarMap.get(`${srvNode.id}:server`) || `server_${srvNode.id.replace(/[^a-zA-Z0-9]/g, '_')}`;
+          } else {
+            srvVar = 'server';
+          }
+        }
+        lines.push(`${srvVar}.add_route('${path}', ${funcName})`);
+      }
+      lines.push('');
+    }
+
+    // 2. Flow starting from Start / Init node (if present)
     const startNode = nodes.find(n => n.data.definitionId === 'core:setup');
     if (startNode) {
       const startFlow = this.traverseFlow(startNode.id, 'flow_out', edges, nodeMap, outputVarMap, 0, new Set());
@@ -308,7 +467,7 @@ export class CodeGenerator {
       }
     }
 
-    // 2. Loop starting from While True Loop node
+    // 3. Loop starting from While True Loop node
     const loopNode = nodes.find(n => n.data.definitionId === 'core:while_loop');
     if (loopNode) {
       lines.push('while True:');
@@ -319,8 +478,17 @@ export class CodeGenerator {
         lines.push('    pass');
       }
     } else {
-      // Default fallback loop
-      lines.push('while True:\n    pass');
+      // Default fallback loop (or server start if MicroPyServer is used without explicit while loop)
+      const hasServerInit = nodes.some(n => n.data.definitionId === 'micropyserver:init');
+      const hasServerStartInFlow = nodes.some(n => n.data.definitionId === 'micropyserver:start');
+      if (hasServerInit && !hasServerStartInFlow) {
+        const srvNode = nodes.find(n => n.data.definitionId === 'micropyserver:init')!;
+        const srvVar = outputVarMap.get(`${srvNode.id}:server`) || `server_${srvNode.id.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        lines.push('# Start MicroPyServer loop');
+        lines.push(`${srvVar}.start()`);
+      } else {
+        lines.push('while True:\n    pass');
+      }
     }
 
     return lines.join('\n');

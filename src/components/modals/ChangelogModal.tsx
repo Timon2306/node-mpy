@@ -45,6 +45,60 @@ export const ChangelogModal: React.FC = () => {
 
         {/* Scrollable Changelog Body */}
         <div className="p-4 space-y-4 overflow-y-auto max-h-[440px] scrollbar-thin scrollbar-thumb-gray-600 select-text">
+          {/* Version 1.1.0 Visual Dashboard & PinLab Suite */}
+          <div className="space-y-3 p-3.5 rounded-lg bg-[#161920] border border-rose-500/50 shadow-lg">
+            <div className="flex items-center justify-between">
+              <span className="px-2.5 py-0.5 rounded text-[11px] font-mono font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40">
+                v1.1.0 — Visual IoT Dashboard & PinLab
+              </span>
+              <span className="text-[10px] text-rose-400 font-mono font-semibold">21.10.2026</span>
+            </div>
+
+            <p className="text-[11px] text-gray-300 leading-relaxed">
+              {isRu
+                ? 'Большой релиз: визуальный конструктор IoT-дашбордов (Dashboard Flows) со шкалами, графиками, тумблерами и ползунками, генерация чистого сервера на TypeScript, двусторонний IoT-мост с контроллером и поддержка 75 лабораторных экспериментов PinLab.'
+                : 'Major release: Visual IoT Dashboard studio with Gauges, Charts, Switches and Sliders, clean TypeScript server compiler, bi-directional IoT bridge with ESP controllers, and 75 PinLab course experiments.'}
+            </p>
+
+            <div className="space-y-2 text-gray-300">
+              <div className="space-y-1">
+                <span className="text-[11px] font-semibold text-rose-400 flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5 text-rose-400" />
+                  {isRu ? 'Конструктор дашбордов (Dashboard Flows)' : 'Visual Dashboard Studio'}
+                </span>
+                <p className="text-[11px] text-gray-400 pl-5 leading-snug">
+                  {isRu
+                    ? 'Ноды Шкалы (Gauge), Графика (Chart), Кнопок, Тумблеров, Ползунков (ШИМ/Серво) и светодиодов. Живой интерактивный запуск дашборда прямо в приложении.'
+                    : 'Gauges, Charts, Buttons, Switches, Sliders (PWM/Servo), and LEDs with live interactive in-app dashboard runner.'}
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-[11px] font-semibold text-teal-400 flex items-center gap-1.5">
+                  <Cpu className="w-3.5 h-3.5 text-teal-400" />
+                  {isRu ? 'Чистый TypeScript сервер и экспорт в 1 клик' : 'Clean TypeScript Server & 1-Click Export'}
+                </span>
+                <p className="text-[11px] text-gray-400 pl-5 leading-snug">
+                  {isRu
+                    ? 'Компактный сервер server.ts (~85 строк) с Server-Sent Events и отдельная веб-страница dashboard.html. Экспорт комплекта одной кнопкой.'
+                    : 'Clean server.ts (~85 lines) with Server-Sent Events and standalone dashboard.html. One-click project bundle export.'}
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-[11px] font-semibold text-blue-400 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+                  {isRu ? '115 нод и поддержка 75 экспериментов PinLab' : '115 Nodes & 75 PinLab Experiments'}
+                </span>
+                <p className="text-[11px] text-gray-400 pl-5 leading-snug">
+                  {isRu
+                    ? 'Добавлены модули DS18B20 1-Wire, RFID MFRC522, MicroPyServer. Умные селективные импорты (from machine import Pin) и ноды фильтрации команд.'
+                    : 'Added DS18B20 1-Wire, RFID MFRC522, MicroPyServer modules. Smart selective imports (from machine import Pin) and command filters.'}
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Version 1.0.1 WASM & Updater Release */}
           <div className="space-y-3 p-3.5 rounded-lg bg-[#161920] border border-teal-500/50 shadow-lg">
             <div className="flex items-center justify-between">

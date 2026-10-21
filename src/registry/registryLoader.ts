@@ -1,5 +1,6 @@
 import { LibraryPackageJSON, PaletteCategory } from '../types/registry';
 import { NodeDefinition } from '../types/nodes';
+import { FlowMode } from '../types/project';
 
 // Static imports of default JSON definitions
 import coreLib from './definitions/core.json';
@@ -14,6 +15,10 @@ import servoLib from './definitions/servo.json';
 import st7735Lib from './definitions/st7735.json';
 import i2cLcdLib from './definitions/i2c_lcd.json';
 import max7219Lib from './definitions/max7219.json';
+import ds18b20Lib from './definitions/ds18b20.json';
+import mfrc522Lib from './definitions/mfrc522.json';
+import micropyserverLib from './definitions/micropyserver.json';
+import dashboardLib from './definitions/dashboard.json';
 
 const BUILTIN_LIBRARIES: LibraryPackageJSON[] = [
   coreLib as unknown as LibraryPackageJSON,
@@ -28,6 +33,10 @@ const BUILTIN_LIBRARIES: LibraryPackageJSON[] = [
   st7735Lib as unknown as LibraryPackageJSON,
   i2cLcdLib as unknown as LibraryPackageJSON,
   max7219Lib as unknown as LibraryPackageJSON,
+  ds18b20Lib as unknown as LibraryPackageJSON,
+  mfrc522Lib as unknown as LibraryPackageJSON,
+  micropyserverLib as unknown as LibraryPackageJSON,
+  dashboardLib as unknown as LibraryPackageJSON,
 ];
 
 const STORAGE_KEY = 'node_mpy_custom_libraries_v1';
@@ -122,15 +131,28 @@ export class LibraryRegistry {
   }
 
   /**
-   * Builds the categorized palette for the left sidebar based on unlocked/imported libraries
+   * Builds the categorized palette for the left sidebar based on unlocked/imported libraries and active flow mode
    */
-  public static getPaletteCategories(unlockedLibraryIds: string[]): PaletteCategory[] {
+  public static getPaletteCategories(unlockedLibraryIds: string[], flowMode: FlowMode = 'micropython'): PaletteCategory[] {
     const allLibs = this.getAllLibraries();
     const categoriesMap: Map<string, PaletteCategory> = new Map();
 
     for (const lib of allLibs) {
+      // In Dashboard mode: show Dashboard library and general Core logic; hide hardware MicroPython libs
+      if (flowMode === 'dashboard') {
+        if (lib.id !== 'dashboard' && lib.id !== 'core') {
+          continue;
+        }
+      } else {
+        // In MicroPython mode: hide Dashboard library
+        if (lib.id === 'dashboard') {
+          continue;
+        }
+      }
+
       const isCore = lib.id === 'core';
-      const isUnlocked = isCore || unlockedLibraryIds.includes(lib.id);
+      const isDashboard = lib.id === 'dashboard';
+      const isUnlocked = isCore || isDashboard || unlockedLibraryIds.includes(lib.id);
 
       if (!categoriesMap.has(lib.category)) {
         categoriesMap.set(lib.category, {
@@ -157,7 +179,7 @@ export class LibraryRegistry {
       }
     }
 
-    return Array.from(categoriesMap.values()).filter(cat => cat.nodes.length > 0 || cat.name === 'Core');
+    return Array.from(categoriesMap.values()).filter(cat => cat.nodes.length > 0 || cat.name === 'Core' || cat.name === 'Dashboard');
   }
 
   /**

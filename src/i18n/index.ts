@@ -9,6 +9,17 @@ export interface Translations {
     openTooltip: string;
     saveButton: string;
     saveTooltip: string;
+    saveSchema: string;
+    saveSchemaDesc: string;
+    saveSvg: string;
+    saveSvgDesc: string;
+    savePng: string;
+    savePngDesc: string;
+    savePy: string;
+    savePyDesc: string;
+    copyJson: string;
+    copyJsonDesc: string;
+    schemaCopied: string;
     clearTooltip: string;
     clearConfirm: string;
     exportButton: string;
@@ -84,7 +95,18 @@ export const translations: Record<Language, Translations> = {
       openButton: 'Открыть',
       openTooltip: 'Открыть проект (.nodempy.json)',
       saveButton: 'Сохранить',
-      saveTooltip: 'Сохранить схему проекта (.nodempy.json)',
+      saveTooltip: 'Экспорт и сохранение схемы или кода',
+      saveSchema: 'Схема проекта (.nodempy.json)',
+      saveSchemaDesc: 'Полная структура со всеми нодами и связями',
+      saveSvg: 'Векторная схема (.svg)',
+      saveSvgDesc: 'Масштабируемый вектор для отчетов и схем',
+      savePng: 'Изображение схемы (.png)',
+      savePngDesc: 'Растровый снимок холста (Hi-Res)',
+      savePy: 'Скрипт MicroPython (main.py)',
+      savePyDesc: 'Чистый исполняемый код для платы',
+      copyJson: 'Скопировать JSON схемы',
+      copyJsonDesc: 'В буфер обмена без создания файла',
+      schemaCopied: 'JSON схемы скопирован в буфер обмена!',
       clearTooltip: 'Очистить холст',
       clearConfirm: 'Очистить весь холст? Все несохраненные блоки будут удалены.',
       exportButton: 'Export main.py',
@@ -109,6 +131,7 @@ export const translations: Record<Language, Translations> = {
         Timing: 'Timing (Тайминги и Задержки)',
         Network: 'Network (Wi-Fi и Сеть)',
         Lighting: 'Lighting (Адресные LED)',
+        Dashboard: 'Dashboard (Интерфейс и Виджеты)',
       },
     },
     inspector: {
@@ -181,7 +204,18 @@ export const translations: Record<Language, Translations> = {
       openButton: 'Open',
       openTooltip: 'Open project (.nodempy.json)',
       saveButton: 'Save',
-      saveTooltip: 'Save project schema (.nodempy.json)',
+      saveTooltip: 'Export and save project schema or code',
+      saveSchema: 'Project Schema (.nodempy.json)',
+      saveSchemaDesc: 'Complete structure with all nodes and connections',
+      saveSvg: 'Vector Diagram (.svg)',
+      saveSvgDesc: 'Scalable vector graphic for reports & docs',
+      savePng: 'Diagram Snapshot (.png)',
+      savePngDesc: 'High-resolution raster screenshot',
+      savePy: 'MicroPython Script (main.py)',
+      savePyDesc: 'Clean executable code for the board',
+      copyJson: 'Copy Schema JSON',
+      copyJsonDesc: 'To clipboard without creating a file',
+      schemaCopied: 'Schema JSON copied to clipboard!',
       clearTooltip: 'Clear Canvas',
       clearConfirm: 'Clear entire canvas? All unsaved blocks will be lost.',
       exportButton: 'Export main.py',
@@ -207,6 +241,7 @@ export const translations: Record<Language, Translations> = {
         Timing: 'Timing & Delays',
         Network: 'Network (Wi-Fi)',
         Lighting: 'Lighting (NeoPixel LEDs)',
+        Dashboard: 'Dashboard (UI Widgets)',
       },
     },
     inspector: {

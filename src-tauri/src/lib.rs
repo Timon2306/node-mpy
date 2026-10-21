@@ -9,6 +9,16 @@ fn save_project(json: String, path: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn save_file_content(content: String, path: String) -> Result<(), String> {
+    std::fs::write(&path, content).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn save_file_bytes(bytes: Vec<u8>, path: String) -> Result<(), String> {
+    std::fs::write(&path, &bytes).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn load_project(path: String) -> Result<String, String> {
     std::fs::read_to_string(&path).map_err(|e| e.to_string())
 }
@@ -85,6 +95,8 @@ pub fn run() {
             save_main_py,
             save_project,
             load_project,
+            save_file_content,
+            save_file_bytes,
             open_file_folder,
             open_browser_url
         ])

@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] — 2026-10-21 (Visual IoT Dashboard & PinLab Suite)
+
+### 🚀 Highlights
+- **Visual IoT Dashboard Studio (Dashboard Flows)**: Dedicated flow mode for designing browser-based dashboards with drag-and-drop nodes:
+  - **Gauge (Шкала)**: Real-time radial dial gauge with configurable min/max range and measurement units.
+  - **Chart (График)**: Multi-point live time-series canvas chart.
+  - **Buttons & Switches (Кнопки и Тумблеры)**: Custom labels, color themes, and custom command payloads (`FAN_ON`, `START_PUMP`, etc.).
+  - **Sliders (Ползунки)**: Smooth continuous adjustment (0..1023 for PWM brightness or 0..180 for Servo angles).
+  - **LED Indicators & Text**: Live hardware status indicators and formatted values.
+  - **Interactive In-App Runner**: 1-click «Запустить дашборд» launches live interactive telemetry simulation inside the app.
+- **Clean TypeScript Backend Generator (`server.ts`)**:
+  - Concise ~85-line TypeScript backend server with Server-Sent Events (SSE) for instant real-time telemetry broadcast.
+  - Standalone dark-themed `dashboard.html` web application with responsive layout and zero external runtime dependencies.
+  - Dual-mode inspector code viewer: toggle between `[ server.ts ]` and `[ dashboard.html ]`.
+  - 1-click **«Экспорт дашборда»**: saves both `server.ts` and `dashboard.html` together in a single folder ready to run (`npx tsx server.ts`).
+- **Universal Two-Way IoT Controller Bridge**:
+  - **`network:dashboard_client`**: Multi-sensor reverse-polling client sending telemetry (`val1`, `val2`) and receiving text commands and slider numbers from any dashboard control.
+  - **`network:dashboard_command`**: Dedicated command filter node enabling direct wiring to relays, LEDs, motors, or conditional branches.
+- **Hardware Expansion & PinLab Compatibility (115 nodes total)**:
+  - 100% test pass across all 75 laboratory experiments from the PinLab course.
+  - Added native modules: **DS18B20** (1-Wire digital thermometer), **RFID MFRC522** (MIFARE card/tag reader), and **MicroPyServer** (embedded lightweight microcontroller web server).
+  - Smart selective Python imports (`from machine import Pin` instead of forced global `import machine`).
+  - Polished node layout, fixed text clipping, and responsive port widths.
+
 ## [1.0.1] — 2026-10-18 (MicroPython WASM, IoT Nodes & GitHub Auto-Updater)
 
 ### 🚀 Highlights

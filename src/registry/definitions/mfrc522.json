@@ -1,0 +1,71 @@
+{
+  "id": "mfrc522",
+  "name": "MFRC522 (RFID считыватель)",
+  "version": "1.0.0",
+  "description": "Модуль RFID RC522 (13.56 МГц) для чтения бесконтактных карт, меток и брелоков",
+  "isNative": false,
+  "category": "Hardware",
+  "color": "#6366F1",
+  "icon": "CreditCard",
+  "importSnippet": "import mfrc522\nfrom machine import Pin",
+  "nodes": [
+    {
+      "id": "mfrc522:init",
+      "libraryId": "mfrc522",
+      "label": "RFID MFRC522 Init",
+      "category": "Hardware",
+      "color": "#6366F1",
+      "icon": "CreditCard",
+      "description": "Инициализация RFID-считывателя MFRC522 с назначением пинов SCK, MOSI, MISO, RST, SDA",
+      "inputs": [],
+      "outputs": [
+        { "id": "reader", "name": "reader", "type": "device", "label": "RFID Reader" }
+      ],
+      "properties": [
+        { "id": "sck", "name": "sck", "type": "number", "label": "SCK Pin", "defaultValue": 0, "min": 0, "max": 48 },
+        { "id": "mosi", "name": "mosi", "type": "number", "label": "MOSI Pin", "defaultValue": 2, "min": 0, "max": 48 },
+        { "id": "miso", "name": "miso", "type": "number", "label": "MISO Pin", "defaultValue": 12, "min": 0, "max": 48 },
+        { "id": "rst", "name": "rst", "type": "number", "label": "RST Pin", "defaultValue": 13, "min": 0, "max": 48 },
+        { "id": "sda", "name": "sda", "type": "number", "label": "SDA / CS Pin", "defaultValue": 14, "min": 0, "max": 48 }
+      ],
+      "codeTemplate": {
+        "section": "init",
+        "imports": [
+          "import mfrc522",
+          "from machine import Pin"
+        ],
+        "template": "rdr_{{id}} = mfrc522.MFRC522({{props.sck}}, {{props.mosi}}, {{props.miso}}, {{props.rst}}, {{props.sda}})",
+        "outputVariables": {
+          "reader": "rdr_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "mfrc522:read_card",
+      "libraryId": "mfrc522",
+      "label": "RFID Read Card",
+      "category": "Hardware",
+      "color": "#6366F1",
+      "icon": "Radio",
+      "description": "Проверка наличия RFID-карты и считывание её уникального номера (UID)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "reader", "name": "reader", "type": "device", "label": "Reader" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" },
+        { "id": "has_card", "name": "has_card", "type": "boolean", "label": "Has Card" },
+        { "id": "card_uid", "name": "card_uid", "type": "string", "label": "Card UID (Hex)" }
+      ],
+      "properties": [],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "stat_{{id}}, _ = {{inputs.reader}}.request({{inputs.reader}}.REQIDL)\n{{output.has_card}} = False\n{{output.card_uid}} = ''\nif stat_{{id}} == {{inputs.reader}}.OK:\n    stat_{{id}}, raw_uid_{{id}} = {{inputs.reader}}.anticoll()\n    if stat_{{id}} == {{inputs.reader}}.OK and len(raw_uid_{{id}}) >= 4:\n        {{output.has_card}} = True\n        {{output.card_uid}} = '0x{:02x}{:02x}{:02x}{:02x}'.format(raw_uid_{{id}}[0], raw_uid_{{id}}[1], raw_uid_{{id}}[2], raw_uid_{{id}}[3])",
+        "outputVariables": {
+          "has_card": "has_card_{{id}}",
+          "card_uid": "card_uid_{{id}}"
+        }
+      }
+    }
+  ]
+}

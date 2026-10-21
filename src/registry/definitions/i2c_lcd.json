@@ -2,12 +2,12 @@
   "id": "i2c_lcd",
   "name": "I2C LCD (Символьный экран 1602 / 2004)",
   "version": "1.0.0",
-  "description": "Символьные дисплеи LCD 1602 и 2004 с I2C-адаптером PCF8574",
+  "description": "Символьные дисплеи LCD 1602 и 2004 с I2C-адаптером PCF8574 (поддержка esp8266_i2c_lcd и i2c_lcd)",
   "isNative": false,
   "category": "Displays",
   "color": "#10B981",
   "icon": "Grid",
-  "importSnippet": "from i2c_lcd import I2cLcd",
+  "importSnippet": "try:\n    from esp8266_i2c_lcd import I2cLcd\nexcept ImportError:\n    from i2c_lcd import I2cLcd",
   "nodes": [
     {
       "id": "i2c_lcd:init",
@@ -30,6 +30,9 @@
       ],
       "codeTemplate": {
         "section": "init",
+        "imports": [
+          "try:\n    from esp8266_i2c_lcd import I2cLcd\nexcept ImportError:\n    from i2c_lcd import I2cLcd"
+        ],
         "template": "lcd_{{id}} = I2cLcd({{inputs.bus}}, {{props.addr}}, {{props.lines}}, {{props.cols}})",
         "outputVariables": {
           "lcd": "lcd_{{id}}"
@@ -106,6 +109,53 @@
       "codeTemplate": {
         "section": "flow",
         "template": "{{inputs.lcd}}.clear()"
+      }
+    },
+    {
+      "id": "i2c_lcd:backlight",
+      "libraryId": "i2c_lcd",
+      "label": "LCD Backlight",
+      "category": "Displays",
+      "color": "#10B981",
+      "icon": "Sun",
+      "description": "Включение или выключение подсветки экрана LCD",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "lcd", "name": "lcd", "type": "device", "label": "LCD" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [
+        { "id": "enabled", "name": "enabled", "type": "boolean", "label": "Подсветка включена", "defaultValue": true }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{% if props.enabled %}{{inputs.lcd}}.hal_backlight_on(){% else %}{{inputs.lcd}}.hal_backlight_off(){% endif %}"
+      }
+    },
+    {
+      "id": "i2c_lcd:custom_char",
+      "libraryId": "i2c_lcd",
+      "label": "LCD Custom Char",
+      "category": "Displays",
+      "color": "#10B981",
+      "icon": "Smile",
+      "description": "Регистрация пользовательского символа/иконки (0-7)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "lcd", "name": "lcd", "type": "device", "label": "LCD" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [
+        { "id": "location", "name": "location", "type": "number", "label": "Слот символа (0-7)", "defaultValue": 0, "min": 0, "max": 7 },
+        { "id": "charmap", "name": "charmap", "type": "text", "label": "Байт-маска (8 чисел)", "defaultValue": "[0x00, 0x0A, 0x1F, 0x1F, 0x0E, 0x04, 0x00, 0x00]" }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{inputs.lcd}}.custom_char({{props.location}}, bytearray({{props.charmap}}))"
       }
     }
   ]

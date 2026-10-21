@@ -489,4 +489,257 @@ if (!complexResult.code.includes('if logic_logic_op:')) {
 
 console.log('✓ Complex multi-node flow with Math, Logic, Random, Network, If/Else passed with flying colors!\n');
 
+// --- TEST 4: MicroPyServer + File I/O + String Replace ---
+const serverNodes: Node<NodeInstanceData>[] = [
+  {
+    id: 'srv_init',
+    type: 'nodeMpy',
+    position: { x: 0, y: 0 },
+    data: {
+      definitionId: 'micropyserver:init',
+      libraryId: 'micropyserver',
+      label: 'Server Init',
+      color: '#06B6D4',
+      icon: 'Server',
+      properties: { port: 80 },
+    },
+  },
+  {
+    id: 'srv_route',
+    type: 'nodeMpy',
+    position: { x: 0, y: 0 },
+    data: {
+      definitionId: 'micropyserver:route',
+      libraryId: 'micropyserver',
+      label: 'Route /',
+      color: '#06B6D4',
+      icon: 'CornerDownRight',
+      properties: { path: '/', func_name: 'index' },
+    },
+  },
+  {
+    id: 'file_read_node',
+    type: 'nodeMpy',
+    position: { x: 0, y: 0 },
+    data: {
+      definitionId: 'core:file_read',
+      libraryId: 'core',
+      label: 'Read page2.html',
+      color: '#10B981',
+      icon: 'File',
+      properties: { filename: 'page2.html' },
+    },
+  },
+  {
+    id: 'str_replace_node',
+    type: 'nodeMpy',
+    position: { x: 0, y: 0 },
+    data: {
+      definitionId: 'core:string_replace',
+      libraryId: 'core',
+      label: 'Replace Value',
+      color: '#EAB308',
+      icon: 'Replace',
+      properties: { search: '<=VALUE=>', replace: '1023' },
+    },
+  },
+  {
+    id: 'srv_send',
+    type: 'nodeMpy',
+    position: { x: 0, y: 0 },
+    data: {
+      definitionId: 'micropyserver:send',
+      libraryId: 'micropyserver',
+      label: 'Send HTML',
+      color: '#06B6D4',
+      icon: 'Send',
+      properties: { content_type: 'text/html' },
+    },
+  },
+];
+
+const serverEdges: Edge[] = [
+  // Wire srv_init to srv_route
+  { id: 'se1', source: 'srv_init', sourceHandle: 'server', target: 'srv_route', targetHandle: 'server' },
+
+  // Route flow: route -> file_read -> send
+  { id: 'se2', source: 'srv_route', sourceHandle: 'flow_out', target: 'file_read_node', targetHandle: 'flow_in' },
+  { id: 'se3', source: 'file_read_node', sourceHandle: 'flow_out', target: 'srv_send', targetHandle: 'flow_in' },
+
+  // Data flow: file_read (content) -> str_replace (text)
+  { id: 'se4', source: 'file_read_node', sourceHandle: 'content', target: 'str_replace_node', targetHandle: 'text' },
+
+  // Data flow: str_replace (result) -> send (content)
+  { id: 'se5', source: 'str_replace_node', sourceHandle: 'result', target: 'srv_send', targetHandle: 'content' },
+
+  // Wire srv_init to srv_send
+  { id: 'se6', source: 'srv_init', sourceHandle: 'server', target: 'srv_send', targetHandle: 'server' },
+];
+
+const serverResult = CodeGenerator.generateCode(serverNodes, serverEdges);
+console.log('MicroPyServer Flow Code:\n' + serverResult.code + '\n');
+
+// Assertions on MicroPyServer flow:
+if (!serverResult.code.includes('from micropyserver import MicroPyServer')) {
+  console.error('FAILED: MicroPyServer import missing');
+  process.exit(1);
+}
+
+if (!serverResult.code.includes('server_srv_init = MicroPyServer(port=80)')) {
+  console.error('FAILED: MicroPyServer init missing');
+  process.exit(1);
+}
+
+if (!serverResult.code.includes('def index_srv_route(request, params):')) {
+  console.error('FAILED: Route function definition missing');
+  process.exit(1);
+}
+
+if (!serverResult.code.includes('open("page2.html", \'r\')')) {
+  console.error('FAILED: file_read call missing');
+  process.exit(1);
+}
+
+if (!serverResult.code.includes('.replace("<=VALUE=>", str(1023))')) {
+  console.error('FAILED: string replace call missing');
+  process.exit(1);
+}
+
+if (!serverResult.code.includes('server_srv_init.send(') || !serverResult.code.includes("content_type='Content-Type: text/html'")) {
+  console.error('FAILED: server.send call missing or content_type mismatch');
+  process.exit(1);
+}
+
+if (!serverResult.code.includes("server_srv_init.add_route('/', index_srv_route)")) {
+  console.error('FAILED: server.add_route registration missing');
+  process.exit(1);
+}
+
+if (!serverResult.code.includes('server_srv_init.start()')) {
+  console.error('FAILED: server.start() loop missing');
+  process.exit(1);
+}
+
+console.log('✓ MicroPyServer + File Read + String Replace + Route Registration passed with 100% accuracy!\n');
+
+// --- TEST 5: Selective Imports from Module (e.g. from machine import Pin) ---
+console.log('--- TEST 5: Selective Imports from Module (from machine import Pin) ---');
+const selectiveImportNodes = [
+  {
+    id: 'import_node',
+    type: 'nodeMpy',
+    position: { x: 0, y: 0 },
+    data: {
+      definitionId: 'core:import_module',
+      libraryId: 'core',
+      label: 'Import Module',
+      color: '#3B82F6',
+      icon: 'Box',
+      properties: {
+        imports: [
+          { module: 'machine', import_all: false, classes: 'Pin' }
+        ]
+      }
+    }
+  },
+  {
+    id: 'pin_node',
+    type: 'nodeMpy',
+    position: { x: 0, y: 0 },
+    data: {
+      definitionId: 'machine:pin_init',
+      libraryId: 'machine',
+      label: 'Pin Config',
+      color: '#10B981',
+      icon: 'ToggleLeft',
+      properties: { pin: 4, mode: 'OUT', pull: 'None' }
+    }
+  }
+];
+
+const selectiveResult = CodeGenerator.generateCode(selectiveImportNodes as any, []);
+
+if (!selectiveResult.code.includes('from machine import Pin')) {
+  console.error('FAILED: Expected "from machine import Pin" in imports');
+  process.exit(1);
+}
+
+if (selectiveResult.code.includes('import machine\n') || selectiveResult.code.endsWith('import machine')) {
+  console.error('FAILED: Unwanted "import machine" found when selective import active');
+  process.exit(1);
+}
+
+if (!selectiveResult.code.includes('pin_4 = Pin(4, Pin.OUT)')) {
+  console.error('FAILED: Expected "pin_4 = Pin(4, Pin.OUT)", got:', selectiveResult.code);
+  process.exit(1);
+}
+
+if (selectiveResult.code.includes('machine.Pin')) {
+  console.error('FAILED: Found "machine.Pin" instead of direct "Pin" call');
+  process.exit(1);
+}
+
+console.log('✓ Selective import test passed: clean "from machine import Pin" and "Pin(4, Pin.OUT)" without "import machine"!\n');
+
+// --- TEST 6: Dashboard Client Node (IoT Telemetry & Command) ---
+console.log('--- TEST 6: Dashboard Client Node (IoT Telemetry & Command) ---');
+const dashClientNodes = [
+  {
+    id: 'while_loop',
+    type: 'nodeMpy',
+    position: { x: 0, y: 0 },
+    data: {
+      definitionId: 'core:while_loop',
+      libraryId: 'core',
+      label: 'While True Loop',
+      color: '#3B82F6',
+      icon: 'Repeat',
+      properties: {}
+    }
+  },
+  {
+    id: 'dash_client_1',
+    type: 'nodeMpy',
+    position: { x: 0, y: 0 },
+    data: {
+      definitionId: 'network:dashboard_client',
+      libraryId: 'network',
+      label: 'Отправка в Дашборд',
+      color: '#06B6D4',
+      icon: 'Radio',
+      properties: {
+        server_ip: '192.168.17.14',
+        server_port: 1880,
+        path: '/light',
+        param: 'value'
+      }
+    }
+  }
+];
+
+const dashClientEdges = [
+  {
+    id: 'e_while_to_dash',
+    source: 'while_loop',
+    sourceHandle: 'loop_body',
+    target: 'dash_client_1',
+    targetHandle: 'flow_in'
+  }
+];
+
+const dashClientRes = CodeGenerator.generateCode(dashClientNodes as any, dashClientEdges as any);
+if (!dashClientRes.code.includes("connect(('192.168.17.14', 1880))")) {
+  console.error('FAILED: Expected socket connect with server_ip and server_port. Got:', dashClientRes.code);
+  process.exit(1);
+}
+if (!dashClientRes.code.includes("'/light?value='")) {
+  console.error('FAILED: Expected /light?value= in request query string');
+  process.exit(1);
+}
+if (!dashClientRes.code.includes("b'CMD_ON' in _raw_dash_client_1")) {
+  console.error('FAILED: Expected CMD_ON check in response');
+  process.exit(1);
+}
+console.log('✓ Dashboard client node compiles cleanly with socket telemetry and CMD_ON command check!\n');
+
 console.log('ALL TESTS PASSED SUCCESSFULLY!');

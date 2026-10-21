@@ -1,13 +1,13 @@
 {
   "id": "st7735",
   "name": "ST7735 / TFT (Цветной TFT дисплей SPI)",
-  "version": "1.0.0",
-  "description": "Цветные графические TFT экраны 128x160 и 128x128 по аппаратной шине SPI",
+  "version": "1.1.0",
+  "description": "Цветные графические TFT экраны 128x160 и 128x128 по аппаратной шине SPI (библиотеки tft и st7735)",
   "isNative": false,
   "category": "Displays",
   "color": "#8B5CF6",
   "icon": "Monitor",
-  "importSnippet": "from tft import TFT\nfrom st7735 import ST7735\nimport machine",
+  "importSnippet": "try:\n    from tft import TFT_GREEN as TFTDisplay, TFT\nexcept ImportError:\n    from st7735 import ST7735 as TFTDisplay\nimport font\nimport machine",
   "nodes": [
     {
       "id": "st7735:init",
@@ -27,12 +27,18 @@
         { "id": "width", "name": "width", "type": "number", "label": "Ширина (px)", "defaultValue": 128 },
         { "id": "height", "name": "height", "type": "number", "label": "Высота (px)", "defaultValue": 160 },
         { "id": "dc_pin", "name": "dc_pin", "type": "number", "label": "DC / RS Пин", "defaultValue": 4 },
-        { "id": "cs_pin", "name": "cs_pin", "type": "number", "label": "CS Пин", "defaultValue": 5 },
-        { "id": "rst_pin", "name": "rst_pin", "type": "number", "label": "RST Пин", "defaultValue": 16 }
+        { "id": "cs_pin", "name": "cs_pin", "type": "number", "label": "CS Пин", "defaultValue": 2 },
+        { "id": "rst_pin", "name": "rst_pin", "type": "number", "label": "RST Пин", "defaultValue": 5 },
+        { "id": "rotate", "name": "rotate", "type": "number", "label": "Поворот (0, 90, 180, 270)", "defaultValue": 0 }
       ],
       "codeTemplate": {
         "section": "init",
-        "template": "tft_{{id}} = TFT({{props.width}}, {{props.height}}, {{inputs.spi_bus}}, dc=machine.Pin({{props.dc_pin}}, machine.Pin.OUT), cs=machine.Pin({{props.cs_pin}}, machine.Pin.OUT), rst=machine.Pin({{props.rst_pin}}, machine.Pin.OUT))\ntft_{{id}}.init()",
+        "imports": [
+          "try:\n    from tft import TFT_GREEN, TFT\nexcept ImportError:\n    from st7735 import ST7735 as TFT_GREEN, ST7735 as TFT",
+          "import font",
+          "import machine"
+        ],
+        "template": "dc_pin_{{id}} = machine.Pin({{props.dc_pin}}, machine.Pin.OUT)\ncs_pin_{{id}} = machine.Pin({{props.cs_pin}}, machine.Pin.OUT)\nrst_pin_{{id}} = machine.Pin({{props.rst_pin}}, machine.Pin.OUT)\ntft_{{id}} = TFT_GREEN({{props.width}}, {{props.height}}, {{inputs.spi_bus}}, dc_pin_{{id}}, cs_pin_{{id}}, rst_pin_{{id}}, rotate={{props.rotate}})\ntry:\n    tft_{{id}}.initr(tft_{{id}}.BGR)\nexcept AttributeError:\n    tft_{{id}}.init()",
         "outputVariables": {
           "tft": "tft_{{id}}"
         }
@@ -48,31 +54,31 @@
       "description": "Очистка экрана заливкой сплошным цветом",
       "inputs": [
         { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
-        { "id": "tft", "name": "tft", "type": "device", "label": "TFT" }
+        { "id": "tft", "name": "tft", "type": "device", "label": "TFT" },
+        { "id": "color", "name": "color", "type": "number", "label": "Color" }
       ],
       "outputs": [
         { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
       ],
       "properties": [
         {
-          "id": "color",
-          "name": "color",
+          "id": "color_preset",
+          "name": "color_preset",
           "type": "select",
           "label": "Цвет заливки",
-          "defaultValue": "ST7735.COLOR_BLACK",
+          "defaultValue": "BLACK",
           "options": [
-            { "label": "Черный (BLACK)", "value": "ST7735.COLOR_BLACK" },
-            { "label": "Белый (WHITE)", "value": "ST7735.COLOR_WHITE" },
-            { "label": "Синий (BLUE)", "value": "ST7735.COLOR_BLUE" },
-            { "label": "Красный (RED)", "value": "ST7735.COLOR_RED" },
-            { "label": "Зеленый (GREEN)", "value": "ST7735.COLOR_GREEN" },
-            { "label": "Циан (CYAN)", "value": "ST7735.COLOR_CYAN" }
+            { "label": "Черный (BLACK)", "value": "BLACK" },
+            { "label": "Белый (WHITE)", "value": "WHITE" },
+            { "label": "Синий (BLUE)", "value": "BLUE" },
+            { "label": "Красный (RED)", "value": "RED" },
+            { "label": "Зеленый (GREEN)", "value": "GREEN" }
           ]
         }
       ],
       "codeTemplate": {
         "section": "flow",
-        "template": "{{inputs.tft}}.clear({{props.color}})"
+        "template": "{% if inputs.color %}{{inputs.tft}}.clear({{inputs.color}}){% elif props.color_preset == 'BLACK' %}{{inputs.tft}}.clear(0x0000){% elif props.color_preset == 'WHITE' %}{{inputs.tft}}.clear(0xFFFF){% elif props.color_preset == 'RED' %}{{inputs.tft}}.clear(0xF800){% elif props.color_preset == 'GREEN' %}{{inputs.tft}}.clear(0x07E0){% elif props.color_preset == 'BLUE' %}{{inputs.tft}}.clear(0x001F){% else %}{{inputs.tft}}.clear(0x0000){% endif %}"
       }
     },
     {
@@ -95,13 +101,141 @@
       ],
       "properties": [
         { "id": "def_text", "name": "def_text", "type": "text", "label": "Текст по умолч.", "defaultValue": "Node-MPY" },
-        { "id": "def_x", "name": "def_x", "type": "number", "label": "X", "defaultValue": 10 },
-        { "id": "def_y", "name": "def_y", "type": "number", "label": "Y", "defaultValue": 10 },
-        { "id": "size", "name": "size", "type": "number", "label": "Масштаб шрифта", "defaultValue": 1 }
+        { "id": "def_x", "name": "def_x", "type": "number", "label": "X", "defaultValue": 5 },
+        { "id": "def_y", "name": "def_y", "type": "number", "label": "Y", "defaultValue": 5 },
+        { "id": "size", "name": "size", "type": "number", "label": "Масштаб шрифта", "defaultValue": 1 },
+        {
+          "id": "color_preset",
+          "name": "color_preset",
+          "type": "select",
+          "label": "Цвет текста",
+          "defaultValue": "0xFFFF",
+          "options": [
+            { "label": "Белый (WHITE)", "value": "0xFFFF" },
+            { "label": "Зеленый (GREEN)", "value": "0x07E0" },
+            { "label": "Красный (RED)", "value": "0xF800" },
+            { "label": "Синий (BLUE)", "value": "0x001F" },
+            { "label": "Желтый (YELLOW)", "value": "0xFFE0" },
+            { "label": "Черный (BLACK)", "value": "0x0000" }
+          ]
+        }
       ],
       "codeTemplate": {
         "section": "flow",
-        "template": "{{inputs.tft}}.chars(str({{inputs.text || props.def_text}}), {{inputs.x || props.def_x}}, {{inputs.y || props.def_y}}, ST7735.COLOR_WHITE, {{props.size}})"
+        "template": "try:\n    {{inputs.tft}}.text({{inputs.x || props.def_x}}, {{inputs.y || props.def_y}}, str({{inputs.text || props.def_text}}), font.terminalfont, {{props.color_preset}}, {{props.size}})\nexcept (AttributeError, TypeError):\n    {{inputs.tft}}.chars(str({{inputs.text || props.def_text}}), {{inputs.x || props.def_x}}, {{inputs.y || props.def_y}}, {{props.color_preset}}, {{props.size}})"
+      }
+    },
+    {
+      "id": "st7735:draw_bmp",
+      "libraryId": "st7735",
+      "label": "TFT Draw BMP Image",
+      "category": "Displays",
+      "color": "#8B5CF6",
+      "icon": "Image",
+      "description": "Отрисовка BMP-изображения из файловой системы на экране",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "tft", "name": "tft", "type": "device", "label": "TFT" },
+        { "id": "x", "name": "x", "type": "number", "label": "X" },
+        { "id": "y", "name": "y", "type": "number", "label": "Y" },
+        { "id": "filename", "name": "filename", "type": "string", "label": "Filename" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [
+        { "id": "def_x", "name": "def_x", "type": "number", "label": "X", "defaultValue": 0 },
+        { "id": "def_y", "name": "def_y", "type": "number", "label": "Y", "defaultValue": 0 },
+        { "id": "def_filename", "name": "def_filename", "type": "text", "label": "Имя BMP файла", "defaultValue": "image.bmp" }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{inputs.tft}}.draw_bmp({{inputs.x || props.def_x}}, {{inputs.y || props.def_y}}, str({{inputs.filename || ('\"' + props.def_filename + '\"')}}))"
+      }
+    },
+    {
+      "id": "st7735:rect",
+      "libraryId": "st7735",
+      "label": "TFT Draw Rectangle",
+      "category": "Displays",
+      "color": "#8B5CF6",
+      "icon": "Square",
+      "description": "Рисование прямоугольника (контур или заливка)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "tft", "name": "tft", "type": "device", "label": "TFT" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [
+        { "id": "x", "name": "x", "type": "number", "label": "X", "defaultValue": 10 },
+        { "id": "y", "name": "y", "type": "number", "label": "Y", "defaultValue": 10 },
+        { "id": "w", "name": "w", "type": "number", "label": "Ширина W", "defaultValue": 50 },
+        { "id": "h", "name": "h", "type": "number", "label": "Высота H", "defaultValue": 30 },
+        { "id": "fill", "name": "fill", "type": "boolean", "label": "Заливка (fillrect)", "defaultValue": true },
+        { "id": "color", "name": "color", "type": "text", "label": "16-битный цвет (HEX)", "defaultValue": "0x07E0" }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{% if props.fill %}{{inputs.tft}}.fillrect({{props.x}}, {{props.y}}, {{props.w}}, {{props.h}}, {{props.color}}){% else %}{{inputs.tft}}.rect({{props.x}}, {{props.y}}, {{props.w}}, {{props.h}}, {{props.color}}){% endif %}"
+      }
+    },
+    {
+      "id": "st7735:line",
+      "libraryId": "st7735",
+      "label": "TFT Draw Line",
+      "category": "Displays",
+      "color": "#8B5CF6",
+      "icon": "Minus",
+      "description": "Рисование отрезка прямой линии от (x0, y0) до (x1, y1)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "tft", "name": "tft", "type": "device", "label": "TFT" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [
+        { "id": "x0", "name": "x0", "type": "number", "label": "X0", "defaultValue": 0 },
+        { "id": "y0", "name": "y0", "type": "number", "label": "Y0", "defaultValue": 0 },
+        { "id": "x1", "name": "x1", "type": "number", "label": "X1", "defaultValue": 127 },
+        { "id": "y1", "name": "y1", "type": "number", "label": "Y1", "defaultValue": 159 },
+        { "id": "color", "name": "color", "type": "text", "label": "16-битный цвет (HEX)", "defaultValue": "0xFFFF" }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{inputs.tft}}.line({{props.x0}}, {{props.y0}}, {{props.x1}}, {{props.y1}}, {{props.color}})"
+      }
+    },
+    {
+      "id": "st7735:rgb_color",
+      "libraryId": "st7735",
+      "label": "TFT RGB Color",
+      "category": "Displays",
+      "color": "#8B5CF6",
+      "icon": "Palette",
+      "description": "Создание 16-битного цвета из RGB (0-255)",
+      "inputs": [
+        { "id": "tft", "name": "tft", "type": "device", "label": "TFT" },
+        { "id": "r", "name": "r", "type": "number", "label": "R (0-255)" },
+        { "id": "g", "name": "g", "type": "number", "label": "G (0-255)" },
+        { "id": "b", "name": "b", "type": "number", "label": "B (0-255)" }
+      ],
+      "outputs": [
+        { "id": "color", "name": "color", "type": "number", "label": "Color (16-bit)" }
+      ],
+      "properties": [
+        { "id": "r", "name": "r", "type": "number", "label": "Red", "defaultValue": 255 },
+        { "id": "g", "name": "g", "type": "number", "label": "Green", "defaultValue": 255 },
+        { "id": "b", "name": "b", "type": "number", "label": "Blue", "defaultValue": 255 }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{output.color}} = {{inputs.tft}}.rgbcolor({{inputs.r || props.r}}, {{inputs.g || props.g}}, {{inputs.b || props.b}})",
+        "outputVariables": {
+          "color": "color_{{id}}"
+        }
       }
     }
   ]

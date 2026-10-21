@@ -11,10 +11,11 @@ import {
 } from '@xyflow/react';
 import { NodeInstanceData, extractImportsFromNode } from '../types/nodes';
 import { PaletteCategory } from '../types/registry';
-import { NodeMpyProject, NodeTealProject, FlowTab } from '../types/project';
+import { NodeMpyProject, NodeTealProject, FlowTab, FlowMode } from '../types/project';
 import { arePortsCompatible, PORT_COLORS, getIncompatibleConnectionReason } from '../types/ports';
 import { LibraryRegistry } from '../registry/registryLoader';
 import { CodeGenerator } from '../compiler/codeGenerator';
+import { DashboardCodeGenerator } from '../compiler/dashboardCodeGenerator';
 import { Language } from '../i18n';
 
 export interface HistorySnapshot {
@@ -75,6 +76,7 @@ interface FlowState {
   isSettingsModalOpen: boolean;
   settingsActiveTab: 'general' | 'updates';
   isSimulationOpen: boolean;
+  isDashboardModalOpen: boolean;
 
   // Simulation State
   isSimRunning: boolean;
@@ -104,9 +106,10 @@ interface FlowState {
   loadProject: (project: any) => void;
   exportProject: (projectName?: string) => NodeMpyProject;
   loadDemoProject: () => void;
+  loadDashboardTemplate: () => void;
 
   // Multi-Flow Tab Actions
-  addFlow: (name?: string) => void;
+  addFlow: (name?: string, mode?: FlowMode) => void;
   deleteFlow: (flowId: string) => void;
   switchFlow: (flowId: string) => void;
   renameFlow: (flowId: string, newName: string) => void;
@@ -129,6 +132,7 @@ interface FlowState {
   setChangelogModalOpen: (open: boolean) => void;
   setSettingsModalOpen: (open: boolean, tab?: 'general' | 'updates') => void;
   setSettingsActiveTab: (tab: 'general' | 'updates') => void;
+  setDashboardModalOpen: (open: boolean) => void;
 
   // Simulation Actions
   setSimulationOpen: (open: boolean) => void;
@@ -163,6 +167,7 @@ const loadAutoSavedState = (): { flows: FlowTab[]; activeFlowId: string } => {
           const sanitizedFlows: FlowTab[] = data.flows.map((f: any, idx: number) => ({
             id: f.id || `flow_${idx + 1}`,
             name: f.name || `Flow ${idx + 1}`,
+            mode: f.mode || 'micropython',
             nodes: Array.isArray(f.nodes) ? f.nodes : [],
             edges: Array.isArray(f.edges) ? f.edges : [],
           }));
@@ -178,6 +183,7 @@ const loadAutoSavedState = (): { flows: FlowTab[]; activeFlowId: string } => {
           const singleFlow: FlowTab = {
             id: 'flow_1',
             name: 'Flow 1',
+            mode: 'micropython',
             nodes: data.nodes || [],
             edges: data.edges || [],
           };
@@ -196,6 +202,7 @@ const loadAutoSavedState = (): { flows: FlowTab[]; activeFlowId: string } => {
   const defaultFlow: FlowTab = {
     id: 'flow_1',
     name: 'Flow 1',
+    mode: 'micropython',
     nodes: [],
     edges: [],
   };
@@ -276,6 +283,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   isSettingsModalOpen: false,
   settingsActiveTab: 'general',
   isSimulationOpen: false,
+  isDashboardModalOpen: false,
 
   isSimRunning: false,
   isSimPaused: false,
@@ -310,6 +318,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       ...(tab ? { settingsActiveTab: tab } : {}),
     }),
   setSettingsActiveTab: (tab) => set({ settingsActiveTab: tab }),
+  setDashboardModalOpen: (open) => set({ isDashboardModalOpen: open }),
 
   setSimulationOpen: (open) => set({ isSimulationOpen: open }),
   toggleSimulation: () => set((state) => ({ isSimulationOpen: !state.isSimulationOpen })),
@@ -342,14 +351,16 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   resetVirtualPins: () => set({ virtualPins: { ...INITIAL_ESP8266_PINS } }),
 
   // Multi-Flow Tab Actions
-  addFlow: (name) => {
+  addFlow: (name, mode) => {
     const { flows } = get();
     const flowNum = flows.length + 1;
     const newFlowId = `flow_${Date.now()}`;
-    const newFlowName = name || `Flow ${flowNum}`;
+    const flowMode = mode || 'micropython';
+    const newFlowName = name || (flowMode === 'dashboard' ? `Dashboard ${flowNum}` : `Flow ${flowNum}`);
     const newFlow: FlowTab = {
       id: newFlowId,
       name: newFlowName,
+      mode: flowMode,
       nodes: [],
       edges: [],
     };
@@ -953,8 +964,34 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   },
 
   recalculate: () => {
-    const { nodes, edges } = get();
+    const { nodes, edges, flows, activeFlowId } = get();
+    const activeFlow = flows.find((f) => f.id === activeFlowId);
+    const flowMode = activeFlow?.mode || 'micropython';
 
+    if (flowMode === 'dashboard') {
+      // Dashboard Flow Mode
+      const categories = LibraryRegistry.getPaletteCategories([], 'dashboard');
+      const validatedNodes = nodes.map((node) => ({
+        ...node,
+        data: {
+          ...node.data,
+          hasWarning: false,
+          warningMessage: undefined,
+        },
+      }));
+
+      const dbResult = DashboardCodeGenerator.generateCode(validatedNodes, edges);
+
+      set({
+        nodes: validatedNodes,
+        activeLibraryIds: ['dashboard', 'core'],
+        categories,
+        generatedCode: dbResult.serverCode,
+      });
+      return;
+    }
+
+    // MicroPython Flow Mode (Standard)
     // 1. Calculate active library imports from all core:import_module nodes
     const activeLibs = new Set<string>();
     nodes.forEach((n) => {
@@ -984,7 +1021,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     });
 
     // 3. Update categories in left palette
-    const categories = LibraryRegistry.getPaletteCategories(activeLibraryIds);
+    const categories = LibraryRegistry.getPaletteCategories(activeLibraryIds, 'micropython');
 
     // 4. Generate Python code
     const compResult = CodeGenerator.generateCode(validatedNodes, edges);
@@ -1337,6 +1374,108 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       edges: demoEdges,
       flows: updatedFlows,
       selectedNodeId: 'dht_init',
+    });
+
+    get().recalculate();
+  },
+
+  loadDashboardTemplate: () => {
+    get().pushHistory();
+    const epId = `node_${Date.now()}_ep`;
+    const gaugeId = `node_${Date.now()}_gauge`;
+    const chartId = `node_${Date.now()}_chart`;
+    const switchId = `node_${Date.now()}_sw`;
+    const respId = `node_${Date.now()}_resp`;
+
+    const templateNodes: Node<NodeInstanceData>[] = [
+      {
+        id: epId,
+        type: 'nodeMpy',
+        position: { x: 80, y: 100 },
+        selected: false,
+        data: {
+          definitionId: 'dashboard:http_endpoint',
+          libraryId: 'dashboard',
+          label: 'HTTP Endpoint (/light)',
+          color: '#E11D48',
+          icon: 'Radio',
+          properties: { path: '/light', method: 'GET', param_name: 'value' },
+        },
+      },
+      {
+        id: gaugeId,
+        type: 'nodeMpy',
+        position: { x: 380, y: 50 },
+        selected: false,
+        data: {
+          definitionId: 'dashboard:gauge',
+          libraryId: 'dashboard',
+          label: 'Шкала (Gauge)',
+          color: '#E11D48',
+          icon: 'Gauge',
+          properties: { label: 'Освещённость (LDR)', min: 0, max: 1024, units: 'лк' },
+        },
+      },
+      {
+        id: chartId,
+        type: 'nodeMpy',
+        position: { x: 380, y: 170 },
+        selected: false,
+        data: {
+          definitionId: 'dashboard:chart',
+          libraryId: 'dashboard',
+          label: 'График (Chart)',
+          color: '#E11D48',
+          icon: 'BarChart2',
+          properties: { label: 'Динамика света', points: 30 },
+        },
+      },
+      {
+        id: switchId,
+        type: 'nodeMpy',
+        position: { x: 80, y: 290 },
+        selected: false,
+        data: {
+          definitionId: 'dashboard:switch',
+          libraryId: 'dashboard',
+          label: 'Переключатель',
+          color: '#E11D48',
+          icon: 'ToggleLeft',
+          properties: { label: 'Управление LED', on_payload: 'CMD_ON', off_payload: 'CMD_OFF' },
+        },
+      },
+      {
+        id: respId,
+        type: 'nodeMpy',
+        position: { x: 380, y: 290 },
+        selected: false,
+        data: {
+          definitionId: 'dashboard:http_response',
+          libraryId: 'dashboard',
+          label: 'HTTP Response',
+          color: '#E11D48',
+          icon: 'Send',
+          properties: { default_text: 'CMD_OFF' },
+        },
+      },
+    ];
+
+    const templateEdges: Edge[] = [
+      { id: `e_${epId}_gauge`, source: epId, sourceHandle: 'value', target: gaugeId, targetHandle: 'value', style: { stroke: PORT_COLORS.number || '#38BDF8', strokeWidth: 2 } },
+      { id: `e_${epId}_chart`, source: epId, sourceHandle: 'value', target: chartId, targetHandle: 'value', style: { stroke: PORT_COLORS.number || '#38BDF8', strokeWidth: 2 } },
+      { id: `e_${switchId}_resp_flow`, source: switchId, sourceHandle: 'flow_out', target: respId, targetHandle: 'flow_in', style: { stroke: PORT_COLORS.flow || '#F59E0B', strokeWidth: 2.5 }, animated: true },
+      { id: `e_${switchId}_resp_data`, source: switchId, sourceHandle: 'state', target: respId, targetHandle: 'data', style: { stroke: PORT_COLORS.any || '#A855F7', strokeWidth: 2 } },
+    ];
+
+    const { flows, activeFlowId } = get();
+    const updatedFlows = syncFlows(flows, activeFlowId, templateNodes, templateEdges);
+    saveAutoSavedState(updatedFlows, activeFlowId);
+
+    set({
+      nodes: templateNodes,
+      edges: templateEdges,
+      flows: updatedFlows,
+      selectedNodeId: epId,
     });
 
     get().recalculate();

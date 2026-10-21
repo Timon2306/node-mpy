@@ -116,17 +116,17 @@ export const NodeMpyNode = memo(({ id, data, selected }: NodeProps) => {
   } else if (nodeData.definitionId === 'core:import_module') {
     const imps = extractImportsFromNode(nodeData.properties);
     if (imps.length === 0) {
-      displayLabel = 'Import: machine';
+      displayLabel = language === 'ru' ? 'Импорт модуля' : 'Import Module';
       importLines = ['import machine'];
     } else if (imps.length === 1) {
       const first = imps[0];
-      displayLabel = `Import: ${first.module}`;
+      displayLabel = language === 'ru' ? 'Импорт модуля' : 'Import Module';
       const line = !first.import_all && first.classes
         ? `from ${first.module} import ${first.classes}`
         : `import ${first.module}`;
       importLines = [line];
     } else {
-      displayLabel = `Imports (${imps.length})`;
+      displayLabel = language === 'ru' ? `Импорты (${imps.length})` : `Imports (${imps.length})`;
       importLines = imps.map((item) => {
         if (!item.import_all && item.classes) {
           return `from ${item.module} import ${item.classes}`;
@@ -235,10 +235,31 @@ export const NodeMpyNode = memo(({ id, data, selected }: NodeProps) => {
     const url = String(nodeData.properties?.url || '/sensor');
     const fmt = nodeData.properties?.payload_format === 'json' ? 'JSON' : 'RAW';
     subtitle = `POST (${fmt}) ${url.replace(/^https?:\/\/[^/]+/, '') || url}`;
+  } else if (nodeData.definitionId === 'network:dashboard_client') {
+    const ip = nodeData.properties?.server_ip || '192.168.1.100';
+    const port = nodeData.properties?.server_port || 1880;
+    const path = nodeData.properties?.path || '/api/data';
+    subtitle = `${ip}:${port}${path}`;
+  } else if (nodeData.definitionId === 'network:dashboard_command') {
+    subtitle = `Команда: "${nodeData.properties?.target_cmd ?? 'CMD_ON'}"`;
   } else if (nodeData.definitionId === 'ssd1306:line') {
     subtitle = `Line (${nodeData.properties?.x0 ?? 0},${nodeData.properties?.y0 ?? 0})➔(${nodeData.properties?.x1 ?? 127},${nodeData.properties?.y1 ?? 63})`;
   } else if (nodeData.definitionId === 'ssd1306:pixel') {
     subtitle = `Pixel (${nodeData.properties?.x ?? 64}, ${nodeData.properties?.y ?? 32})`;
+  } else if (nodeData.definitionId === 'dashboard:gauge') {
+    subtitle = `${nodeData.properties?.min ?? 0}..${nodeData.properties?.max ?? 1024} ${nodeData.properties?.units ?? 'лк'}`;
+  } else if (nodeData.definitionId === 'dashboard:chart') {
+    subtitle = `${nodeData.properties?.points ?? 30} pts`;
+  } else if (nodeData.definitionId === 'dashboard:button') {
+    subtitle = `Payload: ${nodeData.properties?.payload ?? 'CMD_ON'}`;
+  } else if (nodeData.definitionId === 'dashboard:switch') {
+    subtitle = `${nodeData.properties?.on_payload ?? 'CMD_ON'} / ${nodeData.properties?.off_payload ?? 'CMD_OFF'}`;
+  } else if (nodeData.definitionId === 'dashboard:slider') {
+    subtitle = `${nodeData.properties?.min ?? 0}..${nodeData.properties?.max ?? 1023}`;
+  } else if (nodeData.definitionId === 'dashboard:http_endpoint') {
+    subtitle = `${nodeData.properties?.method ?? 'GET'} ${nodeData.properties?.path ?? '/light'}`;
+  } else if (nodeData.definitionId === 'dashboard:http_response') {
+    subtitle = `Send: ${nodeData.properties?.default_text ?? 'OK'}`;
   }
 
   const inputs = def?.inputs || [];
@@ -249,16 +270,17 @@ export const NodeMpyNode = memo(({ id, data, selected }: NodeProps) => {
 
   const isImportNode = nodeData.definitionId === 'core:import_module';
   const isImportMulti = isImportNode && importLines.length > 1;
+  const hasTwoLines = isImportNode || Boolean(subtitle);
 
   let sizeClasses = '';
   if (isMultiPort) {
-    sizeClasses = 'min-w-[210px] max-w-[260px]';
+    sizeClasses = 'min-w-[210px] max-w-[280px]';
   } else if (isImportMulti) {
-    sizeClasses = 'min-w-[190px] max-w-[340px] min-h-[38px] flex items-stretch';
-  } else if (isImportNode) {
-    sizeClasses = 'min-w-[170px] max-w-[280px] h-[38px] flex items-stretch';
+    sizeClasses = 'min-w-[200px] max-w-[340px] min-h-[46px] flex items-stretch';
+  } else if (hasTwoLines) {
+    sizeClasses = 'min-w-[170px] max-w-[280px] min-h-[42px] flex items-stretch';
   } else {
-    sizeClasses = 'min-w-[170px] max-w-[240px] h-[38px] flex items-stretch';
+    sizeClasses = 'min-w-[160px] max-w-[240px] h-[38px] flex items-stretch';
   }
 
   let borderColor = '#374151';
@@ -435,7 +457,7 @@ export const NodeMpyNode = memo(({ id, data, selected }: NodeProps) => {
           </div>
 
           {/* Node content: Title + Subtitle or Import Lines Column */}
-          <div className="flex flex-col px-2.5 py-1.5 overflow-hidden w-full leading-tight justify-center">
+          <div className="flex flex-col px-2.5 py-1 overflow-hidden w-full leading-tight justify-center">
             <span className="text-[12px] font-semibold text-gray-100 truncate">
               {displayLabel}
             </span>

@@ -140,36 +140,7 @@
         "template": "{{inputs.wlan || wlan}}.disconnect()\n{{inputs.wlan || wlan}}.active(False)"
       }
     },
-    {
-      "id": "network:http_get",
-      "libraryId": "network",
-      "label": "HTTP GET Request",
-      "category": "Network",
-      "color": "#06B6D4",
-      "icon": "ArrowUpRight",
-      "description": "Отправка HTTP GET запроса на сервер (например в Node-RED)",
-      "inputs": [
-        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
-        { "id": "url", "name": "url", "type": "string", "label": "URL (если провод)" }
-      ],
-      "outputs": [
-        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" },
-        { "id": "response", "name": "response", "type": "string", "label": "Response Text" },
-        { "id": "status_code", "name": "status_code", "type": "number", "label": "Status Code" }
-      ],
-      "properties": [
-        { "id": "url", "name": "url", "type": "text", "label": "URL сервера", "defaultValue": "http://192.168.1.100:1880/api" },
-        { "id": "timeout", "name": "timeout", "type": "number", "label": "Таймаут (сек)", "defaultValue": 5 }
-      ],
-      "codeTemplate": {
-        "section": "flow",
-        "template": "try:\n    _res_{{id}} = urequests.get({{inputs.url || '{{props.url}}'}}, timeout={{props.timeout}})\n    {{output.response}} = _res_{{id}}.text\n    {{output.status_code}} = _res_{{id}}.status_code\n    _res_{{id}}.close()\nexcept Exception as _e_{{id}}:\n    {{output.response}} = \"\"\n    {{output.status_code}} = -1",
-        "outputVariables": {
-          "response": "http_res_{{id}}",
-          "status_code": "http_code_{{id}}"
-        }
-      }
-    },
+
     {
       "id": "network:http_post",
       "libraryId": "network",
@@ -210,6 +181,101 @@
         "outputVariables": {
           "response": "post_res_{{id}}",
           "status_code": "post_code_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "network:http_get",
+      "libraryId": "network",
+      "label": "HTTP GET Request",
+      "category": "Network",
+      "color": "#06B6D4",
+      "icon": "DownloadCloud",
+      "description": "Выполнение HTTP GET запроса для получения данных (погода, REST API, облака IoT)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "url", "name": "url", "type": "string", "label": "URL (если провод)" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" },
+        { "id": "response", "name": "response", "type": "string", "label": "Response Text" },
+        { "id": "status_code", "name": "status_code", "type": "number", "label": "Status Code" }
+      ],
+      "properties": [
+        { "id": "url", "name": "url", "type": "text", "label": "URL запроса", "defaultValue": "http://api.weatherbit.io/v2.0/current?city=Moscow,RU&key=YOUR_KEY" },
+        { "id": "timeout", "name": "timeout", "type": "number", "label": "Таймаут (сек)", "defaultValue": 10 }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "try:\n    import urequests as _rq_{{id}}\n    _res_{{id}} = _rq_{{id}}.get({{inputs.url || ('\"' + props.url + '\"')}})\n    {{output.response}} = _res_{{id}}.text\n    {{output.status_code}} = _res_{{id}}.status_code\n    _res_{{id}}.close()\nexcept Exception:\n    try:\n        import socket\n        _, _, _host_{{id}}, _path_{{id}} = ({{inputs.url || ('\"' + props.url + '\"')}}).split('/', 3)\n        _addr_{{id}} = socket.getaddrinfo(_host_{{id}}, 80)[0][-1]\n        _s_{{id}} = socket.socket()\n        _s_{{id}}.connect(_addr_{{id}})\n        _s_{{id}}.send(bytes('GET /%s HTTP/1.0\\r\\nHost: %s\\r\\n\\r\\n' % (_path_{{id}}, _host_{{id}}), 'utf8'))\n        _raw_{{id}} = ''\n        while True:\n            _chunk_{{id}} = _s_{{id}}.recv(256)\n            if _chunk_{{id}}:\n                _raw_{{id}} += str(_chunk_{{id}}, 'utf8')\n            else:\n                break\n        _s_{{id}}.close()\n        {{output.response}} = _raw_{{id}}.split('\\r\\n\\r\\n', 1)[1] if '\\r\\n\\r\\n' in _raw_{{id}} else _raw_{{id}}\n        {{output.status_code}} = 200\n    except Exception as _err_{{id}}:\n        {{output.response}} = ''\n        {{output.status_code}} = -1",
+        "outputVariables": {
+          "response": "get_res_{{id}}",
+          "status_code": "get_code_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "network:dashboard_client",
+      "libraryId": "network",
+      "label": "Отправка в Дашборд",
+      "category": "Network",
+      "color": "#06B6D4",
+      "icon": "Radio",
+      "description": "Отправляет показания датчиков на сервер дашборда (порт 1880) и получает команды от кнопок, тумблеров и ползунков",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "value", "name": "value", "type": "any", "label": "Датчик 1 (Свет/Темп)" },
+        { "id": "val2", "name": "val2", "type": "any", "label": "Датчик 2 (опц.)" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" },
+        { "id": "command", "name": "command", "type": "string", "label": "Команда (Текст)" },
+        { "id": "slider_val", "name": "slider_val", "type": "number", "label": "Число ползунка" },
+        { "id": "is_on", "name": "is_on", "type": "boolean", "label": "Команда ON?" },
+        { "id": "response", "name": "response", "type": "string", "label": "Ответ сервера" },
+        { "id": "status_code", "name": "status_code", "type": "number", "label": "Status" }
+      ],
+      "properties": [
+        { "id": "server_ip", "name": "server_ip", "type": "text", "label": "IP-адрес сервера (ПК)", "defaultValue": "192.168.1.100" },
+        { "id": "server_port", "name": "server_port", "type": "number", "label": "Порт сервера", "defaultValue": 1880 },
+        { "id": "path", "name": "path", "type": "text", "label": "Путь эндпоинта", "defaultValue": "/api/data" },
+        { "id": "param", "name": "param", "type": "text", "label": "Параметр 1", "defaultValue": "value" },
+        { "id": "param2", "name": "param2", "type": "text", "label": "Параметр 2", "defaultValue": "val2" }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "try:\n    import socket as _sock_{{id}}\n    _s_{{id}} = _sock_{{id}}.socket()\n    _s_{{id}}.settimeout(1.0)\n    _s_{{id}}.connect(('{{props.server_ip}}', {{props.server_port}}))\n    _v1_{{id}} = str({{inputs.value || 0}})\n    _q_{{id}} = '{{props.path}}?{{props.param}}=' + _v1_{{id}}\n    _v2_{{id}} = ('&{{props.param2}}=' + str({{inputs.val2 || \"None\"}})) if str({{inputs.val2 || \"None\"}}) != 'None' else ''\n    _req_{{id}} = 'GET ' + _q_{{id}} + _v2_{{id}} + ' HTTP/1.1\\r\\nHost: {{props.server_ip}}\\r\\nConnection: close\\r\\n\\r\\n'\n    _s_{{id}}.send(_req_{{id}}.encode())\n    _raw_{{id}} = _s_{{id}}.recv(256)\n    _s_{{id}}.close()\n    _raw_str_{{id}} = str(_raw_{{id}}, 'utf-8', 'ignore') if _raw_{{id}} else ''\n    _body_{{id}} = _raw_str_{{id}}.split('\\r\\n\\r\\n', 1)[1] if '\\r\\n\\r\\n' in _raw_str_{{id}} else _raw_str_{{id}}\n    _body_{{id}} = _body_{{id}}.strip()\n    {{output.command}} = _body_{{id}}\n    {{output.response}} = _raw_str_{{id}}\n    {{output.is_on}} = (b'CMD_ON' in _raw_{{id}} or 'ON' in _body_{{id}} or _body_{{id}} == '1')\n    try:\n        {{output.slider_val}} = float(''.join(c for c in _body_{{id}} if c.isdigit() or c in '.-')) or 0\n    except Exception:\n        {{output.slider_val}} = 0\n    {{output.status_code}} = 200\nexcept Exception:\n    {{output.command}} = ''\n    {{output.response}} = ''\n    {{output.is_on}} = False\n    {{output.slider_val}} = 0\n    {{output.status_code}} = -1",
+        "outputVariables": {
+          "command": "dash_cmd_{{id}}",
+          "slider_val": "dash_slider_{{id}}",
+          "is_on": "dash_on_{{id}}",
+          "response": "dash_res_{{id}}",
+          "status_code": "dash_code_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "network:dashboard_command",
+      "libraryId": "network",
+      "label": "Проверка команды",
+      "category": "Network",
+      "color": "#06B6D4",
+      "icon": "CheckSquare",
+      "description": "Проверяет, совпадает ли полученная с дашборда команда с заданной (например FAN_ON, MOTOR_START, DOOR_OPEN)",
+      "inputs": [
+        { "id": "command", "name": "command", "type": "string", "label": "Команда" }
+      ],
+      "outputs": [
+        { "id": "is_match", "name": "is_match", "type": "boolean", "label": "Совпало?" }
+      ],
+      "properties": [
+        { "id": "target_cmd", "name": "target_cmd", "type": "text", "label": "Ожидаемая команда", "defaultValue": "CMD_ON" }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{output.is_match}} = (str({{inputs.command || '\"\"'}}).strip() == '{{props.target_cmd}}')",
+        "outputVariables": {
+          "is_match": "cmd_match_{{id}}"
         }
       }
     }

@@ -2,9 +2,12 @@ import { Edge, Node } from '@xyflow/react';
 import { NodeInstanceData } from './nodes';
 import { LibraryPackageJSON } from './registry';
 
+export type FlowMode = 'micropython' | 'dashboard';
+
 export interface FlowTab {
   id: string;
   name: string;
+  mode?: FlowMode;
   nodes: Node<NodeInstanceData>[];
   edges: Edge[];
 }

@@ -18,6 +18,7 @@ import { LibraryRegistry } from '../../registry/registryLoader';
 import { PORT_COLORS, getPortTooltip } from '../../types/ports';
 import { extractImportsFromNode, ImportEntry } from '../../types/nodes';
 import { translations } from '../../i18n';
+import { DashboardCodeGenerator } from '../../compiler/dashboardCodeGenerator';
 
 const POPULAR_MODULES = [
   { value: 'machine', label: 'machine (Pin, PWM, ADC, I2C, SPI)' },
@@ -39,11 +40,22 @@ const POPULAR_MODULES = [
   { value: 'urandom', label: 'urandom (Случайные числа)' },
 ];
 
+const MODULE_POPULAR_CLASSES: Record<string, string[]> = {
+  machine: ['Pin', 'PWM', 'ADC', 'I2C', 'SPI', 'Timer', 'reset', 'deepsleep'],
+  time: ['sleep', 'sleep_ms', 'sleep_us', 'ticks_ms', 'ticks_diff'],
+  network: ['WLAN', 'STA_IF', 'AP_IF'],
+  dht: ['DHT11', 'DHT22'],
+  math: ['sqrt', 'sin', 'cos', 'pi'],
+  urandom: ['randint', 'choice', 'random'],
+};
+
 export const RightSidebar: React.FC = () => {
   const [copied, setCopied] = useState(false);
+  const [dashboardCodeTab, setDashboardCodeTab] = useState<'server' | 'html'>('server');
 
   const {
     nodes,
+    edges,
     selectedNodeId,
     generatedCode,
     language,
@@ -52,9 +64,17 @@ export const RightSidebar: React.FC = () => {
     updateNodeProperties,
     deleteSelectedNode,
     setFunctionModalOpen,
+    flows,
+    activeFlowId,
   } = useFlowStore();
 
+  const currentFlow = flows.find((f) => f.id === activeFlowId);
+  const isDashboard = currentFlow?.mode === 'dashboard';
+
   const t = translations[language].inspector;
+
+  const dashboardHtmlCode = isDashboard ? DashboardCodeGenerator.generateHtml(nodes, edges) : '';
+  const currentDisplayCode = isDashboard && dashboardCodeTab === 'html' ? dashboardHtmlCode : generatedCode;
 
   const selectedNodes = nodes.filter((n) => n.selected);
   const activeSelectedNode =
@@ -66,7 +86,7 @@ export const RightSidebar: React.FC = () => {
     : null;
 
   const handleCopyCode = () => {
-    navigator.clipboard.writeText(generatedCode);
+    navigator.clipboard.writeText(currentDisplayCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -96,12 +116,14 @@ export const RightSidebar: React.FC = () => {
           onClick={() => setInspectorTab('code')}
           className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-colors border-b-2 ${
             inspectorTab === 'code'
-              ? 'border-blue-400 text-blue-400 bg-slate-panel'
+              ? isDashboard
+                ? 'border-rose-400 text-rose-400 bg-slate-panel'
+                : 'border-blue-400 text-blue-400 bg-slate-panel'
               : 'border-transparent text-gray-400 hover:text-gray-200 hover:bg-slate-hover'
           }`}
         >
           <Code2 className="w-3.5 h-3.5" />
-          <span>{t.codeTab}</span>
+          <span>{isDashboard ? 'Live server.ts' : t.codeTab}</span>
         </button>
       </div>
 
@@ -344,7 +366,7 @@ export const RightSidebar: React.FC = () => {
                               </label>
 
                               {item.import_all === false && (
-                                <div className="space-y-1 pl-5">
+                                <div className="space-y-1.5 pl-5">
                                   <label className="text-[10px] text-gray-400 block">
                                     {language === 'ru' ? 'Классы (через запятую)' : 'Classes (comma separated)'}
                                   </label>
@@ -363,8 +385,61 @@ export const RightSidebar: React.FC = () => {
                                     }}
                                     className="w-full bg-slate-canvas text-gray-200 text-xs rounded px-2.5 py-1 border border-slate-border focus:border-blue-400 focus:outline-none font-mono"
                                   />
+
+                                  {/* Quick chips for popular classes */}
+                                  {MODULE_POPULAR_CLASSES[item.module] && (
+                                    <div className="space-y-1 pt-0.5">
+                                      <span className="text-[9px] text-gray-500 block">
+                                        {language === 'ru' ? 'Быстрый выбор классов:' : 'Quick class selection:'}
+                                      </span>
+                                      <div className="flex flex-wrap gap-1">
+                                        {MODULE_POPULAR_CLASSES[item.module].map((cls) => {
+                                          const curList = (item.classes || '')
+                                            .split(',')
+                                            .map((s) => s.trim())
+                                            .filter(Boolean);
+                                          const isSelected = curList.includes(cls);
+                                          return (
+                                            <button
+                                              key={cls}
+                                              type="button"
+                                              onClick={() => {
+                                                const updated = isSelected
+                                                  ? curList.filter((c) => c !== cls)
+                                                  : [...curList, cls];
+                                                const next = arr.map((it, i) =>
+                                                  i === idx ? { ...it, classes: updated.join(', ') } : it
+                                                );
+                                                updateNodeProperties(activeSelectedNode.id, {
+                                                  imports: next,
+                                                  module: next[0]?.module || 'machine',
+                                                });
+                                              }}
+                                              className={`px-1.5 py-0.5 rounded text-[10px] font-mono border transition-colors ${
+                                                isSelected
+                                                  ? 'bg-blue-600/30 text-blue-300 border-blue-400 font-semibold shadow-xs'
+                                                  : 'bg-slate-panel text-gray-400 border-slate-border hover:text-gray-200 hover:border-gray-500'
+                                              }`}
+                                            >
+                                              {isSelected ? `✓ ${cls}` : `+ ${cls}`}
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               )}
+
+                              {/* Live syntax preview pill */}
+                              <div className="px-2 py-1 rounded bg-[#12161F] border border-blue-500/20 text-blue-300 font-mono text-[10px] flex items-center justify-between mt-1">
+                                <span className="truncate">
+                                  {item.import_all !== false
+                                    ? `import ${item.module}`
+                                    : `from ${item.module} import ${item.classes || '...'}`}
+                                </span>
+                                <span className="text-[9px] text-gray-500 uppercase ml-2 flex-shrink-0">Python</span>
+                              </div>
                             </div>
                           </div>
                         );
@@ -612,11 +687,36 @@ export const RightSidebar: React.FC = () => {
       {inspectorTab === 'code' && (
         <div className="flex-1 flex flex-col overflow-hidden select-text">
           {/* Action Header */}
-          <div className="flex items-center justify-between p-2.5 bg-slate-panel border-b border-slate-border">
-            <span className="text-xs text-gray-300 font-mono flex items-center gap-1.5">
-              <Code2 className="w-3.5 h-3.5 text-blue-400" />
-              main.py (MicroPython)
-            </span>
+          <div className="flex items-center justify-between p-2 bg-slate-panel border-b border-slate-border">
+            {isDashboard ? (
+              <div className="flex items-center gap-1 bg-[#14171C] p-0.5 rounded border border-slate-border">
+                <button
+                  onClick={() => setDashboardCodeTab('server')}
+                  className={`px-2 py-0.5 rounded text-[11px] font-mono transition-colors ${
+                    dashboardCodeTab === 'server'
+                      ? 'bg-rose-500/20 text-rose-300 font-semibold border border-rose-500/30'
+                      : 'text-gray-400 hover:text-gray-200 border border-transparent'
+                  }`}
+                >
+                  server.ts
+                </button>
+                <button
+                  onClick={() => setDashboardCodeTab('html')}
+                  className={`px-2 py-0.5 rounded text-[11px] font-mono transition-colors ${
+                    dashboardCodeTab === 'html'
+                      ? 'bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/30'
+                      : 'text-gray-400 hover:text-gray-200 border border-transparent'
+                  }`}
+                >
+                  dashboard.html
+                </button>
+              </div>
+            ) : (
+              <span className="text-xs text-gray-300 font-mono flex items-center gap-1.5">
+                <Code2 className="w-3.5 h-3.5 text-blue-400" />
+                main.py (MicroPython)
+              </span>
+            )}
 
             <button
               onClick={handleCopyCode}
@@ -630,7 +730,13 @@ export const RightSidebar: React.FC = () => {
               ) : (
                 <>
                   <Copy className="w-3.5 h-3.5" />
-                  <span>{t.copyCode}</span>
+                  <span>
+                    {isDashboard
+                      ? dashboardCodeTab === 'server'
+                        ? 'Копировать TS'
+                        : 'Копировать HTML'
+                      : t.copyCode}
+                  </span>
                 </>
               )}
             </button>
@@ -639,14 +745,16 @@ export const RightSidebar: React.FC = () => {
           {/* Code Viewer with Lines */}
           <div className="flex-1 overflow-auto bg-[#14171C] p-3 font-mono text-[11px] leading-relaxed">
             <pre className="text-gray-200 whitespace-pre">
-              <code>{generatedCode}</code>
+              <code>{currentDisplayCode}</code>
             </pre>
           </div>
 
           {/* Footer stats */}
           <div className="px-3 py-1.5 bg-slate-panelHeader border-t border-slate-border text-[10px] text-gray-400 flex items-center justify-between font-mono">
-            <span>{generatedCode.split('\n').length} {t.linesCount}</span>
-            <span className="text-blue-400">{t.cleanMicropython}</span>
+            <span>{currentDisplayCode.split('\n').length} {t.linesCount}</span>
+            <span className={isDashboard ? (dashboardCodeTab === 'server' ? 'text-rose-400 font-semibold' : 'text-amber-400 font-semibold') : 'text-blue-400'}>
+              {isDashboard ? (dashboardCodeTab === 'server' ? 'TypeScript Server (server.ts)' : 'Web Interface (dashboard.html)') : t.cleanMicropython}
+            </span>
           </div>
         </div>
       )}

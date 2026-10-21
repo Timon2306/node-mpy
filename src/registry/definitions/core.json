@@ -649,6 +649,184 @@
         "section": "flow",
         "template": "# {{props.text}}"
       }
+    },
+    {
+      "id": "core:map_range",
+      "libraryId": "core",
+      "label": "Map Range (Масштабирование)",
+      "category": "Core",
+      "color": "#3B82F6",
+      "icon": "Minimize2",
+      "description": "Линейное масштабирование значения из одного диапазона в другой (например, АЦП 0..1023 в ШИМ 0..1023 или угол 0..180)",
+      "inputs": [
+        { "id": "val", "name": "val", "type": "number", "label": "Value" }
+      ],
+      "outputs": [
+        { "id": "result", "name": "result", "type": "number", "label": "Mapped Value" }
+      ],
+      "properties": [
+        { "id": "in_min", "name": "in_min", "type": "number", "label": "Входной минимум (In Min)", "defaultValue": 0 },
+        { "id": "in_max", "name": "in_max", "type": "number", "label": "Входной максимум (In Max)", "defaultValue": 1023 },
+        { "id": "out_min", "name": "out_min", "type": "number", "label": "Выходной минимум (Out Min)", "defaultValue": 0 },
+        { "id": "out_max", "name": "out_max", "type": "number", "label": "Выходной максимум (Out Max)", "defaultValue": 1023 },
+        { "id": "as_int", "name": "as_int", "type": "boolean", "label": "Округлить до целого (int)", "defaultValue": true }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{% if props.as_int %}{{output.result}} = int(({{inputs.val || 0}} - {{props.in_min}}) * ({{props.out_max}} - {{props.out_min}}) / (({{props.in_max}} - {{props.in_min}}) or 1) + {{props.out_min}}){% else %}{{output.result}} = float(({{inputs.val || 0}} - {{props.in_min}}) * ({{props.out_max}} - {{props.out_min}}) / (({{props.in_max}} - {{props.in_min}}) or 1) + {{props.out_min}}){% endif %}",
+        "outputVariables": {
+          "result": "map_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "core:json_parse",
+      "libraryId": "core",
+      "label": "JSON Parse",
+      "category": "Core",
+      "color": "#3B82F6",
+      "icon": "FileCode",
+      "description": "Парсинг JSON-строки в объект Python с возможностью извлечения поля",
+      "inputs": [
+        { "id": "json_str", "name": "json_str", "type": "string", "label": "JSON Text" }
+      ],
+      "outputs": [
+        { "id": "data", "name": "data", "type": "any", "label": "Data Object" },
+        { "id": "value", "name": "value", "type": "any", "label": "Field Value" }
+      ],
+      "properties": [
+        { "id": "key", "name": "key", "type": "text", "label": "Ключ для извлечения (опционально)", "defaultValue": "" }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "imports": [
+          "try:\n    import ujson as json\nexcept ImportError:\n    import json"
+        ],
+        "template": "try:\n    {{output.data}} = json.loads(str({{inputs.json_str || '{}'}}))\nexcept Exception:\n    {{output.data}} = {}\n{{output.value}} = {{output.data}}.get('{{props.key}}') if ('{{props.key}}' and isinstance({{output.data}}, dict)) else {{output.data}}",
+        "outputVariables": {
+          "data": "json_data_{{id}}",
+          "value": "json_val_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "core:file_write",
+      "libraryId": "core",
+      "label": "File Write / Log",
+      "category": "Core",
+      "color": "#10B981",
+      "icon": "FileText",
+      "description": "Запись или добавление данных в текстовый / CSV файл на Flash-памяти",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "filename", "name": "filename", "type": "string", "label": "File Name" },
+        { "id": "content", "name": "content", "type": "any", "label": "Data / Text" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [
+        { "id": "filename", "name": "filename", "type": "text", "label": "Имя файла", "defaultValue": "temp_data.csv" },
+        {
+          "id": "mode",
+          "name": "mode",
+          "type": "select",
+          "label": "Режим записи",
+          "defaultValue": "a",
+          "options": [
+            { "label": "Добавить в конец (a - append)", "value": "a" },
+            { "label": "Перезаписать файл (w - overwrite)", "value": "w" }
+          ]
+        },
+        { "id": "newline", "name": "newline", "type": "boolean", "label": "Добавлять перенос строки (\\n)", "defaultValue": true }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "with open({{inputs.filename || props.filename}}, '{{props.mode}}') as _f_{{id}}:\n    _f_{{id}}.write(str({{inputs.content || ''}}){% if props.newline %} + '\\n'{% endif %})"
+      }
+    },
+    {
+      "id": "core:file_read",
+      "libraryId": "core",
+      "label": "File Read",
+      "category": "Core",
+      "color": "#10B981",
+      "icon": "File",
+      "description": "Чтение содержимого файла с Flash-памяти (например, HTML-шаблона или лога)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "filename", "name": "filename", "type": "string", "label": "File Name" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" },
+        { "id": "content", "name": "content", "type": "string", "label": "File Content" }
+      ],
+      "properties": [
+        { "id": "filename", "name": "filename", "type": "text", "label": "Имя файла", "defaultValue": "page.html" }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "try:\n    with open({{inputs.filename || props.filename}}, 'r') as _f_{{id}}:\n        {{output.content}} = _f_{{id}}.read()\nexcept Exception:\n    {{output.content}} = ''",
+        "outputVariables": {
+          "content": "file_data_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "core:string_replace",
+      "libraryId": "core",
+      "label": "String Replace",
+      "category": "Core",
+      "color": "#EAB308",
+      "icon": "Replace",
+      "description": "Замена подстроки или плейсхолдера в тексте (например, <=VALUE=> в HTML)",
+      "inputs": [
+        { "id": "text", "name": "text", "type": "string", "label": "Source Text" },
+        { "id": "search", "name": "search", "type": "string", "label": "Search For" },
+        { "id": "replace", "name": "replace", "type": "string", "label": "Replace With" }
+      ],
+      "outputs": [
+        { "id": "result", "name": "result", "type": "string", "label": "Result Text" }
+      ],
+      "properties": [
+        { "id": "search", "name": "search", "type": "text", "label": "Что заменить", "defaultValue": "<=VALUE=>" },
+        { "id": "replace", "name": "replace", "type": "text", "label": "Чем заменить", "defaultValue": "0" }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{output.result}} = str({{inputs.text || ''}}).replace({{inputs.search || props.search}}, str({{inputs.replace || props.replace}}))",
+        "outputVariables": {
+          "result": "replaced_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "core:string_slice",
+      "libraryId": "core",
+      "label": "String Slice / Substring",
+      "category": "Core",
+      "color": "#EAB308",
+      "icon": "Scissors",
+      "description": "Извлечение среза строки по индексам (например, символы 3:9)",
+      "inputs": [
+        { "id": "text", "name": "text", "type": "string", "label": "Source Text" },
+        { "id": "start", "name": "start", "type": "number", "label": "Start Index" },
+        { "id": "end", "name": "end", "type": "number", "label": "End Index" }
+      ],
+      "outputs": [
+        { "id": "result", "name": "result", "type": "string", "label": "Substring" }
+      ],
+      "properties": [
+        { "id": "start", "name": "start", "type": "number", "label": "Начальный индекс", "defaultValue": 0 },
+        { "id": "end", "name": "end", "type": "number", "label": "Конечный индекс (0 = до конца)", "defaultValue": 0 }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{output.result}} = str({{inputs.text || ''}})[int({{inputs.start || props.start}}):int({{inputs.end || props.end}}) if int({{inputs.end || props.end}}) != 0 else None]",
+        "outputVariables": {
+          "result": "slice_{{id}}"
+        }
+      }
     }
   ]
 }

@@ -1,6 +1,6 @@
 {
   "name": "node-mpy",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Visual MicroPython programming environment in Node-RED style",
   "private": true,
   "type": "module",
@@ -9,7 +9,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "test": "node scripts/test-definitions.mjs && npx tsx scripts/test-compiler-and-simulator.ts"
+    "test": "node scripts/test-definitions.mjs && npx tsx scripts/test-compiler-and-simulator.ts && npx tsx scripts/test-pinlab-experiments.ts && npx tsx scripts/test-dashboard-compiler.ts"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",

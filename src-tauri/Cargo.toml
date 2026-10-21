@@ -1,6 +1,6 @@
 [package]
 name = "node-mpy"
-version = "1.0.1"
+version = "1.1.0"
 description = "Node-MPY - MicroPython Visual Flow Studio"
 authors = ["Node-MPY Team"]
 edition = "2021"

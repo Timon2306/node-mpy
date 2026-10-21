@@ -1,0 +1,530 @@
+{
+  "id": "dashboard",
+  "name": "Dashboard",
+  "version": "1.0.0",
+  "description": "Элементы веб-дашборда и сервера TypeScript",
+  "author": "Node-MPY Team",
+  "isNative": true,
+  "category": "Dashboard",
+  "color": "#E11D48",
+  "icon": "Monitor",
+  "importSnippet": "// TypeScript Dashboard Web Server",
+  "nodes": [
+    {
+      "id": "dashboard:gauge",
+      "libraryId": "dashboard",
+      "label": "Шкала (Gauge)",
+      "category": "Dashboard",
+      "color": "#E11D48",
+      "icon": "Gauge",
+      "description": "Круговая стрелочная шкала (спидометр) для отображения показаний датчиков",
+      "inputs": [
+        {
+          "id": "value",
+          "name": "value",
+          "type": "number",
+          "label": "Value"
+        }
+      ],
+      "outputs": [],
+      "properties": [
+        {
+          "id": "label",
+          "name": "label",
+          "type": "text",
+          "label": "Заголовок шкалы",
+          "defaultValue": "Освещённость (LDR)"
+        },
+        {
+          "id": "min",
+          "name": "min",
+          "type": "number",
+          "label": "Минимум",
+          "defaultValue": 0
+        },
+        {
+          "id": "max",
+          "name": "max",
+          "type": "number",
+          "label": "Максимум",
+          "defaultValue": 1024
+        },
+        {
+          "id": "units",
+          "name": "units",
+          "type": "text",
+          "label": "Единица измерения",
+          "defaultValue": "лк"
+        }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "broadcast({ type: 'gauge', id: '{{id}}', label: '{{props.label}}', value: {{inputs.value || 0}}, min: {{props.min}}, max: {{props.max}}, units: '{{props.units}}' });"
+      }
+    },
+    {
+      "id": "dashboard:chart",
+      "libraryId": "dashboard",
+      "label": "График (Chart)",
+      "category": "Dashboard",
+      "color": "#E11D48",
+      "icon": "BarChart2",
+      "description": "Линейный график истории значений датчика в реальном времени",
+      "inputs": [
+        {
+          "id": "value",
+          "name": "value",
+          "type": "number",
+          "label": "Value"
+        }
+      ],
+      "outputs": [],
+      "properties": [
+        {
+          "id": "label",
+          "name": "label",
+          "type": "text",
+          "label": "Название графика",
+          "defaultValue": "График освещённости"
+        },
+        {
+          "id": "points",
+          "name": "points",
+          "type": "number",
+          "label": "Количество точек",
+          "defaultValue": 30
+        }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "broadcast({ type: 'chart', id: '{{id}}', label: '{{props.label}}', value: {{inputs.value || 0}}, maxPoints: {{props.points}} });"
+      }
+    },
+    {
+      "id": "dashboard:button",
+      "libraryId": "dashboard",
+      "label": "Кнопка (Button)",
+      "category": "Dashboard",
+      "color": "#E11D48",
+      "icon": "Square",
+      "description": "Интерактивная кнопка на панели дашборда для отправки команд",
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "flow_out",
+          "name": "flow_out",
+          "type": "flow",
+          "label": "Click"
+        },
+        {
+          "id": "payload",
+          "name": "payload",
+          "type": "string",
+          "label": "Payload"
+        }
+      ],
+      "properties": [
+        {
+          "id": "label",
+          "name": "label",
+          "type": "text",
+          "label": "Текст на кнопке",
+          "defaultValue": "Включить (CMD_ON)"
+        },
+        {
+          "id": "payload",
+          "name": "payload",
+          "type": "text",
+          "label": "Команда (Payload)",
+          "defaultValue": "CMD_ON"
+        },
+        {
+          "id": "button_color",
+          "name": "button_color",
+          "type": "select",
+          "label": "Цвет кнопки",
+          "defaultValue": "teal",
+          "options": [
+            { "label": "Бирюзовый (Teal)", "value": "teal" },
+            { "label": "Зелёный (Green)", "value": "green" },
+            { "label": "Красный (Red)", "value": "red" },
+            { "label": "Синий (Blue)", "value": "blue" }
+          ]
+        }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "const {{output.payload}} = '{{props.payload}}';",
+        "outputVariables": {
+          "payload": "btn_payload_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "dashboard:switch",
+      "libraryId": "dashboard",
+      "label": "Тумблер (Switch)",
+      "category": "Dashboard",
+      "color": "#E11D48",
+      "icon": "ToggleLeft",
+      "description": "Переключатель ON/OFF для включения/выключения реле или светодиодов",
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "flow_out",
+          "name": "flow_out",
+          "type": "flow",
+          "label": "Change"
+        },
+        {
+          "id": "state",
+          "name": "state",
+          "type": "boolean",
+          "label": "State"
+        },
+        {
+          "id": "payload",
+          "name": "payload",
+          "type": "string",
+          "label": "Payload"
+        }
+      ],
+      "properties": [
+        {
+          "id": "label",
+          "name": "label",
+          "type": "text",
+          "label": "Название тумблера",
+          "defaultValue": "Свет LED 2"
+        },
+        {
+          "id": "on_payload",
+          "name": "on_payload",
+          "type": "text",
+          "label": "Команда при ВКЛ",
+          "defaultValue": "CMD_ON"
+        },
+        {
+          "id": "off_payload",
+          "name": "off_payload",
+          "type": "text",
+          "label": "Команда при ВЫКЛ",
+          "defaultValue": "CMD_OFF"
+        }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "const {{output.state}} = switchState['{{id}}'] ?? false;\nconst {{output.payload}} = {{output.state}} ? '{{props.on_payload}}' : '{{props.off_payload}}';",
+        "outputVariables": {
+          "state": "switch_state_{{id}}",
+          "payload": "switch_payload_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "dashboard:slider",
+      "libraryId": "dashboard",
+      "label": "Ползунок (Slider)",
+      "category": "Dashboard",
+      "color": "#E11D48",
+      "icon": "Sliders",
+      "description": "Слайдер для плавной регулировки ШИМ, угла сервопривода или порога",
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "flow_out",
+          "name": "flow_out",
+          "type": "flow",
+          "label": "Change"
+        },
+        {
+          "id": "value",
+          "name": "value",
+          "type": "number",
+          "label": "Value"
+        }
+      ],
+      "properties": [
+        {
+          "id": "label",
+          "name": "label",
+          "type": "text",
+          "label": "Название параметра",
+          "defaultValue": "Яркость ШИМ"
+        },
+        {
+          "id": "min",
+          "name": "min",
+          "type": "number",
+          "label": "Минимум",
+          "defaultValue": 0
+        },
+        {
+          "id": "max",
+          "name": "max",
+          "type": "number",
+          "label": "Максимум",
+          "defaultValue": 1023
+        },
+        {
+          "id": "step",
+          "name": "step",
+          "type": "number",
+          "label": "Шаг",
+          "defaultValue": 10
+        }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "const {{output.value}} = sliderValue['{{id}}'] ?? {{props.min}};",
+        "outputVariables": {
+          "value": "slider_val_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "dashboard:text_display",
+      "libraryId": "dashboard",
+      "label": "Текст / Значение (Text)",
+      "category": "Dashboard",
+      "color": "#E11D48",
+      "icon": "Type",
+      "description": "Текстовое поле для вывода статуса, IP-адреса или числовых показателей",
+      "inputs": [
+        {
+          "id": "text",
+          "name": "text",
+          "type": "any",
+          "label": "Data"
+        }
+      ],
+      "outputs": [],
+      "properties": [
+        {
+          "id": "label",
+          "name": "label",
+          "type": "text",
+          "label": "Заголовок поля",
+          "defaultValue": "Статус системы"
+        },
+        {
+          "id": "prefix",
+          "name": "prefix",
+          "type": "text",
+          "label": "Префикс текста",
+          "defaultValue": "Состояние: "
+        }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "broadcast({ type: 'text', id: '{{id}}', label: '{{props.label}}', text: '{{props.prefix}}' + String({{inputs.text || 'OK'}}) });"
+      }
+    },
+    {
+      "id": "dashboard:led_indicator",
+      "libraryId": "dashboard",
+      "label": "LED Индикатор (LED)",
+      "category": "Dashboard",
+      "color": "#E11D48",
+      "icon": "Sun",
+      "description": "Виртуальный светодиод (зелёный/красный/серый) для индикации состояний",
+      "inputs": [
+        {
+          "id": "state",
+          "name": "state",
+          "type": "boolean",
+          "label": "State"
+        }
+      ],
+      "outputs": [],
+      "properties": [
+        {
+          "id": "label",
+          "name": "label",
+          "type": "text",
+          "label": "Подпись светодиода",
+          "defaultValue": "Связь с контроллером"
+        },
+        {
+          "id": "color_on",
+          "name": "color_on",
+          "type": "select",
+          "label": "Цвет при включении",
+          "defaultValue": "#10B981",
+          "options": [
+            { "label": "Зелёный (#10B981)", "value": "#10B981" },
+            { "label": "Красный (#EF4444)", "value": "#EF4444" },
+            { "label": "Синий (#3B82F6)", "value": "#3B82F6" },
+            { "label": "Жёлтый (#F59E0B)", "value": "#F59E0B" }
+          ]
+        }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "broadcast({ type: 'led', id: '{{id}}', label: '{{props.label}}', state: Boolean({{inputs.state}}), colorOn: '{{props.color_on}}' });"
+      }
+    },
+    {
+      "id": "dashboard:http_endpoint",
+      "libraryId": "dashboard",
+      "label": "HTTP Endpoint (In)",
+      "category": "Dashboard",
+      "color": "#E11D48",
+      "icon": "Radio",
+      "description": "Приём входящих запросов от ESP контроллера (например GET /light?value=512)",
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "flow_out",
+          "name": "flow_out",
+          "type": "flow",
+          "label": "Request"
+        },
+        {
+          "id": "value",
+          "name": "value",
+          "type": "number",
+          "label": "Query Value"
+        },
+        {
+          "id": "raw_query",
+          "name": "raw_query",
+          "type": "string",
+          "label": "Raw Text"
+        }
+      ],
+      "properties": [
+        {
+          "id": "path",
+          "name": "path",
+          "type": "text",
+          "label": "URL путь (endpoint)",
+          "defaultValue": "/light"
+        },
+        {
+          "id": "method",
+          "name": "method",
+          "type": "select",
+          "label": "HTTP Метод",
+          "defaultValue": "GET",
+          "options": [
+            { "label": "GET (запрос от контроллера)", "value": "GET" },
+            { "label": "POST (отправка тела)", "value": "POST" }
+          ]
+        },
+        {
+          "id": "param_name",
+          "name": "param_name",
+          "type": "text",
+          "label": "Имя параметра (query param)",
+          "defaultValue": "value"
+        }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "// Route: {{props.method}} {{props.path}}\nconst {{output.value}} = Number(req.query['{{props.param_name}}'] || req.body?.['{{props.param_name}}'] || 0);\nconst {{output.raw_query}} = String(req.query['{{props.param_name}}'] || req.body || '');",
+        "outputVariables": {
+          "value": "req_val_{{id}}",
+          "raw_query": "req_raw_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "dashboard:http_response",
+      "libraryId": "dashboard",
+      "label": "HTTP Response (Out)",
+      "category": "Dashboard",
+      "color": "#E11D48",
+      "icon": "Send",
+      "description": "Отправка ответных данных контроллеру (CMD_ON / CMD_OFF / JSON)",
+      "inputs": [
+        {
+          "id": "flow_in",
+          "name": "flow_in",
+          "type": "flow",
+          "label": "Flow"
+        },
+        {
+          "id": "data",
+          "name": "data",
+          "type": "any",
+          "label": "Response Data"
+        }
+      ],
+      "outputs": [],
+      "properties": [
+        {
+          "id": "default_text",
+          "name": "default_text",
+          "type": "text",
+          "label": "Текст ответа по умолчанию",
+          "defaultValue": "OK"
+        },
+        {
+          "id": "status_code",
+          "name": "status_code",
+          "type": "number",
+          "label": "HTTP Status Code",
+          "defaultValue": 200
+        }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "res.status({{props.status_code}}).send(String({{inputs.data || ('\"' + props.default_text + '\"')}}));"
+      }
+    },
+    {
+      "id": "dashboard:function",
+      "libraryId": "dashboard",
+      "label": "Функция (Function)",
+      "category": "Dashboard",
+      "color": "#E11D48",
+      "icon": "Code2",
+      "description": "Простая JavaScript/TypeScript функция для преобразования данных (как нода function в Node-RED)",
+      "inputs": [
+        {
+          "id": "flow_in",
+          "name": "flow_in",
+          "type": "flow",
+          "label": "Flow"
+        },
+        {
+          "id": "msg",
+          "name": "msg",
+          "type": "any",
+          "label": "Input Data"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "flow_out",
+          "name": "flow_out",
+          "type": "flow",
+          "label": "Flow"
+        },
+        {
+          "id": "result",
+          "name": "result",
+          "type": "any",
+          "label": "Output Result"
+        }
+      ],
+      "properties": [
+        {
+          "id": "code",
+          "name": "code",
+          "type": "code",
+          "label": "JS / TS код преобразования",
+          "defaultValue": "// Преобразование входящих данных:\nreturn msg > 500 ? 'CMD_ON' : 'CMD_OFF';"
+        }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "const {{output.result}} = (() => {\n    const msg = {{inputs.msg || 0}};\n    {{props.code}}\n})();",
+        "outputVariables": {
+          "result": "fn_res_{{id}}"
+        }
+      }
+    }
+  ]
+}

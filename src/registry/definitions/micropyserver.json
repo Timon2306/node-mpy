@@ -1,0 +1,153 @@
+{
+  "id": "micropyserver",
+  "name": "MicroPyServer (Веб-сервер)",
+  "version": "1.0.0",
+  "description": "Легковесный HTTP веб-сервер для создания страниц управления и REST API на ESP8266 / ESP32",
+  "isNative": false,
+  "category": "Network",
+  "color": "#06B6D4",
+  "icon": "Globe",
+  "importSnippet": "from micropyserver import MicroPyServer",
+  "nodes": [
+    {
+      "id": "micropyserver:init",
+      "libraryId": "micropyserver",
+      "label": "Web Server Init",
+      "category": "Network",
+      "color": "#06B6D4",
+      "icon": "Server",
+      "description": "Инициализация HTTP веб-сервера MicroPyServer",
+      "inputs": [],
+      "outputs": [
+        { "id": "server", "name": "server", "type": "device", "label": "Server" }
+      ],
+      "properties": [
+        { "id": "port", "name": "port", "type": "number", "label": "HTTP Порт", "defaultValue": 80, "min": 1, "max": 65535 }
+      ],
+      "codeTemplate": {
+        "section": "init",
+        "imports": [
+          "from micropyserver import MicroPyServer"
+        ],
+        "template": "server_{{id}} = MicroPyServer(port={{props.port}})",
+        "outputVariables": {
+          "server": "server_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "micropyserver:route",
+      "libraryId": "micropyserver",
+      "label": "Web Route Handler",
+      "category": "Network",
+      "color": "#06B6D4",
+      "icon": "CornerDownRight",
+      "description": "Обработчик HTTP-маршрута (URL пути: /, /on, /off, /api)",
+      "inputs": [
+        { "id": "server", "name": "server", "type": "device", "label": "Server" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "On Request" },
+        { "id": "params", "name": "params", "type": "any", "label": "Params Dict" },
+        { "id": "request", "name": "request", "type": "string", "label": "Raw Request" }
+      ],
+      "properties": [
+        { "id": "path", "name": "path", "type": "text", "label": "URL Путь", "defaultValue": "/" },
+        { "id": "func_name", "name": "func_name", "type": "text", "label": "Имя функции обработчика", "defaultValue": "handle_route" }
+      ],
+      "codeTemplate": {
+        "section": "functions",
+        "template": "def {{props.func_name}}_{{id}}(request, params):\n    {{output.request}} = request\n    {{output.params}} = params",
+        "outputVariables": {
+          "params": "params_{{id}}",
+          "request": "req_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "micropyserver:send",
+      "libraryId": "micropyserver",
+      "label": "Web Send Response",
+      "category": "Network",
+      "color": "#06B6D4",
+      "icon": "Send",
+      "description": "Отправка HTTP-ответа (HTML-страницы, текста или JSON) клиенту",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "server", "name": "server", "type": "device", "label": "Server" },
+        { "id": "content", "name": "content", "type": "any", "label": "Body Content" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [
+        { "id": "default_text", "name": "default_text", "type": "text", "label": "Текст по умолч.", "defaultValue": "OK" },
+        {
+          "id": "content_type",
+          "name": "content_type",
+          "type": "select",
+          "label": "Тип контента",
+          "defaultValue": "text/html",
+          "options": [
+            { "label": "HTML (text/html)", "value": "text/html" },
+            { "label": "Текст (text/plain)", "value": "text/plain" },
+            { "label": "JSON (application/json)", "value": "application/json" }
+          ]
+        }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{inputs.server}}.send(str({{inputs.content || props.default_text}}), content_type='Content-Type: {{props.content_type}}')"
+      }
+    },
+    {
+      "id": "micropyserver:get_param",
+      "libraryId": "micropyserver",
+      "label": "Web Get Query Param",
+      "category": "Network",
+      "color": "#06B6D4",
+      "icon": "Sliders",
+      "description": "Чтение значения GET-параметра из словаря params (например, r, g, b, duty)",
+      "inputs": [
+        { "id": "params", "name": "params", "type": "any", "label": "Params" }
+      ],
+      "outputs": [
+        { "id": "val_str", "name": "val_str", "type": "string", "label": "Value (Str)" },
+        { "id": "val_num", "name": "val_num", "type": "number", "label": "Value (Int)" },
+        { "id": "exists", "name": "exists", "type": "boolean", "label": "Exists" }
+      ],
+      "properties": [
+        { "id": "param_name", "name": "param_name", "type": "text", "label": "Имя параметра", "defaultValue": "duty" },
+        { "id": "def_val", "name": "def_val", "type": "text", "label": "Значение по умолч.", "defaultValue": "512" }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{output.exists}} = ('{{props.param_name}}' in {{inputs.params}})\n{{output.val_str}} = str({{inputs.params}}['{{props.param_name}}']) if {{output.exists}} else '{{props.def_val}}'\ntry:\n    {{output.val_num}} = int({{output.val_str}})\nexcept (ValueError, TypeError):\n    {{output.val_num}} = 0",
+        "outputVariables": {
+          "val_str": "val_str_{{id}}",
+          "val_num": "val_num_{{id}}",
+          "exists": "exists_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "micropyserver:start",
+      "libraryId": "micropyserver",
+      "label": "Web Server Start",
+      "category": "Network",
+      "color": "#06B6D4",
+      "icon": "PlayCircle",
+      "description": "Привязка обработчиков и запуск цикла прослушивания запросов веб-сервера",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "server", "name": "server", "type": "device", "label": "Server" }
+      ],
+      "outputs": [],
+      "properties": [],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{inputs.server}}.start()"
+      }
+    }
+  ]
+}

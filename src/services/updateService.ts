@@ -1,6 +1,6 @@
 // GitHub Release and Cross-Platform Update Service for Node-MPY
 
-export const APP_CURRENT_VERSION = '1.0.1';
+export const APP_CURRENT_VERSION = '1.1.0';
 export const GITHUB_REPO = 'Timon2306/node-mpy';
 
 export interface ReleaseAsset {
