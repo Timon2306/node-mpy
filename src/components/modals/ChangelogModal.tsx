@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { X, Sparkles, Cpu, Layers, Bug, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { X, Sparkles, Cpu, Layers, Bug, CheckCircle2, ShieldCheck, Play } from 'lucide-react';
 import { useFlowStore } from '../../store/useFlowStore';
 
 export const ChangelogModal: React.FC = () => {
@@ -45,6 +45,60 @@ export const ChangelogModal: React.FC = () => {
 
         {/* Scrollable Changelog Body */}
         <div className="p-4 space-y-4 overflow-y-auto max-h-[440px] scrollbar-thin scrollbar-thumb-gray-600 select-text">
+          {/* Version 1.1.1 Control Flow, Try/Except & Multi-Branching */}
+          <div className="space-y-3 p-3.5 rounded-lg bg-[#161920] border border-teal-500/50 shadow-lg">
+            <div className="flex items-center justify-between">
+              <span className="px-2.5 py-0.5 rounded text-[11px] font-mono font-bold bg-teal-500/20 text-teal-300 border border-teal-500/40">
+                v1.1.1 — Try/Except, Elif & Flow Continuation
+              </span>
+              <span className="text-[10px] text-teal-400 font-mono font-semibold">22.10.2026</span>
+            </div>
+
+            <p className="text-[11px] text-gray-300 leading-relaxed">
+              {isRu
+                ? 'Новая нода перехвата ошибок Try / Except, поддержка многовариантного ветвления If / Elif / Else, порт «Далее (После)» для продолжения потока снаружи условий и автоматическое распознавание сходимости веток (diamond convergence).'
+                : 'New Try / Except error trapping node, multi-branching If / Elif / Else, sequential "Next / Flow After" continuation port outside conditionals, and automatic branch convergence detection.'}
+            </p>
+
+            <div className="space-y-2 text-gray-300">
+              <div className="space-y-1">
+                <span className="text-[11px] font-semibold text-teal-400 flex items-center gap-1.5">
+                  <Cpu className="w-3.5 h-3.5 text-teal-400" />
+                  {isRu ? 'Нода Try / Except и вывод ошибки' : 'Try / Except & Error Binding'}
+                </span>
+                <p className="text-[11px] text-gray-400 pl-5 leading-snug">
+                  {isRu
+                    ? 'Безопасная обработка сбоев датчиков, I2C, Wi-Fi и сети. Выход «Ошибка (Текст)» передает str(err) в Print, дисплеи или переменные.'
+                    : 'Safe exception trapping for I2C sensors, Wi-Fi and network. error_msg port feeds str(err) into Print or displays.'}
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-[11px] font-semibold text-teal-400 flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5 text-teal-400" />
+                  {isRu ? 'Многовариантное ветвление Elif' : 'Elif Multi-Branching'}
+                </span>
+                <p className="text-[11px] text-gray-400 pl-5 leading-snug">
+                  {isRu
+                    ? 'Новая нода If / Elif / Else с 3 ветками elif и опциональный порт Elif в стандартной ноде If / Else.'
+                    : 'New If / Elif / Else node with 3 elif branches, plus optional elif pin on standard If / Else node.'}
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-[11px] font-semibold text-teal-400 flex items-center gap-1.5">
+                  <Play className="w-3.5 h-3.5 text-teal-400" />
+                  {isRu ? 'Продолжение потока «Далее (После)»' : 'Sequential Continuation Outside Conditions'}
+                </span>
+                <p className="text-[11px] text-gray-400 pl-5 leading-snug">
+                  {isRu
+                    ? 'Порт Далее (После) выводит код на базовый уровень отступа после блоков условий. Поддерживается также автоматическое слияние стрелок веток в общую ноду.'
+                    : 'Next port emits code at outer indent level after conditionals. Automatic convergence also merges dual branch wires seamlessly.'}
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Version 1.1.0 Visual Dashboard & PinLab Suite */}
           <div className="space-y-3 p-3.5 rounded-lg bg-[#161920] border border-rose-500/50 shadow-lg">
             <div className="flex items-center justify-between">

@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.1] — 2026-10-22 (Try/Except, Elif Multi-Branching & Flow Continuation)
+
+### 🚀 Highlights
+- **`Try / Except` Error Trapping Node (`core:try_except`)**:
+  - Full support for MicroPython `try: ... except Exception as err: ...` exception handling.
+  - Dedicated `error_msg` port exposing `str(err)` to displays, serial logs, or variables.
+  - Prevents board freeze and crashes on I2C sensor timeouts, Wi-Fi reconnects, or JSON parse errors.
+- **`If / Elif / Else` Multi-Branching (`core:if_elif_else`) & `elif` Support**:
+  - Dedicated multi-way branching node with `cond_if`, `cond_elif1..3`, `flow_if`, `flow_elif1..3`, and `flow_else`.
+  - Added optional `elif` port to standard `core:if_else` node.
+  - Generates clean idiomatic MicroPython without deeply nested `else: if:`.
+- **Sequential Flow Continuation (`flow_next`) & Automatic Branch Convergence**:
+  - Explicit **«Далее (После)» (`flow_next`)** output port on `If / Else`, `If / Elif / Else`, and `Try / Except` allowing sequential steps to continue execution outside conditional blocks at the outer indentation level.
+  - Smart convergence detection: when both branches lead into the same downstream node (convergent diamond flow), the compiler automatically flattens it after the conditional block without duplicate execution.
+- **117 Native Nodes Total**:
+  - Complete 100% test pass across all 117 node definitions, 75 PinLab experiments, compiler suite, and visual dashboard tests.
+
 ## [1.1.0] — 2026-10-21 (Visual IoT Dashboard & PinLab Suite)
 
 ### 🚀 Highlights

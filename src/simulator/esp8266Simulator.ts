@@ -664,7 +664,7 @@ class ESP8266SimulatorEngine {
 
       // 12. If / Else branching
       else if (defId === 'core:if_else') {
-        const condEdge = edges.find((e) => e.target === currentNode.id && e.targetHandle === 'condition');
+        const condEdge = edges.find((e) => e.target === currentNode.id && (e.targetHandle === 'condition' || e.targetHandle === 'cond_if'));
         let condVal = true;
 
         if (condEdge) {
@@ -672,11 +672,93 @@ class ESP8266SimulatorEngine {
           condVal = raw === 1 || raw === true || raw === '1' || raw === 'True';
         }
 
-        nextHandle = condVal ? 'flow_true' : 'flow_false';
+        if (condVal) {
+          nextHandle = 'flow_true';
+        } else {
+          // Check if elif is connected and true
+          const elifEdge = edges.find(e => e.target === currentNode.id && e.targetHandle === 'cond_elif');
+          const hasElifBranch = edges.some(e => e.source === currentNode.id && e.sourceHandle === 'flow_elif');
+          if (elifEdge && hasElifBranch) {
+            const rawElif = this.resolveNodeOutputValue(elifEdge.source, elifEdge.sourceHandle || 'result', nodes, edges);
+            const elifVal = rawElif === 1 || rawElif === true || rawElif === '1' || rawElif === 'True';
+            if (elifVal) {
+              nextHandle = 'flow_elif';
+            } else {
+              nextHandle = 'flow_false';
+            }
+          } else {
+            nextHandle = 'flow_false';
+          }
+        }
+
+        // Fallback to flow_next if the chosen branch has no outgoing edge
+        const hasChosenEdge = edges.some(e => e.source === currentNode.id && e.sourceHandle === nextHandle);
+        if (!hasChosenEdge) {
+          const nextEdge = edges.find(e => e.source === currentNode.id && (e.sourceHandle === 'flow_next' || e.sourceHandle === 'flow_out'));
+          if (nextEdge) {
+            nextHandle = nextEdge.sourceHandle || 'flow_next';
+          }
+        }
+
         store.addSimLog(
           'info',
-          `Условие IF (${condVal ? 'True' : 'False'}) ➔ переход в ветку ${condVal ? 'True' : 'False'}`
+          `Условие IF (${condVal ? 'True' : 'False'}) ➔ переход в ветку ${nextHandle}`
         );
+      }
+
+      // 12b. If / Elif / Else multi-branching
+      else if (defId === 'core:if_elif_else') {
+        const condIfEdge = edges.find(e => e.target === currentNode.id && (e.targetHandle === 'cond_if' || e.targetHandle === 'condition'));
+        let condVal = true;
+        if (condIfEdge) {
+          const raw = this.resolveNodeOutputValue(condIfEdge.source, condIfEdge.sourceHandle || 'result', nodes, edges);
+          condVal = raw === 1 || raw === true || raw === '1' || raw === 'True';
+        }
+
+        if (condVal) {
+          nextHandle = 'flow_if';
+        } else {
+          let matched = false;
+          for (let i = 1; i <= 3; i++) {
+            const elifEdge = edges.find(e => e.target === currentNode.id && e.targetHandle === `cond_elif${i}`);
+            if (elifEdge) {
+              const rawElif = this.resolveNodeOutputValue(elifEdge.source, elifEdge.sourceHandle || 'result', nodes, edges);
+              const elifVal = rawElif === 1 || rawElif === true || rawElif === '1' || rawElif === 'True';
+              if (elifVal) {
+                nextHandle = `flow_elif${i}`;
+                matched = true;
+                break;
+              }
+            }
+          }
+          if (!matched) {
+            nextHandle = 'flow_else';
+          }
+        }
+
+        const hasChosenEdge = edges.some(e => e.source === currentNode.id && e.sourceHandle === nextHandle);
+        if (!hasChosenEdge) {
+          const nextEdge = edges.find(e => e.source === currentNode.id && (e.sourceHandle === 'flow_next' || e.sourceHandle === 'flow_out'));
+          if (nextEdge) {
+            nextHandle = nextEdge.sourceHandle || 'flow_next';
+          }
+        }
+
+        store.addSimLog('info', `If / Elif / Else ➔ переход в ветку ${nextHandle}`);
+      }
+
+      // 12c. Try / Except error handling
+      else if (defId === 'core:try_except') {
+        this.nodeOutputs.set(currentNode.id, { error_msg: 'None' });
+        nextHandle = 'flow_try';
+        const hasTryEdge = edges.some(e => e.source === currentNode.id && e.sourceHandle === 'flow_try');
+        if (!hasTryEdge) {
+          const nextEdge = edges.find(e => e.source === currentNode.id && (e.sourceHandle === 'flow_next' || e.sourceHandle === 'flow_out'));
+          if (nextEdge) {
+            nextHandle = nextEdge.sourceHandle || 'flow_next';
+          }
+        }
+        store.addSimLog('info', `Try / Except ➔ безопасное исполнение блока try`);
       }
 
       // 13. Format String

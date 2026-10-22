@@ -742,4 +742,317 @@ if (!dashClientRes.code.includes("b'CMD_ON' in _raw_dash_client_1")) {
 }
 console.log('✓ Dashboard client node compiles cleanly with socket telemetry and CMD_ON command check!\n');
 
+// --- TEST 7: Try / Except Node with Error Capture & Outer Continuation ---
+console.log('--- TEST 7: Try / Except Node with Error Capture & Outer Continuation ---');
+const tryExceptNodes = [
+  {
+    id: 'while_loop',
+    type: 'nodeMpy',
+    position: { x: 0, y: 0 },
+    data: {
+      definitionId: 'core:while_loop',
+      libraryId: 'core',
+      label: 'While True Loop',
+      color: '#3B82F6',
+      icon: 'Repeat',
+      properties: {}
+    }
+  },
+  {
+    id: 'try_node',
+    type: 'nodeMpy',
+    position: { x: 100, y: 0 },
+    data: {
+      definitionId: 'core:try_except',
+      libraryId: 'core',
+      label: 'Try / Except',
+      color: '#EF4444',
+      icon: 'AlertTriangle',
+      properties: {
+        error_var: 'err',
+        exception_type: 'Exception'
+      }
+    }
+  },
+  {
+    id: 'print_try',
+    type: 'nodeMpy',
+    position: { x: 200, y: -50 },
+    data: {
+      definitionId: 'core:print',
+      libraryId: 'core',
+      label: 'Print OK',
+      color: '#EAB308',
+      icon: 'Terminal',
+      properties: { message: 'Sensor OK' }
+    }
+  },
+  {
+    id: 'print_err',
+    type: 'nodeMpy',
+    position: { x: 200, y: 50 },
+    data: {
+      definitionId: 'core:print',
+      libraryId: 'core',
+      label: 'Print Error',
+      color: '#EAB308',
+      icon: 'Terminal',
+      properties: { prefix: 'Error caught: ' }
+    }
+  },
+  {
+    id: 'sleep_after',
+    type: 'nodeMpy',
+    position: { x: 300, y: 0 },
+    data: {
+      definitionId: 'time:sleep_ms',
+      libraryId: 'time',
+      label: 'Sleep After Try',
+      color: '#3B82F6',
+      icon: 'PauseCircle',
+      properties: { duration: 1000 }
+    }
+  }
+];
+
+const tryExceptEdges = [
+  { id: 'e_loop_try', source: 'while_loop', sourceHandle: 'loop_body', target: 'try_node', targetHandle: 'flow_in' },
+  { id: 'e_try_body', source: 'try_node', sourceHandle: 'flow_try', target: 'print_try', targetHandle: 'flow_in' },
+  { id: 'e_except_body', source: 'try_node', sourceHandle: 'flow_except', target: 'print_err', targetHandle: 'flow_in' },
+  { id: 'e_err_bind', source: 'try_node', sourceHandle: 'error_msg', target: 'print_err', targetHandle: 'msg' },
+  { id: 'e_try_next', source: 'try_node', sourceHandle: 'flow_next', target: 'sleep_after', targetHandle: 'flow_in' }
+];
+
+const tryRes = CodeGenerator.generateCode(tryExceptNodes as any, tryExceptEdges as any);
+console.log('Try/Except Generated Code:\n' + tryRes.code + '\n');
+
+if (!tryRes.code.includes('try:') || !tryRes.code.includes('except Exception as err:')) {
+  console.error('FAILED: try / except block missing in generated code');
+  process.exit(1);
+}
+if (!tryRes.code.includes('print(str("Error caught: ") + str(str(err)))') && !tryRes.code.includes('str(err)')) {
+  console.error('FAILED: error_msg (str(err)) was not passed to print_err node');
+  process.exit(1);
+}
+// sleep_after MUST be unindented (4 spaces inside while True, not 8 spaces inside try or except)
+if (!tryRes.code.includes('\n    time.sleep_ms(1000)')) {
+  console.error('FAILED: time.sleep_ms(1000) was not emitted unindented outside try/except block');
+  process.exit(1);
+}
+console.log('✓ Try / Except node compiles cleanly with error binding and unindented flow_next!\n');
+
+// --- TEST 8: If / Else with flow_next Continuation & Convergence ---
+console.log('--- TEST 8: If / Else with flow_next Continuation & Convergence ---');
+const ifElseNextNodes = [
+  {
+    id: 'while_loop',
+    type: 'nodeMpy',
+    position: { x: 0, y: 0 },
+    data: {
+      definitionId: 'core:while_loop',
+      libraryId: 'core',
+      label: 'While True Loop',
+      color: '#3B82F6',
+      icon: 'Repeat',
+      properties: {}
+    }
+  },
+  {
+    id: 'if_node',
+    type: 'nodeMpy',
+    position: { x: 100, y: 0 },
+    data: {
+      definitionId: 'core:if_else',
+      libraryId: 'core',
+      label: 'If / Else',
+      color: '#EC4899',
+      icon: 'GitFork',
+      properties: {}
+    }
+  },
+  {
+    id: 'print_true',
+    type: 'nodeMpy',
+    position: { x: 200, y: -50 },
+    data: {
+      definitionId: 'core:print',
+      libraryId: 'core',
+      label: 'True Branch',
+      color: '#EAB308',
+      icon: 'Terminal',
+      properties: { message: 'Branch True' }
+    }
+  },
+  {
+    id: 'print_false',
+    type: 'nodeMpy',
+    position: { x: 200, y: 50 },
+    data: {
+      definitionId: 'core:print',
+      libraryId: 'core',
+      label: 'False Branch',
+      color: '#EAB308',
+      icon: 'Terminal',
+      properties: { message: 'Branch False' }
+    }
+  },
+  {
+    id: 'print_after',
+    type: 'nodeMpy',
+    position: { x: 300, y: 0 },
+    data: {
+      definitionId: 'core:print',
+      libraryId: 'core',
+      label: 'After If Node',
+      color: '#EAB308',
+      icon: 'Terminal',
+      properties: { message: 'Always Runs After' }
+    }
+  }
+];
+
+const ifElseNextEdges = [
+  { id: 'e_loop_if', source: 'while_loop', sourceHandle: 'loop_body', target: 'if_node', targetHandle: 'flow_in' },
+  { id: 'e_if_true', source: 'if_node', sourceHandle: 'flow_true', target: 'print_true', targetHandle: 'flow_in' },
+  { id: 'e_if_false', source: 'if_node', sourceHandle: 'flow_false', target: 'print_false', targetHandle: 'flow_in' },
+  { id: 'e_if_next', source: 'if_node', sourceHandle: 'flow_next', target: 'print_after', targetHandle: 'flow_in' }
+];
+
+const ifElseNextRes = CodeGenerator.generateCode(ifElseNextNodes as any, ifElseNextEdges as any);
+console.log('If/Else with flow_next Generated Code:\n' + ifElseNextRes.code + '\n');
+
+if (!ifElseNextRes.code.includes('if True:') || !ifElseNextRes.code.includes('else:')) {
+  console.error('FAILED: if / else branches missing');
+  process.exit(1);
+}
+// print_after MUST be emitted outside the if/else block at indent level 1 (4 spaces)
+if (!ifElseNextRes.code.includes('\n    print("Always Runs After")')) {
+  console.error('FAILED: print_after was not emitted unindented outside if/else block');
+  process.exit(1);
+}
+console.log('✓ If / Else flow_next unindented continuation verified!\n');
+
+// --- TEST 8b: Implicit Convergence (both branches wiring into the same downstream node) ---
+console.log('--- TEST 8b: Implicit Convergence (both branches wiring into the same downstream node) ---');
+const ifElseConvEdges = [
+  { id: 'e_loop_if', source: 'while_loop', sourceHandle: 'loop_body', target: 'if_node', targetHandle: 'flow_in' },
+  { id: 'e_if_true', source: 'if_node', sourceHandle: 'flow_true', target: 'print_true', targetHandle: 'flow_in' },
+  { id: 'e_if_false', source: 'if_node', sourceHandle: 'flow_false', target: 'print_false', targetHandle: 'flow_in' },
+  { id: 'e_true_conv', source: 'print_true', sourceHandle: 'flow_out', target: 'print_after', targetHandle: 'flow_in' },
+  { id: 'e_false_conv', source: 'print_false', sourceHandle: 'flow_out', target: 'print_after', targetHandle: 'flow_in' }
+];
+
+const ifElseConvRes = CodeGenerator.generateCode(ifElseNextNodes as any, ifElseConvEdges as any);
+console.log('If/Else Implicit Convergence Generated Code:\n' + ifElseConvRes.code + '\n');
+
+if (!ifElseConvRes.code.includes('\n    print("Always Runs After")')) {
+  console.error('FAILED: Converged node was not emitted unindented outside if/else block');
+  process.exit(1);
+}
+console.log('✓ If / Else implicit convergence verified with 100% success!\n');
+
+// --- TEST 9: If / Elif / Else Multi-Branching ---
+console.log('--- TEST 9: If / Elif / Else Multi-Branching ---');
+const elifNodes = [
+  {
+    id: 'while_loop',
+    type: 'nodeMpy',
+    position: { x: 0, y: 0 },
+    data: {
+      definitionId: 'core:while_loop',
+      libraryId: 'core',
+      label: 'While True Loop',
+      color: '#3B82F6',
+      icon: 'Repeat',
+      properties: {}
+    }
+  },
+  {
+    id: 'multi_branch',
+    type: 'nodeMpy',
+    position: { x: 100, y: 0 },
+    data: {
+      definitionId: 'core:if_elif_else',
+      libraryId: 'core',
+      label: 'If / Elif / Else',
+      color: '#EC4899',
+      icon: 'GitFork',
+      properties: {}
+    }
+  },
+  {
+    id: 'p_if',
+    type: 'nodeMpy',
+    position: { x: 200, y: -50 },
+    data: {
+      definitionId: 'core:print',
+      libraryId: 'core',
+      label: 'P If',
+      color: '#EAB308',
+      icon: 'Terminal',
+      properties: { message: 'IF Branch' }
+    }
+  },
+  {
+    id: 'p_elif1',
+    type: 'nodeMpy',
+    position: { x: 200, y: 0 },
+    data: {
+      definitionId: 'core:print',
+      libraryId: 'core',
+      label: 'P Elif 1',
+      color: '#EAB308',
+      icon: 'Terminal',
+      properties: { message: 'ELIF 1 Branch' }
+    }
+  },
+  {
+    id: 'p_else',
+    type: 'nodeMpy',
+    position: { x: 200, y: 50 },
+    data: {
+      definitionId: 'core:print',
+      libraryId: 'core',
+      label: 'P Else',
+      color: '#EAB308',
+      icon: 'Terminal',
+      properties: { message: 'ELSE Branch' }
+    }
+  },
+  {
+    id: 'p_continue',
+    type: 'nodeMpy',
+    position: { x: 300, y: 0 },
+    data: {
+      definitionId: 'core:print',
+      libraryId: 'core',
+      label: 'P Continue',
+      color: '#EAB308',
+      icon: 'Terminal',
+      properties: { message: 'Continue Flow' }
+    }
+  }
+];
+
+const elifEdges = [
+  { id: 'e_wb', source: 'while_loop', sourceHandle: 'loop_body', target: 'multi_branch', targetHandle: 'flow_in' },
+  { id: 'e_if', source: 'multi_branch', sourceHandle: 'flow_if', target: 'p_if', targetHandle: 'flow_in' },
+  { id: 'e_elif1', source: 'multi_branch', sourceHandle: 'flow_elif1', target: 'p_elif1', targetHandle: 'flow_in' },
+  { id: 'e_else', source: 'multi_branch', sourceHandle: 'flow_else', target: 'p_else', targetHandle: 'flow_in' },
+  { id: 'e_cont', source: 'multi_branch', sourceHandle: 'flow_next', target: 'p_continue', targetHandle: 'flow_in' }
+];
+
+const elifRes = CodeGenerator.generateCode(elifNodes as any, elifEdges as any);
+console.log('If / Elif / Else Generated Code:\n' + elifRes.code + '\n');
+
+if (!elifRes.code.includes('if True:') || !elifRes.code.includes('elif True:') || !elifRes.code.includes('else:')) {
+  console.error('FAILED: if / elif / else structure incomplete');
+  process.exit(1);
+}
+if (!elifRes.code.includes('\n    print("Continue Flow")')) {
+  console.error('FAILED: Continue Flow not emitted unindented outside if/elif/else');
+  process.exit(1);
+}
+console.log('✓ If / Elif / Else multi-branching verified with 100% accuracy!\n');
+
 console.log('ALL TESTS PASSED SUCCESSFULLY!');

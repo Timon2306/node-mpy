@@ -117,19 +117,94 @@
       "category": "Core",
       "color": "#EC4899",
       "icon": "GitFork",
-      "description": "Ветвление логики по условию",
+      "description": "Ветвление логики по условию (if / elif / else) с выходом Далее",
       "inputs": [
         { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
-        { "id": "condition", "name": "condition", "type": "boolean", "label": "Condition" }
+        { "id": "condition", "name": "condition", "type": "boolean", "label": "Condition" },
+        { "id": "cond_elif", "name": "cond_elif", "type": "boolean", "label": "Elif (Опционально)" }
       ],
       "outputs": [
         { "id": "flow_true", "name": "flow_true", "type": "flow", "label": "True" },
-        { "id": "flow_false", "name": "flow_false", "type": "flow", "label": "False" }
+        { "id": "flow_elif", "name": "flow_elif", "type": "flow", "label": "Elif" },
+        { "id": "flow_false", "name": "flow_false", "type": "flow", "label": "False" },
+        { "id": "flow_next", "name": "flow_next", "type": "flow", "label": "Далее (После)" }
       ],
       "properties": [],
       "codeTemplate": {
         "section": "flow",
         "template": "if {{inputs.condition}}:"
+      }
+    },
+    {
+      "id": "core:if_elif_else",
+      "libraryId": "core",
+      "label": "If / Elif / Else",
+      "category": "Core",
+      "color": "#EC4899",
+      "icon": "GitFork",
+      "description": "Многовариантное ветвление по условиям (if, elif 1-3, else) с выходом Далее",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
+        { "id": "cond_if", "name": "cond_if", "type": "boolean", "label": "If (Условие)" },
+        { "id": "cond_elif1", "name": "cond_elif1", "type": "boolean", "label": "Elif 1 (Условие)" },
+        { "id": "cond_elif2", "name": "cond_elif2", "type": "boolean", "label": "Elif 2 (Условие)" },
+        { "id": "cond_elif3", "name": "cond_elif3", "type": "boolean", "label": "Elif 3 (Условие)" }
+      ],
+      "outputs": [
+        { "id": "flow_if", "name": "flow_if", "type": "flow", "label": "Ветка If" },
+        { "id": "flow_elif1", "name": "flow_elif1", "type": "flow", "label": "Ветка Elif 1" },
+        { "id": "flow_elif2", "name": "flow_elif2", "type": "flow", "label": "Ветка Elif 2" },
+        { "id": "flow_elif3", "name": "flow_elif3", "type": "flow", "label": "Ветка Elif 3" },
+        { "id": "flow_else", "name": "flow_else", "type": "flow", "label": "Ветка Else" },
+        { "id": "flow_next", "name": "flow_next", "type": "flow", "label": "Далее (После)" }
+      ],
+      "properties": [],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "if {{inputs.cond_if}}:"
+      }
+    },
+    {
+      "id": "core:try_except",
+      "libraryId": "core",
+      "label": "Try / Except",
+      "category": "Core",
+      "color": "#EF4444",
+      "icon": "AlertTriangle",
+      "description": "Безопасный перехват ошибок (try / except) для датчиков, сети, I2C и вычислений",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" }
+      ],
+      "outputs": [
+        { "id": "flow_try", "name": "flow_try", "type": "flow", "label": "Try (Попытка)" },
+        { "id": "flow_except", "name": "flow_except", "type": "flow", "label": "Except (Ошибка)" },
+        { "id": "flow_next", "name": "flow_next", "type": "flow", "label": "Далее (После)" },
+        { "id": "error_msg", "name": "error_msg", "type": "string", "label": "Ошибка (Текст)" }
+      ],
+      "properties": [
+        {
+          "id": "error_var",
+          "name": "error_var",
+          "type": "text",
+          "label": "Имя переменной ошибки",
+          "defaultValue": "err",
+          "placeholder": "err"
+        },
+        {
+          "id": "exception_type",
+          "name": "exception_type",
+          "type": "text",
+          "label": "Тип ошибки (Exception, OSError, ValueError)",
+          "defaultValue": "Exception",
+          "placeholder": "Exception"
+        }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "try:\n    pass\nexcept {{props.exception_type}} as {{props.error_var}}:\n    pass",
+        "outputVariables": {
+          "error_msg": "str({{props.error_var}})"
+        }
       }
     },
     {

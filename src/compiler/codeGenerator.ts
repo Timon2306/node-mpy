@@ -505,7 +505,14 @@ export class CodeGenerator {
       return false;
     }
     // Flow control nodes are not data nodes
-    if (node.data.definitionId === 'core:setup' || node.data.definitionId === 'core:while_loop' || node.data.definitionId === 'core:if_else' || node.data.definitionId === 'core:for_range') {
+    if (
+      node.data.definitionId === 'core:setup' ||
+      node.data.definitionId === 'core:while_loop' ||
+      node.data.definitionId === 'core:if_else' ||
+      node.data.definitionId === 'core:if_elif_else' ||
+      node.data.definitionId === 'core:try_except' ||
+      node.data.definitionId === 'core:for_range'
+    ) {
       return false;
     }
     // Data/expression nodes have no flow outputs
@@ -550,6 +557,52 @@ export class CodeGenerator {
   }
 
   /**
+   * Finds the first downstream flow node reachable from all connected branches (merge point)
+   */
+  private static findConvergenceNode(
+    startNodeId: string,
+    branchHandles: string[],
+    edges: Edge[]
+  ): string | undefined {
+    const branchPaths: string[][] = [];
+
+    for (const handle of branchHandles) {
+      const startEdge = edges.find(e => e.source === startNodeId && e.sourceHandle === handle);
+      if (!startEdge) continue;
+
+      const path: string[] = [];
+      const visited = new Set<string>();
+      let curr = startEdge.target;
+
+      while (curr && !visited.has(curr)) {
+        visited.add(curr);
+        path.push(curr);
+        const nextEdge = edges.find(e => e.source === curr && (!e.sourceHandle || e.sourceHandle === 'flow_out' || e.sourceHandle === 'flow_next'));
+        if (!nextEdge) break;
+        curr = nextEdge.target;
+      }
+
+      if (path.length > 0) {
+        branchPaths.push(path);
+      }
+    }
+
+    if (branchPaths.length < 2) {
+      return undefined;
+    }
+
+    // Find the first node in branchPaths[0] that is present in all other branchPaths
+    for (const nodeId of branchPaths[0]) {
+      const inAll = branchPaths.slice(1).every(p => p.includes(nodeId));
+      if (inAll) {
+        return nodeId;
+      }
+    }
+
+    return undefined;
+  }
+
+  /**
    * Traverses flow connections iteratively / recursively with correct indent
    */
   private static traverseFlow(
@@ -560,7 +613,8 @@ export class CodeGenerator {
     outputVarMap: Map<string, string>,
     indentLevel: number,
     visited: Set<string>,
-    emittedDataNodes: Set<string> = new Set()
+    emittedDataNodes: Set<string> = new Set(),
+    stopNodeId?: string
   ): string[] {
     const result: string[] = [];
     const indent = '    '.repeat(indentLevel);
@@ -575,6 +629,11 @@ export class CodeGenerator {
 
       const nextNode = nodeMap.get(edge.target);
       if (!nextNode) break;
+
+      // Stop if hitting boundary stopNodeId (e.g. merge point or continuation after branching)
+      if (stopNodeId && nextNode.id === stopNodeId) {
+        break;
+      }
 
       // Stop startup flow when hitting While True loop (the loop is rendered separately as the main loop)
       if (nextNode.data.definitionId === 'core:while_loop') {
@@ -591,31 +650,178 @@ export class CodeGenerator {
       const prereqs = this.emitDataDependencies(nextNode, edges, nodeMap, outputVarMap, emittedDataNodes, indent);
       result.push(...prereqs);
 
-      // Handle special flow branching: if/else
+      // 1. Handle flow branching: if / elif / else
       if (nextNode.data.definitionId === 'core:if_else') {
-        const condEdge = edges.find(e => e.target === nextNode.id && e.targetHandle === 'condition');
-        const condVar = condEdge ? outputVarMap.get(`${condEdge.source}:${condEdge.sourceHandle}`) : 'True';
+        const condEdge = edges.find(e => e.target === nextNode.id && (e.targetHandle === 'condition' || e.targetHandle === 'cond_if'));
+        const condVar = condEdge ? (outputVarMap.get(`${condEdge.source}:${condEdge.sourceHandle}`) || 'True') : 'True';
+
+        let nextEdge = edges.find(e => e.source === nextNode.id && (e.sourceHandle === 'flow_next' || e.sourceHandle === 'flow_out'));
+        let branchStopNodeId = nextEdge ? nextEdge.target : undefined;
+
+        if (!branchStopNodeId) {
+          const commonTarget = this.findConvergenceNode(nextNode.id, ['flow_true', 'flow_elif', 'flow_false'], edges);
+          if (commonTarget) {
+            branchStopNodeId = commonTarget;
+          }
+        }
 
         result.push(`${indent}if ${condVar}:`);
-        const trueBranch = this.traverseFlow(nextNode.id, 'flow_true', edges, nodeMap, outputVarMap, indentLevel + 1, new Set(visited), emittedDataNodes);
+        const trueBranch = this.traverseFlow(nextNode.id, 'flow_true', edges, nodeMap, outputVarMap, indentLevel + 1, new Set(visited), emittedDataNodes, branchStopNodeId);
         result.push(...(trueBranch.length ? trueBranch : [`${indent}    pass`]));
 
-        result.push(`${indent}else:`);
-        const falseBranch = this.traverseFlow(nextNode.id, 'flow_false', edges, nodeMap, outputVarMap, indentLevel + 1, new Set(visited), emittedDataNodes);
-        result.push(...(falseBranch.length ? falseBranch : [`${indent}    pass`]));
+        // Optional elif branch
+        const hasElifEdge = edges.some(e => e.source === nextNode.id && e.sourceHandle === 'flow_elif');
+        if (hasElifEdge) {
+          const elifCondEdge = edges.find(e => e.target === nextNode.id && e.targetHandle === 'cond_elif');
+          const elifCondVar = elifCondEdge ? (outputVarMap.get(`${elifCondEdge.source}:${elifCondEdge.sourceHandle}`) || 'True') : 'True';
+          result.push(`${indent}elif ${elifCondVar}:`);
+          const elifBranch = this.traverseFlow(nextNode.id, 'flow_elif', edges, nodeMap, outputVarMap, indentLevel + 1, new Set(visited), emittedDataNodes, branchStopNodeId);
+          result.push(...(elifBranch.length ? elifBranch : [`${indent}    pass`]));
+        }
+
+        // Optional else branch
+        const hasFalseEdge = edges.some(e => e.source === nextNode.id && e.sourceHandle === 'flow_false');
+        if (hasFalseEdge) {
+          result.push(`${indent}else:`);
+          const falseBranch = this.traverseFlow(nextNode.id, 'flow_false', edges, nodeMap, outputVarMap, indentLevel + 1, new Set(visited), emittedDataNodes, branchStopNodeId);
+          result.push(...(falseBranch.length ? falseBranch : [`${indent}    pass`]));
+        }
+
+        // Continue outside if/else
+        if (nextEdge) {
+          currentNodeId = nextNode.id;
+          currentHandle = nextEdge.sourceHandle || 'flow_next';
+          continue;
+        }
+
+        if (branchStopNodeId) {
+          const convergeEdge = edges.find(e => e.target === branchStopNodeId);
+          if (convergeEdge) {
+            currentNodeId = convergeEdge.source;
+            currentHandle = convergeEdge.sourceHandle || 'flow_out';
+            continue;
+          }
+        }
 
         break;
       }
 
-      // Handle special flow branching: for range loop
+      // 2. Handle multi-branching: if / elif 1-3 / else
+      if (nextNode.data.definitionId === 'core:if_elif_else') {
+        const condIfEdge = edges.find(e => e.target === nextNode.id && (e.targetHandle === 'cond_if' || e.targetHandle === 'condition'));
+        const condIfVar = condIfEdge ? (outputVarMap.get(`${condIfEdge.source}:${condIfEdge.sourceHandle}`) || 'True') : 'True';
+
+        let nextEdge = edges.find(e => e.source === nextNode.id && (e.sourceHandle === 'flow_next' || e.sourceHandle === 'flow_out'));
+        let branchStopNodeId = nextEdge ? nextEdge.target : undefined;
+
+        const branchList = ['flow_if', 'flow_elif1', 'flow_elif2', 'flow_elif3', 'flow_else'];
+        if (!branchStopNodeId) {
+          const commonTarget = this.findConvergenceNode(nextNode.id, branchList, edges);
+          if (commonTarget) {
+            branchStopNodeId = commonTarget;
+          }
+        }
+
+        result.push(`${indent}if ${condIfVar}:`);
+        const ifBranch = this.traverseFlow(nextNode.id, 'flow_if', edges, nodeMap, outputVarMap, indentLevel + 1, new Set(visited), emittedDataNodes, branchStopNodeId);
+        result.push(...(ifBranch.length ? ifBranch : [`${indent}    pass`]));
+
+        const elifBranches = [
+          { handle: 'flow_elif1', cond: 'cond_elif1' },
+          { handle: 'flow_elif2', cond: 'cond_elif2' },
+          { handle: 'flow_elif3', cond: 'cond_elif3' },
+        ];
+
+        for (const eb of elifBranches) {
+          const hasBranch = edges.some(e => e.source === nextNode.id && e.sourceHandle === eb.handle);
+          if (hasBranch) {
+            const ebCondEdge = edges.find(e => e.target === nextNode.id && e.targetHandle === eb.cond);
+            const ebCondVar = ebCondEdge ? (outputVarMap.get(`${ebCondEdge.source}:${ebCondEdge.sourceHandle}`) || 'True') : 'True';
+            result.push(`${indent}elif ${ebCondVar}:`);
+            const ebBranch = this.traverseFlow(nextNode.id, eb.handle, edges, nodeMap, outputVarMap, indentLevel + 1, new Set(visited), emittedDataNodes, branchStopNodeId);
+            result.push(...(ebBranch.length ? ebBranch : [`${indent}    pass`]));
+          }
+        }
+
+        const hasElseBranch = edges.some(e => e.source === nextNode.id && e.sourceHandle === 'flow_else');
+        if (hasElseBranch) {
+          result.push(`${indent}else:`);
+          const elseBranch = this.traverseFlow(nextNode.id, 'flow_else', edges, nodeMap, outputVarMap, indentLevel + 1, new Set(visited), emittedDataNodes, branchStopNodeId);
+          result.push(...(elseBranch.length ? elseBranch : [`${indent}    pass`]));
+        }
+
+        if (nextEdge) {
+          currentNodeId = nextNode.id;
+          currentHandle = nextEdge.sourceHandle || 'flow_next';
+          continue;
+        }
+
+        if (branchStopNodeId) {
+          const convergeEdge = edges.find(e => e.target === branchStopNodeId);
+          if (convergeEdge) {
+            currentNodeId = convergeEdge.source;
+            currentHandle = convergeEdge.sourceHandle || 'flow_out';
+            continue;
+          }
+        }
+
+        break;
+      }
+
+      // 3. Handle error trapping: try / except
+      if (nextNode.data.definitionId === 'core:try_except') {
+        const errorVar = String(nextNode.data.properties?.error_var || 'err');
+        const excType = String(nextNode.data.properties?.exception_type || 'Exception');
+        outputVarMap.set(`${nextNode.id}:error_msg`, `str(${errorVar})`);
+
+        let nextEdge = edges.find(e => e.source === nextNode.id && (e.sourceHandle === 'flow_next' || e.sourceHandle === 'flow_out'));
+        let branchStopNodeId = nextEdge ? nextEdge.target : undefined;
+
+        if (!branchStopNodeId) {
+          const commonTarget = this.findConvergenceNode(nextNode.id, ['flow_try', 'flow_except'], edges);
+          if (commonTarget) {
+            branchStopNodeId = commonTarget;
+          }
+        }
+
+        result.push(`${indent}try:`);
+        const tryBranch = this.traverseFlow(nextNode.id, 'flow_try', edges, nodeMap, outputVarMap, indentLevel + 1, new Set(visited), emittedDataNodes, branchStopNodeId);
+        result.push(...(tryBranch.length ? tryBranch : [`${indent}    pass`]));
+
+        result.push(`${indent}except ${excType} as ${errorVar}:`);
+        const exceptBranch = this.traverseFlow(nextNode.id, 'flow_except', edges, nodeMap, outputVarMap, indentLevel + 1, new Set(visited), emittedDataNodes, branchStopNodeId);
+        result.push(...(exceptBranch.length ? exceptBranch : [`${indent}    pass`]));
+
+        if (nextEdge) {
+          currentNodeId = nextNode.id;
+          currentHandle = nextEdge.sourceHandle || 'flow_next';
+          continue;
+        }
+
+        if (branchStopNodeId) {
+          const convergeEdge = edges.find(e => e.target === branchStopNodeId);
+          if (convergeEdge) {
+            currentNodeId = convergeEdge.source;
+            currentHandle = convergeEdge.sourceHandle || 'flow_out';
+            continue;
+          }
+        }
+
+        break;
+      }
+
+      // 4. Handle special flow branching: for range loop
       if (nextNode.data.definitionId === 'core:for_range') {
         const countEdge = edges.find(e => e.target === nextNode.id && e.targetHandle === 'count');
         const countVal = countEdge ? (outputVarMap.get(`${countEdge.source}:${countEdge.sourceHandle}`) || '5') : String(nextNode.data.properties?.count ?? 5);
         const varName = String(nextNode.data.properties?.var_name || 'i');
         outputVarMap.set(`${nextNode.id}:index`, varName);
 
+        const nextEdge = edges.find(e => e.source === nextNode.id && e.sourceHandle === 'flow_out');
+        const loopStopNodeId = nextEdge ? nextEdge.target : undefined;
+
         result.push(`${indent}for ${varName} in range(${countVal}):`);
-        const loopBody = this.traverseFlow(nextNode.id, 'loop_body', edges, nodeMap, outputVarMap, indentLevel + 1, new Set(visited), emittedDataNodes);
+        const loopBody = this.traverseFlow(nextNode.id, 'loop_body', edges, nodeMap, outputVarMap, indentLevel + 1, new Set(visited), emittedDataNodes, loopStopNodeId);
         result.push(...(loopBody.length ? loopBody : [`${indent}    pass`]));
 
         currentNodeId = nextNode.id;

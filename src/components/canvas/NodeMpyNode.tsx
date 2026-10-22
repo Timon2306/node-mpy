@@ -206,6 +206,12 @@ export const NodeMpyNode = memo(({ id, data, selected }: NodeProps) => {
     subtitle = `"${txt.length > 15 ? txt.slice(0, 13) + '…' : txt}"`;
   } else if (nodeData.definitionId === 'core:for_range') {
     subtitle = `Count: ${nodeData.properties?.count ?? 5}`;
+  } else if (nodeData.definitionId === 'core:try_except') {
+    subtitle = `except ${nodeData.properties?.exception_type ?? 'Exception'}`;
+  } else if (nodeData.definitionId === 'core:if_elif_else') {
+    subtitle = `Multi-Branch`;
+  } else if (nodeData.definitionId === 'core:if_else') {
+    subtitle = `Branching`;
   } else if (nodeData.definitionId === 'core:math_func') {
     subtitle = `${nodeData.properties?.func ?? 'round'}()`;
   } else if (nodeData.definitionId === 'core:type_cast') {

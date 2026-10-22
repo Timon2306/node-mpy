@@ -1,6 +1,6 @@
 {
   "name": "node-mpy",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Visual MicroPython programming environment in Node-RED style",
   "private": true,
   "type": "module",
