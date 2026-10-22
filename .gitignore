@@ -28,6 +28,13 @@ Thumbs.db
 
 # Rust / Tauri build artifacts
 src-tauri/target
+
+# Built executables (never commit binaries to source)
+*.exe
+*.AppImage
+*.dmg
+*.msi
+*.deb
 src-tauri/gen
 target
 **/*.rs.bk
