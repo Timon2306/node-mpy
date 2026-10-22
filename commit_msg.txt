@@ -1,8 +1,0 @@
-fix: safe ADC Init (no pin_0 error), simulator flow_next continuation & multi-variable/multi-pin nodes
-
-- Fix machine:adc_init emitting undefined pin_0 instead of machine.ADC(0)
-- Add safety net in codeGenerator to auto-initialize any referenced pin_X in hardware section
-- Simulator: implement continuationStack so visual simulation executes flow_next after branch finishes
-- Add core:variables_multi node for declaring multiple variables in one compact block
-- Add machine:multi_pin_init node for initializing multiple pins, PWM and ADC in one compact block
-- Full test pass with regression test for multi-pin and multi-variable assignments
