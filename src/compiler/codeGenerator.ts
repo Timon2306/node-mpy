@@ -313,7 +313,7 @@ export class CodeGenerator {
 
     const implicitPinLines: string[] = [];
     for (const node of nodes) {
-      if (node.data.properties?.pin !== undefined && node.data.definitionId !== 'machine:pin_init') {
+      if (node.data.properties?.pin !== undefined && node.data.definitionId !== 'machine:pin_init' && node.data.definitionId !== 'machine:adc_init') {
         const pinNum = Number(node.data.properties.pin);
         const pinEdge = edges.find(e => e.target === node.id && e.targetHandle === 'pin');
         if (!pinEdge && !initializedPins.has(pinNum)) {
@@ -365,6 +365,23 @@ export class CodeGenerator {
         lines.push(rendered);
       }
     }
+
+    // Safety guard: scan all generated init lines for any referenced pin_\d+ that was never initialized!
+    const referencedPins = new Set<number>();
+    for (const l of lines) {
+      const matches = l.matchAll(/\bpin_(\d+)\b/g);
+      for (const m of matches) {
+        referencedPins.add(Number(m[1]));
+      }
+    }
+    const missingPins: string[] = [];
+    for (const p of referencedPins) {
+      if (!initializedPins.has(p)) {
+        initializedPins.add(p);
+        missingPins.push(`pin_${p} = machine.Pin(${p}, machine.Pin.OUT)`);
+      }
+    }
+    lines.unshift(...missingPins);
 
     return lines.join('\n');
   }
@@ -1087,6 +1104,10 @@ export class CodeGenerator {
         if (incomingVal) return incomingVal;
         const trimmed = fallback.trim();
         if (input.type === 'pin') {
+          if (node.data.definitionId === 'machine:adc_init') {
+            const pinVal = trimmed.startsWith('props.') ? props[trimmed.substring(6)] : trimmed;
+            return String(pinVal ?? props.pin ?? 0);
+          }
           const pinVal = trimmed.startsWith('props.') ? props[trimmed.substring(6)] : trimmed;
           return `pin_${pinVal ?? props.pin ?? 2}`;
         }

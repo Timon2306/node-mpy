@@ -13,6 +13,7 @@ class ESP8266SimulatorEngine {
   private virtualTicks: number = 0;
   private visitedInStep: Set<string> = new Set();
   private forLoopCounters: Map<string, number> = new Map();
+  private continuationStack: string[] = [];
 
   // Runtime simulator memory
   private virtualVariables: Record<string, any> = {};
@@ -34,6 +35,7 @@ class ESP8266SimulatorEngine {
     this.virtualTicks = Date.now();
     this.visitedInStep.clear();
     this.forLoopCounters.clear();
+    this.continuationStack = [];
     this.virtualVariables = {};
     this.nodeOutputs.clear();
 
@@ -117,6 +119,7 @@ class ESP8266SimulatorEngine {
     this.isRunning = false;
     this.isPaused = false;
     this.currentNodeId = null;
+    this.continuationStack = [];
     if (this.timer) {
       clearTimeout(this.timer);
       this.timer = null;
@@ -662,6 +665,30 @@ class ESP8266SimulatorEngine {
         store.addSimLog('info', `Задана переменная: ${varName} = ${JSON.stringify(val)}`);
       }
 
+      // 11b. Variables Multi Set
+      else if (defId === 'core:variables_multi') {
+        const raw = String(props.assignments || '');
+        const lines = raw.split('\n');
+        const assigned: string[] = [];
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed.startsWith('#')) continue;
+          if (trimmed.includes('=')) {
+            const [k, v] = trimmed.split('=').map(s => s.trim());
+            let val: any = v;
+            if (v === 'True') val = true;
+            else if (v === 'False') val = false;
+            else if (!isNaN(Number(v))) val = Number(v);
+            else if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+              val = v.slice(1, -1);
+            }
+            this.virtualVariables[k] = val;
+            assigned.push(`${k}=${val}`);
+          }
+        }
+        store.addSimLog('info', `Заданы переменные: ${assigned.join(', ')}`);
+      }
+
       // 12. If / Else branching
       else if (defId === 'core:if_else') {
         const condEdge = edges.find((e) => e.target === currentNode.id && (e.targetHandle === 'condition' || e.targetHandle === 'cond_if'));
@@ -691,13 +718,17 @@ class ESP8266SimulatorEngine {
           }
         }
 
+        // Check if there is an outer continuation after this if/else
+        const nextContEdge = edges.find(e => e.source === currentNode.id && (e.sourceHandle === 'flow_next' || e.sourceHandle === 'flow_out'));
+
         // Fallback to flow_next if the chosen branch has no outgoing edge
         const hasChosenEdge = edges.some(e => e.source === currentNode.id && e.sourceHandle === nextHandle);
         if (!hasChosenEdge) {
-          const nextEdge = edges.find(e => e.source === currentNode.id && (e.sourceHandle === 'flow_next' || e.sourceHandle === 'flow_out'));
-          if (nextEdge) {
-            nextHandle = nextEdge.sourceHandle || 'flow_next';
+          if (nextContEdge) {
+            nextHandle = nextContEdge.sourceHandle || 'flow_next';
           }
+        } else if (nextContEdge) {
+          this.continuationStack.push(nextContEdge.target);
         }
 
         store.addSimLog(
@@ -736,12 +767,14 @@ class ESP8266SimulatorEngine {
           }
         }
 
+        const nextContEdge = edges.find(e => e.source === currentNode.id && (e.sourceHandle === 'flow_next' || e.sourceHandle === 'flow_out'));
         const hasChosenEdge = edges.some(e => e.source === currentNode.id && e.sourceHandle === nextHandle);
         if (!hasChosenEdge) {
-          const nextEdge = edges.find(e => e.source === currentNode.id && (e.sourceHandle === 'flow_next' || e.sourceHandle === 'flow_out'));
-          if (nextEdge) {
-            nextHandle = nextEdge.sourceHandle || 'flow_next';
+          if (nextContEdge) {
+            nextHandle = nextContEdge.sourceHandle || 'flow_next';
           }
+        } else if (nextContEdge) {
+          this.continuationStack.push(nextContEdge.target);
         }
 
         store.addSimLog('info', `If / Elif / Else ➔ переход в ветку ${nextHandle}`);
@@ -751,12 +784,14 @@ class ESP8266SimulatorEngine {
       else if (defId === 'core:try_except') {
         this.nodeOutputs.set(currentNode.id, { error_msg: 'None' });
         nextHandle = 'flow_try';
+        const nextContEdge = edges.find(e => e.source === currentNode.id && (e.sourceHandle === 'flow_next' || e.sourceHandle === 'flow_out'));
         const hasTryEdge = edges.some(e => e.source === currentNode.id && e.sourceHandle === 'flow_try');
         if (!hasTryEdge) {
-          const nextEdge = edges.find(e => e.source === currentNode.id && (e.sourceHandle === 'flow_next' || e.sourceHandle === 'flow_out'));
-          if (nextEdge) {
-            nextHandle = nextEdge.sourceHandle || 'flow_next';
+          if (nextContEdge) {
+            nextHandle = nextContEdge.sourceHandle || 'flow_next';
           }
+        } else if (nextContEdge) {
+          this.continuationStack.push(nextContEdge.target);
         }
         store.addSimLog('info', `Try / Except ➔ безопасное исполнение блока try`);
       }
@@ -1083,21 +1118,28 @@ class ESP8266SimulatorEngine {
       if (outEdge) {
         targetNodeId = outEdge.target;
       } else {
-        // Check if an active for_range loop is running
-        const activeForRangeId = Array.from(this.forLoopCounters.keys()).pop();
-        const activeForRangeNode = activeForRangeId ? nodes.find((n) => n.id === activeForRangeId) : null;
-
-        if (activeForRangeNode && activeForRangeNode.id !== currentNode.id) {
-          targetNodeId = activeForRangeNode.id;
-          nextHandle = 'loop_body';
+        // Check if there is an outer continuation waiting (flow_next of enclosing if/else or try/except)
+        if (this.continuationStack.length > 0) {
+          targetNodeId = this.continuationStack.pop()!;
+          nextHandle = 'flow_in';
+          store.addSimLog('info', 'Продолжение потока [Далее (После)]');
         } else {
-          // If we reached the end of while_loop body, loop back to while_loop!
-          const loopNode = nodes.find((n) => n.data.definitionId === 'core:while_loop');
-          if (loopNode && loopNode.id !== currentNode.id) {
-            targetNodeId = loopNode.id;
+          // Check if an active for_range loop is running
+          const activeForRangeId = Array.from(this.forLoopCounters.keys()).pop();
+          const activeForRangeNode = activeForRangeId ? nodes.find((n) => n.id === activeForRangeId) : null;
+
+          if (activeForRangeNode && activeForRangeNode.id !== currentNode.id) {
+            targetNodeId = activeForRangeNode.id;
             nextHandle = 'loop_body';
           } else {
-            targetNodeId = null;
+            // If we reached the end of while_loop body, loop back to while_loop!
+            const loopNode = nodes.find((n) => n.data.definitionId === 'core:while_loop');
+            if (loopNode && loopNode.id !== currentNode.id) {
+              targetNodeId = loopNode.id;
+              nextHandle = 'loop_body';
+            } else {
+              targetNodeId = null;
+            }
           }
         }
       }

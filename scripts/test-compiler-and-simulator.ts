@@ -1055,4 +1055,92 @@ if (!elifRes.code.includes('\n    print("Continue Flow")')) {
 }
 console.log('✓ If / Elif / Else multi-branching verified with 100% accuracy!\n');
 
+// --- TEST 10: Multi-Pin Init, Multi-Variables & Standalone ADC Init ---
+console.log('--- TEST 10: Multi-Pin Init, Multi-Variables & Standalone ADC Init ---');
+const compactNodes = [
+  {
+    id: 'multi_pins',
+    type: 'nodeMpy',
+    position: { x: 0, y: 0 },
+    data: {
+      definitionId: 'machine:multi_pin_init',
+      libraryId: 'machine',
+      label: 'Multi Pin Init',
+      color: '#10B981',
+      icon: 'Cpu',
+      properties: {
+        code: 'led1 = machine.PWM(machine.Pin(4), freq=1000)\nled2 = machine.PWM(machine.Pin(5), freq=1000)'
+      }
+    }
+  },
+  {
+    id: 'adc_init_standalone',
+    type: 'nodeMpy',
+    position: { x: 0, y: 50 },
+    data: {
+      definitionId: 'machine:adc_init',
+      libraryId: 'machine',
+      label: 'ADC Init (pin 0)',
+      color: '#10B981',
+      icon: 'BarChart2',
+      properties: {
+        pin: 0,
+        atten: 'ATTN_11DB'
+      }
+    }
+  },
+  {
+    id: 'while_loop',
+    type: 'nodeMpy',
+    position: { x: 100, y: 0 },
+    data: {
+      definitionId: 'core:while_loop',
+      libraryId: 'core',
+      label: 'While True Loop',
+      color: '#3B82F6',
+      icon: 'Repeat',
+      properties: {}
+    }
+  },
+  {
+    id: 'multi_vars',
+    type: 'nodeMpy',
+    position: { x: 200, y: 0 },
+    data: {
+      definitionId: 'core:variables_multi',
+      libraryId: 'core',
+      label: 'Set Variables (Multi)',
+      color: '#6366F1',
+      icon: 'Sliders',
+      properties: {
+        assignments: 'DARK_VAL = 330\nLIGHT_VAL = 1024\nlast_send = 0\nlight = 0'
+      }
+    }
+  }
+];
+
+const compactEdges = [
+  { id: 'e_wb_vars', source: 'while_loop', sourceHandle: 'loop_body', target: 'multi_vars', targetHandle: 'flow_in' }
+];
+
+const compactRes = CodeGenerator.generateCode(compactNodes as any, compactEdges as any);
+console.log('Compact Multi-Pins & Multi-Variables Code:\n' + compactRes.code + '\n');
+
+// 1. ADC Init must use machine.ADC(0), NEVER undefined pin_0!
+if (compactRes.code.includes('pin_0') || !compactRes.code.includes('machine.ADC(0)')) {
+  console.error('FAILED: ADC Init emitted undefined pin_0 instead of machine.ADC(0)');
+  process.exit(1);
+}
+// 2. Multi-Pins must emit in Section 2
+if (!compactRes.code.includes('led1 = machine.PWM(machine.Pin(4)') || !compactRes.code.includes('led2 = machine.PWM(machine.Pin(5)')) {
+  console.error('FAILED: Multi-Pin setup lines missing in Section 2');
+  process.exit(1);
+}
+// 3. Multi-Variables must emit inside loop
+if (!compactRes.code.includes('\n    DARK_VAL = 330') || !compactRes.code.includes('\n    LIGHT_VAL = 1024')) {
+  console.error('FAILED: Multi-variables assignments not properly indented in loop');
+  process.exit(1);
+}
+console.log('✓ Multi-Pin Init, Multi-Variables & Safe ADC Init verified with 100% success!\n');
+
 console.log('ALL TESTS PASSED SUCCESSFULLY!');

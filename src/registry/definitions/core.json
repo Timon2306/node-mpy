@@ -386,6 +386,35 @@
       }
     },
     {
+      "id": "core:variables_multi",
+      "libraryId": "core",
+      "label": "Set Variables (Multi)",
+      "category": "Core",
+      "color": "#6366F1",
+      "icon": "Sliders",
+      "description": "Задание сразу нескольких переменных в одном блоке (например DARK_VAL = 330, LIGHT_VAL = 1024)",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [
+        {
+          "id": "assignments",
+          "name": "assignments",
+          "type": "code",
+          "label": "Переменные (имя = значение по строкам)",
+          "defaultValue": "DARK_VAL = 330\nLIGHT_VAL = 1024\nlast_send = 0\nlight = 0",
+          "placeholder": "x = 0\ny = 100"
+        }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{props.assignments}}"
+      }
+    },
+    {
       "id": "core:variable_get",
       "libraryId": "core",
       "label": "Get Variable",

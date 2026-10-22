@@ -212,6 +212,10 @@ export const NodeMpyNode = memo(({ id, data, selected }: NodeProps) => {
     subtitle = `Multi-Branch`;
   } else if (nodeData.definitionId === 'core:if_else') {
     subtitle = `Branching`;
+  } else if (nodeData.definitionId === 'core:variables_multi') {
+    subtitle = `Multi Variables`;
+  } else if (nodeData.definitionId === 'machine:multi_pin_init') {
+    subtitle = `Multi Pin Setup`;
   } else if (nodeData.definitionId === 'core:math_func') {
     subtitle = `${nodeData.properties?.func ?? 'round'}()`;
   } else if (nodeData.definitionId === 'core:type_cast') {
