@@ -49,12 +49,12 @@ export const DashboardModal: React.FC = () => {
   const sliders = dashboardNodes.filter(n => n.data?.definitionId === 'dashboard:slider');
   const texts = dashboardNodes.filter(n => n.data?.definitionId === 'dashboard:text_display');
   const leds = dashboardNodes.filter(n => n.data?.definitionId === 'dashboard:led_indicator');
-  const endpoints = dashboardNodes.filter(n => n.data?.definitionId === 'dashboard:http_endpoint');
+  const endpoints = (JSON.parse(configJson) as { endpoints: { id: string; path: string; param: string }[] }).endpoints;
   const [testEndpointId, setTestEndpointId] = useState<string>('');
   const endpoint = endpoints.find(n => n.id === testEndpointId) || endpoints[0];
 
-  const endpointPath = endpoint?.data?.properties?.path || '/light';
-  const endpointParam = endpoint?.data?.properties?.param_name || 'value';
+  const endpointPath = endpoint?.path || '/light';
+  const endpointParam = endpoint?.param || 'value';
   const normalizedPath = endpointPath.startsWith('/') ? endpointPath : '/' + endpointPath;
   const host = server.running && server.ip ? server.ip : '<IP_ЭТОГО_ПК>';
   const pageUrl = `http://${host}:${DASHBOARD_PORT}`;
@@ -476,7 +476,7 @@ export const DashboardModal: React.FC = () => {
               >
                 {endpoints.map(ep => (
                   <option key={ep.id} value={ep.id}>
-                    {ep.data?.properties?.path} ({ep.data?.properties?.param_name || 'value'})
+                    {ep.path}
                   </option>
                 ))}
               </select>

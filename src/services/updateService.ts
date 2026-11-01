@@ -1,5 +1,5 @@
 
-export const APP_CURRENT_VERSION = '1.2.0';
+export const APP_CURRENT_VERSION = '1.2.1';
 export const GITHUB_REPO = 'Timon2306/node-mpy';
 
 export interface ReleaseAsset {

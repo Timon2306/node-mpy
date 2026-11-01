@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { DashboardCodeGenerator } from '../../compiler/dashboardCodeGenerator';
 import { useFlowStore } from '../../store/useFlowStore';
 import { isDesktopApp } from '../../services/dashboardServer';
 
@@ -10,13 +11,11 @@ export const EndpointChips: React.FC<{ current: string; onPick: (path: string) =
     ...new Set(
       flows
         .filter((f) => f.mode === 'dashboard')
-        .flatMap((f) => f.nodes)
-        .filter((n) => n.data.definitionId === 'dashboard:http_endpoint')
-        .map((n) => String(n.data.properties?.path || '/light'))
+        .flatMap((f) => DashboardCodeGenerator.buildConfig(f.nodes, f.edges).endpoints.map((ep) => ep.path))
     ),
   ];
   if (paths.length === 0) {
-    return <div className="text-[10px] text-gray-500">На вкладке дашборда нет ноды «HTTP Endpoint»: адрес не с чем связать</div>;
+    return <div className="text-[10px] text-gray-500">На вкладке дашборда нет виджетов с «Именем показаний»</div>;
   }
   return (
     <div className="flex flex-wrap gap-1 items-center">

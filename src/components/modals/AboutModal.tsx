@@ -79,7 +79,7 @@ export const AboutModal: React.FC = () => {
             <span className="text-[12px] font-semibold text-gray-200">
               {isRu ? 'Версия: ' : 'Version: '}
             </span>
-            <span className="font-mono text-teal-300 font-bold text-[12px]">1.2.0</span>
+            <span className="font-mono text-teal-300 font-bold text-[12px]">1.2.1</span>
           </div>
 
           <div className="space-y-0.5 text-[12px] text-gray-300 border-l-2 border-teal-500/50 pl-3 py-0.5">

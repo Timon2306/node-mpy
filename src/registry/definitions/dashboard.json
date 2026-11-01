@@ -28,6 +28,7 @@
       ],
       "outputs": [],
       "properties": [
+        { "id": "source", "name": "source", "type": "text", "label": "Имя показаний (как в прошивке)", "defaultValue": "", "placeholder": "light" },
         {
           "id": "label",
           "name": "label",
@@ -80,6 +81,7 @@
       ],
       "outputs": [],
       "properties": [
+        { "id": "source", "name": "source", "type": "text", "label": "Имя показаний (как в прошивке)", "defaultValue": "", "placeholder": "light" },
         {
           "id": "label",
           "name": "label",
@@ -124,6 +126,7 @@
         }
       ],
       "properties": [
+        { "id": "source", "name": "source", "type": "text", "label": "Имя связи (как в прошивке)", "defaultValue": "", "placeholder": "led" },
         {
           "id": "label",
           "name": "label",
@@ -209,6 +212,7 @@
         }
       ],
       "properties": [
+        { "id": "source", "name": "source", "type": "text", "label": "Имя связи (как в прошивке)", "defaultValue": "", "placeholder": "led" },
         {
           "id": "label",
           "name": "label",
@@ -271,6 +275,7 @@
         }
       ],
       "properties": [
+        { "id": "source", "name": "source", "type": "text", "label": "Имя связи (как в прошивке)", "defaultValue": "", "placeholder": "led" },
         {
           "id": "label",
           "name": "label",
@@ -333,6 +338,7 @@
       ],
       "outputs": [],
       "properties": [
+        { "id": "source", "name": "source", "type": "text", "label": "Имя показаний (как в прошивке)", "defaultValue": "", "placeholder": "light" },
         {
           "id": "label",
           "name": "label",
@@ -371,6 +377,7 @@
       ],
       "outputs": [],
       "properties": [
+        { "id": "source", "name": "source", "type": "text", "label": "Имя показаний (как в прошивке)", "defaultValue": "", "placeholder": "light" },
         {
           "id": "label",
           "name": "label",

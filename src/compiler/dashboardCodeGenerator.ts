@@ -97,6 +97,28 @@ export class DashboardCodeGenerator {
       .filter(e => known.has(e.source) && known.has(e.target) && !FLOW_PORTS.has(e.sourceHandle || '') && !FLOW_PORTS.has(e.targetHandle || ''))
       .map((e): [string, string, string, string] => [e.source, e.sourceHandle || '', e.target, e.targetHandle || '']);
 
+    const endpointList = endpoints.map(ep => ({ id: ep.id, path: normalizePath(propsOf(ep).path), param: String(propsOf(ep).param_name || 'value').trim() }));
+    const displayPort: Record<string, string> = { gauge: 'value', chart: 'value', text: 'text', led: 'state' };
+    for (const node of nodes) {
+      const kind = DISPLAY_KINDS[node.data?.definitionId];
+      const source = String(propsOf(node).source || '').trim();
+      if (!kind || !source || edges.some(e => e.target === node.id)) continue;
+      const path = normalizePath(source);
+      let endpoint = endpointList.find(ep => ep.path === path && ep.param === 'value');
+      if (!endpoint) {
+        endpoint = { id: `auto:${source}`, path, param: 'value' };
+        endpointList.push(endpoint);
+      }
+      wires.push([endpoint.id, 'value', node.id, displayPort[kind]]);
+    }
+
+    for (const node of nodes) {
+      const source = String(propsOf(node).source || '').trim();
+      if (!source || !(node.id in controls)) continue;
+      const path = normalizePath(source);
+      if (!endpointList.some(ep => ep.path === path)) endpointList.push({ id: `auto:${source}`, path, param: 'value' });
+    }
+
     const replies: DashboardConfig['replies'] = {};
     for (const ep of endpoints) {
       const seen = new Set<string>([ep.id]);
@@ -113,7 +135,7 @@ export class DashboardCodeGenerator {
     }
 
     return {
-      endpoints: endpoints.map(ep => ({ id: ep.id, path: normalizePath(propsOf(ep).path), param: String(propsOf(ep).param_name || 'value').trim() })),
+      endpoints: endpointList,
       controls,
       functions,
       displays,
@@ -128,7 +150,8 @@ export class DashboardCodeGenerator {
     const wiredIn = (id: string) => edges.some(e => e.target === id);
 
     for (const id of Object.keys(config.displays)) {
-      if (!wiredIn(id)) warnings[id] = 'Виджет не подключён: соедините его вход с HTTP Endpoint или другой нодой';
+      const source = String(propsOf(nodes.find(n => n.id === id)!).source || '').trim();
+      if (!wiredIn(id) && !source) warnings[id] = 'Укажите «Имя показаний» (то же, что в прошивке) или соедините вход с другой нодой';
     }
     for (const id of Object.keys(config.functions)) {
       if (!wiredIn(id)) warnings[id] = 'Функция не получает данных: подключите её вход';

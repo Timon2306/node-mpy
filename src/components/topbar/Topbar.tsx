@@ -710,46 +710,6 @@ export const Topbar: React.FC = () => {
           <RotateCcw className="w-3.5 h-3.5" />
         </button>
 
-        <button
-          onClick={currentFlow?.mode === 'dashboard' ? handleExportDashboardBundle : handleExportMainPy}
-          title={
-            currentFlow?.mode === 'dashboard'
-              ? language === 'ru'
-                ? 'Экспортировать дашборд (server.ts + dashboard.html)'
-                : 'Export Dashboard (server.ts + dashboard.html)'
-              : t.exportTooltip
-          }
-          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md font-semibold text-xs shadow-sm active:scale-95 transition-all ${
-            currentFlow?.mode === 'dashboard'
-              ? 'bg-rose-600 hover:bg-rose-500 text-white'
-              : 'bg-teal-brand hover:bg-teal-hover text-slate-900'
-          }`}
-        >
-          {exportSuccess ? (
-            <>
-              <Check className="w-3.5 h-3.5 stroke-[3]" />
-              <span>
-                {currentFlow?.mode === 'dashboard'
-                  ? language === 'ru'
-                    ? 'Дашборд сохранён!'
-                    : 'Dashboard saved!'
-                  : t.exportSuccess}
-              </span>
-            </>
-          ) : (
-            <>
-              <Download className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>
-                {currentFlow?.mode === 'dashboard'
-                  ? language === 'ru'
-                    ? 'Экспорт дашборда'
-                    : 'Export Dashboard'
-                  : t.exportButton}
-              </span>
-            </>
-          )}
-        </button>
-
         <div className="relative">
           <button
             onClick={() => setMenuOpen(!menuOpen)}

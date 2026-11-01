@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { CodeGenerator } from '../src/compiler/codeGenerator';
 import { DashboardCodeGenerator } from '../src/compiler/dashboardCodeGenerator';
+import { createDashboardEngine } from '../src/compiler/dashboardEngine';
 import { EXAMPLES, buildExampleProject } from '../src/store/examples';
 
 const dir = mkdtempSync(join(tmpdir(), 'nodempy-examples-'));
@@ -18,7 +19,11 @@ for (const example of EXAMPLES) {
       const result = DashboardCodeGenerator.generateCode(flow.nodes as any, flow.edges);
       const warnings = Object.values(result.nodeWarnings || {});
       if (warnings.length) fail(`${label}: ${warnings.join('; ')}`);
-      else console.log(`✓ ${label}`);
+      const config = DashboardCodeGenerator.buildConfig(flow.nodes as any, flow.edges);
+      const engine = createDashboardEngine(config);
+      const reply = config.endpoints[0] && engine.request(config.endpoints[0].path, { value: '42' });
+      if (!reply) fail(`${label}: сервер не отвечает на путь из дашборда`);
+      else if (!warnings.length) console.log(`✓ ${label}`);
       continue;
     }
     const result = CodeGenerator.generateCode(flow.nodes as any, flow.edges);

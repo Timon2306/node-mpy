@@ -213,9 +213,9 @@ export const RightSidebar: React.FC = () => {
                 <div className="p-2.5 bg-amber-950/40 border border-amber-600/50 rounded-md flex items-start gap-2 text-xs text-amber-300">
                   <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-400 mt-0.5" />
                   <div>
-                    <p className="font-semibold">{t.warningTitle}</p>
+                    <p className="font-semibold">{activeSelectedNode.data.warningMessage ? 'Внимание' : t.warningTitle}</p>
                     <p className="text-[11px] text-amber-200/90 mt-0.5">
-                      {t.warningDesc}
+                      {activeSelectedNode.data.warningMessage || t.warningDesc}
                     </p>
                   </div>
                 </div>

@@ -500,8 +500,8 @@
           "id": "server_ip",
           "name": "server_ip",
           "type": "text",
-          "label": "IP-адрес сервера (ПК)",
-          "defaultValue": "192.168.1.100"
+          "label": "IP компьютера (пусто — определится сам)",
+          "defaultValue": ""
         },
         {
           "id": "server_port",
@@ -514,7 +514,7 @@
           "id": "path",
           "name": "path",
           "type": "text",
-          "label": "Путь эндпоинта",
+          "label": "Имя показаний (как в дашборде)",
           "defaultValue": "/light"
         },
         {
@@ -543,7 +543,7 @@
           "status_code": "dash_code_{{id}}"
         },
         "helpers": [
-          "def dashboard_sync(host, port, path, param1, value1, param2, value2):\n    try:\n        import socket\n        import json\n        query = path + '?' + param1 + '=' + str(value1)\n        if value2 is not None:\n            query += '&' + param2 + '=' + str(value2)\n        s = socket.socket()\n        try:\n            s.settimeout(2)\n            s.connect((host, port))\n            s.send(('GET ' + query + ' HTTP/1.0\\r\\nHost: ' + host + '\\r\\n\\r\\n').encode())\n            raw = b''\n            while len(raw) < 1024:\n                chunk = s.recv(256)\n                if not chunk:\n                    break\n                raw += chunk\n        finally:\n            s.close()\n        parts = raw.split(b'\\r\\n\\r\\n', 1)\n        code = int(parts[0].split()[1])\n        body = parts[-1].decode().strip()\n        try:\n            reply = json.loads(body)\n        except ValueError:\n            reply = body\n        number = 0\n        is_on = False\n        for v in (reply.values() if isinstance(reply, dict) else [reply]):\n            if v is True or v == '1' or str(v).endswith('ON'):\n                is_on = True\n            elif isinstance(v, (int, float)) and v is not False:\n                number = v\n        return reply, number, is_on, body, code\n    except Exception:\n        return '', 0, False, '', -1\n"
+          "def dashboard_sync(host, port, path, param1, value1, param2, value2):\n    try:\n        import socket\n        import json\n        if not path.startswith('/'):\n            path = '/' + path\n        query = path + '?' + param1 + '=' + str(value1)\n        if value2 is not None:\n            query += '&' + param2 + '=' + str(value2)\n        s = socket.socket()\n        try:\n            s.settimeout(2)\n            s.connect((host, port))\n            s.send(('GET ' + query + ' HTTP/1.0\\r\\nHost: ' + host + '\\r\\n\\r\\n').encode())\n            raw = b''\n            while len(raw) < 1024:\n                chunk = s.recv(256)\n                if not chunk:\n                    break\n                raw += chunk\n        finally:\n            s.close()\n        parts = raw.split(b'\\r\\n\\r\\n', 1)\n        code = int(parts[0].split()[1])\n        body = parts[-1].decode().strip()\n        try:\n            reply = json.loads(body)\n        except ValueError:\n            reply = body\n        number = 0\n        is_on = False\n        for v in (reply.values() if isinstance(reply, dict) else [reply]):\n            if v is True or v == '1' or str(v).endswith('ON'):\n                is_on = True\n            elif isinstance(v, (int, float)) and v is not False:\n                number = v\n        return reply, number, is_on, body, code\n    except Exception:\n        return '', 0, False, '', -1\n"
         ]
       }
     },

@@ -51,7 +51,7 @@ export const EXAMPLES: ExampleInfo[] = [
         [
           ['adc', 'machine:adc_init', { pin: 0 }, 280, 220],
           ['read', 'machine:adc_read', {}, 760, 40],
-          ['send', 'network:dashboard_client', { path: '/light' }, 1000, 40],
+          ['send', 'network:dashboard_client', { path: 'light' }, 1000, 40],
           ['pause', 'time:sleep_ms', { duration: 1000 }, 1240, 40],
         ],
         [
@@ -66,14 +66,10 @@ export const EXAMPLES: ExampleInfo[] = [
         name: 'Дашборд: свет',
         mode: 'dashboard',
         nodes: [
-          ['ep', 'dashboard:http_endpoint', { path: '/light' }, 80, 100],
-          ['gauge', 'dashboard:gauge', { label: 'Освещённость', min: 0, max: 1023, units: '' }, 380, 50],
-          ['chart', 'dashboard:chart', { label: 'Динамика света' }, 380, 190],
+          ['gauge', 'dashboard:gauge', { label: 'Освещённость', min: 0, max: 1023, units: '', source: 'light' }, 80, 50],
+          ['chart', 'dashboard:chart', { label: 'Динамика света', source: 'light' }, 80, 190],
         ],
-        edges: [
-          ['ep', 'value', 'gauge', 'value'],
-          ['ep', 'value', 'chart', 'value'],
-        ],
+        edges: [],
       },
     ],
   },
@@ -86,7 +82,7 @@ export const EXAMPLES: ExampleInfo[] = [
         'Плата: светодиод',
         [
           ['led', 'machine:pin_init', { pin: 5, mode: 'OUT' }, 280, 220],
-          ['send', 'network:dashboard_client', { path: '/led' }, 760, 40],
+          ['send', 'network:dashboard_client', { path: 'led' }, 760, 40],
           ['set', 'machine:pin_write', {}, 1000, 40],
           ['pause', 'time:sleep_ms', { duration: 300 }, 1240, 40],
         ],
@@ -102,8 +98,7 @@ export const EXAMPLES: ExampleInfo[] = [
         name: 'Дашборд: светодиод',
         mode: 'dashboard',
         nodes: [
-          ['ep', 'dashboard:http_endpoint', { path: '/led' }, 80, 100],
-          ['sw', 'dashboard:switch', { label: 'Светодиод', channel: 'led' }, 380, 100],
+          ['sw', 'dashboard:switch', { label: 'Светодиод', channel: 'led', source: 'led' }, 80, 100],
         ],
         edges: [],
       },
@@ -119,7 +114,7 @@ export const EXAMPLES: ExampleInfo[] = [
         [
           ['pin', 'machine:pin_init', { pin: 5, mode: 'OUT' }, 280, 220],
           ['pwm', 'machine:pwm_init', { freq: 1000, duty: 0 }, 520, 220],
-          ['send', 'network:dashboard_client', { path: '/pwm' }, 760, 40],
+          ['send', 'network:dashboard_client', { path: 'pwm' }, 760, 40],
           ['duty', 'machine:pwm_set', {}, 1000, 40],
           ['pause', 'time:sleep_ms', { duration: 200 }, 1240, 40],
         ],
@@ -136,8 +131,7 @@ export const EXAMPLES: ExampleInfo[] = [
         name: 'Дашборд: яркость',
         mode: 'dashboard',
         nodes: [
-          ['ep', 'dashboard:http_endpoint', { path: '/pwm' }, 80, 100],
-          ['sl', 'dashboard:slider', { label: 'Яркость', min: 0, max: 1023, step: 10 }, 380, 100],
+          ['sl', 'dashboard:slider', { label: 'Яркость', min: 0, max: 1023, step: 10, source: 'pwm' }, 80, 100],
         ],
         edges: [],
       },

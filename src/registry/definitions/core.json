@@ -928,11 +928,11 @@
     {
       "id": "core:python_block",
       "libraryId": "core",
-      "label": "Python Block (классы, функции)",
+      "label": "Python Block (импорты, переменные, классы)",
       "category": "Core",
       "color": "#64748B",
       "icon": "Code2",
-      "description": "Произвольный код Python вне цикла: классы, константы, функции",
+      "description": "Свой код вне цикла: строки import попадут в импорты, остальное (переменные, классы, функции) пойдёт перед программой",
       "inputs": [],
       "outputs": [],
       "properties": [

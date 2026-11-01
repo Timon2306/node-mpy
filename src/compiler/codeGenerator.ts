@@ -11,6 +11,8 @@ export interface CompilerResult {
 }
 
 export class CodeGenerator {
+  public static defaultServerIp = '192.168.1.100';
+
   private static idAliases = new Map<string, string>();
 
   private static assignIdAliases(nodes: Node<NodeInstanceData>[]) {
@@ -27,6 +29,11 @@ export class CodeGenerator {
 
   public static generateCode(nodes: Node<NodeInstanceData>[], edges: Edge[]): CompilerResult {
     const errors: string[] = [];
+    nodes = nodes.map(n =>
+      n.data.definitionId === 'network:dashboard_client' && !String(n.data.properties?.server_ip || '').trim()
+        ? { ...n, data: { ...n.data, properties: { ...n.data.properties, server_ip: this.defaultServerIp } } }
+        : n
+    );
     this.assignIdAliases(nodes);
 
     const nodeMap = new Map<string, Node<NodeInstanceData>>();
@@ -36,7 +43,12 @@ export class CodeGenerator {
 
     this.assignOutputVariables(nodes, outputVarMap);
 
-    const { importsCode, selectiveImports } = this.generateImports(nodes, outputVarMap);
+    const generated = this.generateImports(nodes, outputVarMap);
+    const { selectiveImports } = generated;
+    const ownImports = nodes
+      .filter(n => n.data.definitionId === 'core:python_block')
+      .flatMap(n => this.splitBlock(String(n.data.properties?.code || '')).imports);
+    const importsCode = [...new Set([...generated.importsCode.split('\n'), ...ownImports])].filter(l => l.trim()).join('\n');
 
     let initCode = this.generateInits(nodes, edges, nodeMap, outputVarMap, errors);
 
@@ -54,7 +66,7 @@ export class CodeGenerator {
       '# Сгенерировано в Node-MPY',
       importsCode,
       initCode && `# --- Оборудование ---\n${initCode}`,
-      functionsCode && `# --- Функции ---\n${functionsCode.trimEnd()}`,
+      functionsCode && `# --- Переменные и функции ---\n${functionsCode.trimEnd()}`,
       `# --- Программа ---\n${executionCode || 'while True:\n    pass'}`,
     ];
     const fullCode = sections.filter(Boolean).join('\n\n') + '\n';
@@ -412,6 +424,15 @@ export class CodeGenerator {
     return lines.join('\n');
   }
 
+  private static splitBlock(code: string): { imports: string[]; rest: string } {
+    const imports: string[] = [];
+    const rest: string[] = [];
+    for (const line of code.split('\n')) {
+      (/^(import|from)\s+\S/.test(line) ? imports : rest).push(line.trimEnd());
+    }
+    return { imports, rest: rest.join('\n').trim() };
+  }
+
   private static generateFunctions(
     nodes: Node<NodeInstanceData>[],
     edges: Edge[],
@@ -441,7 +462,7 @@ export class CodeGenerator {
     }
 
     for (const node of nodes.filter(n => n.data.definitionId === 'core:python_block')) {
-      const code = String(node.data.properties?.code || '').trimEnd();
+      const code = this.splitBlock(String(node.data.properties?.code || '')).rest;
       if (code) lines.push(`${code}
 `);
     }

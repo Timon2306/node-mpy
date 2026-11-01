@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Edge, Node } from '@xyflow/react';
+import { CodeGenerator } from '../compiler/codeGenerator';
 import { DashboardCodeGenerator } from '../compiler/dashboardCodeGenerator';
 import { DashboardEngine, createDashboardEngine } from '../compiler/dashboardEngine';
 import { useFlowStore } from '../store/useFlowStore';
@@ -36,6 +37,16 @@ let schema: Schema | null = null;
 let unlisten: (() => void) | null = null;
 let unsubscribeStore: (() => void) | null = null;
 let syncTimer: ReturnType<typeof setTimeout> | null = null;
+
+export async function detectLocalIp() {
+  if (!isDesktopApp()) return;
+  try {
+    CodeGenerator.defaultServerIp = await call<string>('local_ip');
+    useFlowStore.getState().recalculate();
+  } catch {
+    return;
+  }
+}
 
 export const isDesktopApp = () => typeof window !== 'undefined' && Boolean((window as any).__TAURI_INTERNALS__);
 

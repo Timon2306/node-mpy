@@ -11,6 +11,7 @@ import { ChangelogModal } from './components/modals/ChangelogModal';
 import { SettingsModal } from './components/modals/SettingsModal';
 import { SimulationConsole } from './components/simulator/SimulationConsole';
 import { DashboardModal } from './components/dashboard/DashboardModal';
+import { detectLocalIp } from './services/dashboardServer';
 import { BoardModal } from './components/board/BoardModal';
 import { useFlowStore } from './store/useFlowStore';
 
@@ -19,6 +20,7 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     recalculate();
+    detectLocalIp();
   }, []);
 
   return (

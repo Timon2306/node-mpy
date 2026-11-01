@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.1]
+
+### Simpler dashboards
+- Widgets are linked to the firmware by name (no wires or HTTP Endpoint needed); computer IP is filled in automatically.
+- `Python Block`: `import` lines go to imports, the rest runs before the program.
+- Removed the duplicate Export button; node warnings now show their real reason.
+
 ## [1.2.0]
 
 ### Dashboard
