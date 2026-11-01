@@ -305,35 +305,6 @@
       }
     },
     {
-      "id": "core:map_range",
-      "libraryId": "core",
-      "label": "Map Range",
-      "category": "Core",
-      "color": "#3B82F6",
-      "icon": "Maximize2",
-      "description": "Преобразование диапазона значений (например 0..4095 в 0..100)",
-      "inputs": [
-        { "id": "val", "name": "val", "type": "number", "label": "Value" }
-      ],
-      "outputs": [
-        { "id": "result", "name": "result", "type": "number", "label": "Mapped" }
-      ],
-      "properties": [
-        { "id": "default_val", "name": "default_val", "type": "number", "label": "Значение (если нет входа)", "defaultValue": 0 },
-        { "id": "in_min", "name": "in_min", "type": "number", "label": "Вход Мин", "defaultValue": 0 },
-        { "id": "in_max", "name": "in_max", "type": "number", "label": "Вход Макс", "defaultValue": 4095 },
-        { "id": "out_min", "name": "out_min", "type": "number", "label": "Выход Мин", "defaultValue": 0 },
-        { "id": "out_max", "name": "out_max", "type": "number", "label": "Выход Макс", "defaultValue": 100 }
-      ],
-      "codeTemplate": {
-        "section": "flow",
-        "template": "{{output.result}} = int(({{inputs.val || props.default_val}} - {{props.in_min}}) * ({{props.out_max}} - {{props.out_min}}) / ({{props.in_max}} - {{props.in_min}}) + {{props.out_min}})",
-        "outputVariables": {
-          "result": "map_{{id}}"
-        }
-      }
-    },
-    {
       "id": "core:print",
       "libraryId": "core",
       "label": "Print to Console",
@@ -930,6 +901,46 @@
         "outputVariables": {
           "result": "slice_{{id}}"
         }
+      }
+    },
+    {
+      "id": "core:python_code",
+      "libraryId": "core",
+      "label": "Python Code",
+      "category": "Core",
+      "color": "#64748B",
+      "icon": "Code2",
+      "description": "Произвольный код Python в ходе программы: всё, чего нет среди нод",
+      "inputs": [
+        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" }
+      ],
+      "outputs": [
+        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+      ],
+      "properties": [
+        { "id": "code", "name": "code", "type": "code", "label": "Код", "defaultValue": "pass" }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{props.code}}"
+      }
+    },
+    {
+      "id": "core:python_block",
+      "libraryId": "core",
+      "label": "Python Block (классы, функции)",
+      "category": "Core",
+      "color": "#64748B",
+      "icon": "Code2",
+      "description": "Произвольный код Python вне цикла: классы, константы, функции",
+      "inputs": [],
+      "outputs": [],
+      "properties": [
+        { "id": "code", "name": "code", "type": "code", "label": "Код", "defaultValue": "class Example:\n    pass" }
+      ],
+      "codeTemplate": {
+        "section": "functions",
+        "template": "{{props.code}}"
       }
     }
   ]

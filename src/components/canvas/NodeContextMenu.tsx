@@ -32,7 +32,6 @@ export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({ menu, onClose 
   const hasNode = !!menu.nodeId;
   const canPaste = copiedNodes && copiedNodes.length > 0;
 
-  // Close on outside click or escape
   useEffect(() => {
     const handleDown = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -54,7 +53,6 @@ export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({ menu, onClose 
     };
   }, [onClose]);
 
-  // Adjust coordinates if menu would overflow viewport
   const menuWidth = 190;
   const menuHeight = hasNode ? 180 : 90;
   const screenW = window.innerWidth;
@@ -72,7 +70,6 @@ export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({ menu, onClose 
     >
       {hasNode ? (
         <>
-          {/* Copy */}
           <button
             onClick={() => {
               copySelectedNodes();
@@ -87,7 +84,6 @@ export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({ menu, onClose 
             <span className="text-[10px] text-gray-500 font-mono">Ctrl+C</span>
           </button>
 
-          {/* Paste */}
           <button
             onClick={() => {
               if (canPaste) {
@@ -109,7 +105,6 @@ export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({ menu, onClose 
             <span className="text-[10px] text-gray-500 font-mono">Ctrl+V</span>
           </button>
 
-          {/* Duplicate */}
           <button
             onClick={() => {
               duplicateSelectedNodes();
@@ -126,7 +121,6 @@ export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({ menu, onClose 
 
           <div className="h-[1px] bg-[#374151] my-1" />
 
-          {/* Properties */}
           <button
             onClick={() => {
               if (menu.nodeId) {
@@ -145,7 +139,6 @@ export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({ menu, onClose 
 
           <div className="h-[1px] bg-[#374151] my-1" />
 
-          {/* Delete */}
           <button
             onClick={() => {
               if (menu.nodeId) {
@@ -164,9 +157,7 @@ export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({ menu, onClose 
           </button>
         </>
       ) : (
-        /* Empty canvas context menu */
         <>
-          {/* Paste */}
           <button
             onClick={() => {
               if (canPaste) {
@@ -190,7 +181,6 @@ export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({ menu, onClose 
 
           <div className="h-[1px] bg-[#374151] my-1" />
 
-          {/* Clear Canvas */}
           <button
             onClick={() => {
               if (window.confirm(isRu ? 'Очистить холст этой вкладки?' : 'Clear canvas for this tab?')) {

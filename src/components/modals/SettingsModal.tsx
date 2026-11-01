@@ -96,7 +96,6 @@ export const SettingsModal: React.FC = () => {
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-[620px] bg-[#1A1D24] border border-[#2E3544] rounded-xl shadow-2xl overflow-hidden flex flex-col text-xs select-none max-h-[85vh]"
       >
-        {/* Title Bar */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-[#2E3544] bg-[#14171E] flex-shrink-0">
           <div className="flex items-center gap-2">
             <Settings className="w-4 h-4 text-teal-400" />
@@ -112,7 +111,6 @@ export const SettingsModal: React.FC = () => {
           </button>
         </div>
 
-        {/* Tab Navigation Header */}
         <div className="flex items-center gap-1 px-4 pt-2 border-b border-[#2E3544] bg-[#161920] flex-shrink-0">
           <button
             onClick={() => setSettingsActiveTab('general')}
@@ -142,12 +140,9 @@ export const SettingsModal: React.FC = () => {
           </button>
         </div>
 
-        {/* Content Area */}
         <div className="p-5 overflow-y-auto space-y-4 text-gray-300 leading-relaxed scrollbar-thin scrollbar-thumb-gray-600">
-          {/* TAB 1: GENERAL */}
           {settingsActiveTab === 'general' && (
             <div className="space-y-4">
-              {/* Language Selector */}
               <div className="p-3.5 rounded-lg bg-[#14171E] border border-[#2B3240] space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -189,7 +184,6 @@ export const SettingsModal: React.FC = () => {
                 </div>
               </div>
 
-              {/* Default Simulator Engine */}
               <div className="p-3.5 rounded-lg bg-[#14171E] border border-[#2B3240] space-y-2">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-2">
@@ -231,7 +225,6 @@ export const SettingsModal: React.FC = () => {
                 </div>
               </div>
 
-              {/* Autosave Status */}
               <div className="p-3.5 rounded-lg bg-[#14171E] border border-[#2B3240] flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-400" />
@@ -253,10 +246,8 @@ export const SettingsModal: React.FC = () => {
             </div>
           )}
 
-          {/* TAB 2: UPDATES */}
           {settingsActiveTab === 'updates' && (
             <div className="space-y-4">
-              {/* App Version & Platform Card */}
               <div className="p-4 rounded-lg bg-[#14171E] border border-[#2B3240] flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <NodeMpyLogo size={28} />
@@ -281,7 +272,6 @@ export const SettingsModal: React.FC = () => {
                 </button>
               </div>
 
-              {/* Error Message */}
               {errorMsg && (
                 <div className="p-3.5 rounded-lg bg-red-950/50 border border-red-500/50 flex items-start gap-2.5 text-red-200">
                   <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
@@ -299,7 +289,6 @@ export const SettingsModal: React.FC = () => {
                 </div>
               )}
 
-              {/* Status: Up-to-date */}
               {updateInfo && !updateInfo.hasUpdate && !errorMsg && (
                 <div className="p-4 rounded-lg bg-emerald-950/40 border border-emerald-500/40 flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
@@ -316,7 +305,6 @@ export const SettingsModal: React.FC = () => {
                 </div>
               )}
 
-              {/* Status: Update Available! */}
               {updateInfo && updateInfo.hasUpdate && (
                 <div className="p-4 rounded-lg bg-[#18202F] border border-teal-500/50 space-y-3 shadow-xl">
                   <div className="flex items-center justify-between">
@@ -339,7 +327,6 @@ export const SettingsModal: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Release Notes */}
                   {updateInfo.releaseNotes && (
                     <div className="p-3 rounded bg-[#11141C] border border-[#2B3240] space-y-1 text-gray-300 max-h-36 overflow-y-auto font-mono text-[11px] leading-relaxed select-text">
                       <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
@@ -351,7 +338,6 @@ export const SettingsModal: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Primary Download Action for Current Platform */}
                   {updateInfo.matchingAsset ? (
                     <div className="pt-1 flex flex-col sm:flex-row items-center gap-2">
                       <button
@@ -389,7 +375,6 @@ export const SettingsModal: React.FC = () => {
                     </button>
                   )}
 
-                  {/* All Assets List (for cross-platform users) */}
                   {updateInfo.allAssets && updateInfo.allAssets.length > 1 && (
                     <div className="pt-2 border-t border-[#2B3240] space-y-1.5">
                       <p className="text-[10px] text-gray-400 uppercase font-semibold">
@@ -414,7 +399,6 @@ export const SettingsModal: React.FC = () => {
                 </div>
               )}
 
-              {/* Initial Idle Hint */}
               {!updateInfo && !checking && !errorMsg && (
                 <div className="p-3.5 rounded-lg bg-[#14171E] border border-[#2B3240] text-[11px] text-gray-400 space-y-1 leading-snug">
                   <p className="text-gray-300 font-semibold">
@@ -431,7 +415,6 @@ export const SettingsModal: React.FC = () => {
           )}
         </div>
 
-        {/* Footer */}
         <div className="px-4 py-2.5 border-t border-[#2E3544] bg-[#14171E] flex justify-between items-center flex-shrink-0">
           <span className="text-[10px] text-gray-500 font-mono">
             Node-MPY • MicroPython Visual Studio

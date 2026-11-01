@@ -86,9 +86,14 @@ fn open_browser_url(url: String) -> Result<(), String> {
     Ok(())
 }
 
+mod dashboard_server;
+mod serial_flash;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .manage(dashboard_server::DashboardServer::default())
+        .manage(serial_flash::SerialMonitor::default())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .invoke_handler(tauri::generate_handler![
@@ -98,7 +103,16 @@ pub fn run() {
             save_file_content,
             save_file_bytes,
             open_file_folder,
-            open_browser_url
+            open_browser_url,
+            dashboard_server::dashboard_start,
+            dashboard_server::dashboard_stop,
+            dashboard_server::dashboard_respond,
+            dashboard_server::dashboard_publish,
+            dashboard_server::local_ip,
+            serial_flash::list_serial_ports,
+            serial_flash::flash_files,
+            serial_flash::serial_monitor_start,
+            serial_flash::serial_monitor_stop
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

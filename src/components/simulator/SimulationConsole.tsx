@@ -36,7 +36,6 @@ export const SimulationConsole: React.FC = () => {
 
   const activeSimulator = simEngineMode === 'wasm' ? wasmSimulator : esp8266Simulator;
 
-  // Autoscroll to bottom when new logs arrive
   useEffect(() => {
     if (logContainerRef.current) {
       logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
@@ -85,16 +84,12 @@ export const SimulationConsole: React.FC = () => {
   };
 
   const ledPin = virtualPins[2];
-  // On ESP8266, builtin LED is connected between VCC and GPIO 2 (active-low: value 0 = LED ON!)
   const isLedLit = ledPin?.value === 0;
 
   return (
     <div className="absolute bottom-0 left-0 right-0 z-30 bg-[#161920] border-t border-[#2E3646] shadow-2xl flex flex-col h-[220px] max-h-[45vh] select-none animate-in slide-in-from-bottom-4 duration-150">
-      {/* Top Toolbar */}
       <div className="h-9 px-3 bg-[#1C202A] border-b border-[#2E3646] flex items-center justify-between text-xs flex-shrink-0">
-        {/* Left: Board Name & Simulation Controls */}
         <div className="flex items-center gap-2">
-          {/* Board Badge */}
           <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-blue-950/60 border border-blue-500/40 text-blue-300 font-semibold text-[11px]">
             <Cpu className="w-3.5 h-3.5 text-blue-400" />
             <span>{isRu ? 'Симуляция' : 'Simulation'}</span>
@@ -102,7 +97,6 @@ export const SimulationConsole: React.FC = () => {
 
           <div className="h-4 w-[1px] bg-[#2E3646] mx-1" />
 
-          {/* Play / Pause Button */}
           <button
             onClick={handlePlayPause}
             className={`flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-semibold transition-all ${
@@ -124,7 +118,6 @@ export const SimulationConsole: React.FC = () => {
             )}
           </button>
 
-          {/* Step Button */}
           <button
             onClick={handleStep}
             title={isRu ? 'Выполнить один шаг' : 'Execute one step'}
@@ -134,7 +127,6 @@ export const SimulationConsole: React.FC = () => {
             <span>{isRu ? 'Шаг' : 'Step'}</span>
           </button>
 
-          {/* Stop Button */}
           <button
             onClick={handleStop}
             disabled={!isSimRunning}
@@ -149,7 +141,6 @@ export const SimulationConsole: React.FC = () => {
             <span>{isRu ? 'Стоп' : 'Stop'}</span>
           </button>
 
-          {/* Speed Selector */}
           <div className="flex items-center gap-1 bg-[#12141A] rounded p-0.5 border border-[#2E3646] ml-1">
             {[0.5, 1, 2, 5].map((spd) => (
               <button
@@ -166,7 +157,6 @@ export const SimulationConsole: React.FC = () => {
             ))}
           </div>
 
-          {/* Engine Mode Toggle Switch */}
           <div className="flex items-center bg-[#12141A] rounded p-0.5 border border-[#2E3646] ml-1">
             <button
               type="button"
@@ -208,14 +198,12 @@ export const SimulationConsole: React.FC = () => {
           </div>
         </div>
 
-        {/* Center: Live Virtual Pins (Interactive Buttons) */}
         <div className="hidden lg:flex items-center gap-1.5 px-2 py-0.5 bg-[#12141A] rounded border border-[#2E3646]">
           <span className="text-[10px] text-gray-400 font-mono flex items-center gap-1">
             <Zap className="w-3 h-3 text-amber-400" />
             GPIO:
           </span>
 
-          {/* Pin 2 (Built-in LED) */}
           <button
             type="button"
             onClick={() => {
@@ -251,7 +239,6 @@ export const SimulationConsole: React.FC = () => {
             <span>D4(LED): {ledPin?.value ?? 1}</span>
           </button>
 
-          {/* Key GPIOs */}
           {[0, 4, 5, 12, 14].map((pinNum) => {
             const p = virtualPins[pinNum];
             const isHigh = p?.value === 1;
@@ -295,7 +282,6 @@ export const SimulationConsole: React.FC = () => {
           })}
         </div>
 
-        {/* Right: Clear & Close */}
         <div className="flex items-center gap-1.5">
           <button
             onClick={clearSimLogs}
@@ -314,7 +300,6 @@ export const SimulationConsole: React.FC = () => {
         </div>
       </div>
 
-      {/* Terminal Log Output */}
       <div
         ref={logContainerRef}
         className="flex-1 overflow-y-auto p-2.5 font-mono text-[11px] leading-relaxed space-y-1 select-text bg-[#0E1015]"

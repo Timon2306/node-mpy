@@ -6,7 +6,6 @@ import { NodeInstanceData } from '../src/types/nodes';
 
 console.log('=== RUNNING DASHBOARD COMPILER & REGISTRY TESTS ===\n');
 
-// 1. Verify LibraryRegistry loads Dashboard nodes
 console.log('--- TEST 1: Palette Categories & Dashboard nodes ---');
 const dashboardCategories = LibraryRegistry.getPaletteCategories([], 'dashboard');
 const dashboardCat = dashboardCategories.find(c => c.id === 'dashboard');
@@ -25,7 +24,6 @@ if (mpDashboardCat) {
 }
 console.log('✓ Dashboard category successfully isolated from micropython mode!');
 
-// 2. Build full Student Lab Dashboard Flow
 console.log('\n--- TEST 2: Generate Student Lab Server (TypeScript) & HTML ---');
 const testNodes: Node<NodeInstanceData>[] = [
   {
@@ -150,7 +148,6 @@ if (!result.htmlCode.includes('Node-MPY — Dashboard')) {
 console.log('✓ server.ts generated successfully with /light endpoint and PORT 1880!');
 console.log(`✓ dashboard.html generated successfully (${result.htmlCode.length} characters)!`);
 
-// 3. Test SVG export of Dashboard Flow
 console.log('\n--- TEST 3: SVG Vector Export of Dashboard Flow ---');
 const flowTab = {
   id: 'flow_dashboard',
@@ -167,7 +164,6 @@ if (!svgResult.svg.includes('<svg') || !svgResult.svg.includes('HTTP Endpoint'))
 }
 console.log(`✓ Dashboard SVG generated successfully (${svgResult.width}x${svgResult.height})!`);
 
-// 4. Test Empty Dashboard Canvas Generation
 console.log('\n--- TEST 4: Clean Starter for Empty Dashboard Canvas ---');
 const emptyResult = DashboardCodeGenerator.generateCode([], []);
 const lineCount = emptyResult.serverCode.split('\n').length;

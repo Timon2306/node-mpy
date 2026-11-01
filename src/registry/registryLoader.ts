@@ -2,7 +2,6 @@ import { LibraryPackageJSON, PaletteCategory } from '../types/registry';
 import { NodeDefinition } from '../types/nodes';
 import { FlowMode } from '../types/project';
 
-// Static imports of default JSON definitions
 import coreLib from './definitions/core.json';
 import machineLib from './definitions/machine.json';
 import timeLib from './definitions/time.json';
@@ -99,17 +98,14 @@ export class LibraryRegistry {
     try {
       const parsed: LibraryPackageJSON = JSON.parse(jsonInput);
       
-      // Basic schema validations
       if (!parsed.id || !parsed.name || !Array.isArray(parsed.nodes)) {
         return { success: false, error: 'Неверная структура JSON: отсутствуют обязательные поля id, name или массив nodes' };
       }
 
-      // Check for collision with builtin
       if (BUILTIN_LIBRARIES.some(b => b.id === parsed.id)) {
         return { success: false, error: `Библиотека с id "${parsed.id}" является системной встроенной библиотекой и не может быть перезаписана.` };
       }
 
-      // Filter out existing custom with same id or replace
       this.customLibraries = this.customLibraries.filter(lib => lib.id !== parsed.id);
       this.customLibraries.push(parsed);
       this.saveCustomLibraries();
@@ -130,21 +126,16 @@ export class LibraryRegistry {
     return false;
   }
 
-  /**
-   * Builds the categorized palette for the left sidebar based on unlocked/imported libraries and active flow mode
-   */
   public static getPaletteCategories(unlockedLibraryIds: string[], flowMode: FlowMode = 'micropython'): PaletteCategory[] {
     const allLibs = this.getAllLibraries();
     const categoriesMap: Map<string, PaletteCategory> = new Map();
 
     for (const lib of allLibs) {
-      // In Dashboard mode: show Dashboard library and general Core logic; hide hardware MicroPython libs
       if (flowMode === 'dashboard') {
         if (lib.id !== 'dashboard' && lib.id !== 'core') {
           continue;
         }
       } else {
-        // In MicroPython mode: hide Dashboard library
         if (lib.id === 'dashboard') {
           continue;
         }
@@ -152,7 +143,7 @@ export class LibraryRegistry {
 
       const isCore = lib.id === 'core';
       const isDashboard = lib.id === 'dashboard';
-      const isUnlocked = isCore || isDashboard || unlockedLibraryIds.includes(lib.id);
+      const isUnlocked = true;
 
       if (!categoriesMap.has(lib.category)) {
         categoriesMap.set(lib.category, {
@@ -166,13 +157,11 @@ export class LibraryRegistry {
       }
 
       const cat = categoriesMap.get(lib.category)!;
-      // Category is unlocked if at least one of its member libraries is unlocked
       if (isUnlocked) {
         cat.isUnlocked = true;
       }
 
       for (const node of lib.nodes) {
-        // Only include node in palette if its parent library is unlocked
         if (isUnlocked) {
           cat.nodes.push(node);
         }
@@ -182,13 +171,10 @@ export class LibraryRegistry {
     return Array.from(categoriesMap.values()).filter(cat => cat.nodes.length > 0 || cat.name === 'Core' || cat.name === 'Dashboard');
   }
 
-  /**
-   * Ready-to-copy Prompt template for AI (ChatGPT / Claude / DeepSeek)
-   */
   public static getAiPromptTemplate(): string {
     return `# ИНСТРУКЦИЯ ДЛЯ НЕЙРОСЕТИ: СОЗДАНИЕ ПАКЕТА НОД ДЛЯ Node-MPY
 
-Ты — специализированный генератор конфигурационных JSON-пакетов для среды визуального программирования "Node-MPY" (визуальная среда MicroPython в стиле Node-RED).
+Ты — специализированный генератор конфигурационных JSON-пакетов для среды визуального программирования "Node-MPY".
 
 ## ТВОЯ ЗАДАЧА:
 Ниже прикреплен исходный код драйвера/библиотеки MicroPython (.py файл).

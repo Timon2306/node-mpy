@@ -29,7 +29,6 @@ export const NodeMpyLogo: React.FC<NodeMpyLogoProps> = ({ className = 'w-7 h-7',
         </filter>
       </defs>
 
-      {/* Outer Microcontroller Frame */}
       <rect
         x="3"
         y="3"
@@ -41,7 +40,6 @@ export const NodeMpyLogo: React.FC<NodeMpyLogoProps> = ({ className = 'w-7 h-7',
         strokeWidth="1.5"
       />
 
-      {/* Chip Pins Top/Bottom */}
       <rect x="9" y="0.75" width="2" height="2.5" rx="0.75" fill="#00D4B2" />
       <rect x="15" y="0.75" width="2" height="2.5" rx="0.75" fill="#38BDF8" />
       <rect x="21" y="0.75" width="2" height="2.5" rx="0.75" fill="#00D4B2" />
@@ -50,7 +48,6 @@ export const NodeMpyLogo: React.FC<NodeMpyLogoProps> = ({ className = 'w-7 h-7',
       <rect x="15" y="28.75" width="2" height="2.5" rx="0.75" fill="#38BDF8" />
       <rect x="21" y="28.75" width="2" height="2.5" rx="0.75" fill="#00D4B2" />
 
-      {/* Chip Pins Left/Right */}
       <rect x="0.75" y="9" width="2.5" height="2" rx="0.75" fill="#00D4B2" />
       <rect x="0.75" y="15" width="2.5" height="2" rx="0.75" fill="#38BDF8" />
       <rect x="0.75" y="21" width="2.5" height="2" rx="0.75" fill="#00D4B2" />
@@ -59,14 +56,12 @@ export const NodeMpyLogo: React.FC<NodeMpyLogoProps> = ({ className = 'w-7 h-7',
       <rect x="28.75" y="15" width="2.5" height="2" rx="0.75" fill="#38BDF8" />
       <rect x="28.75" y="21" width="2.5" height="2" rx="0.75" fill="#00D4B2" />
 
-      {/* Circuit Nodes & Connections */}
       <circle cx="10" cy="10" r="2.2" fill="#00D4B2" filter="url(#mpyGlow)" />
       <circle cx="22" cy="10" r="2.2" fill="#38BDF8" filter="url(#mpyGlow)" />
       <circle cx="16" cy="16" r="2.8" fill="url(#mpyGrad)" filter="url(#mpyGlow)" />
       <circle cx="10" cy="22" r="2.2" fill="#38BDF8" filter="url(#mpyGlow)" />
       <circle cx="22" cy="22" r="2.2" fill="#00D4B2" filter="url(#mpyGlow)" />
 
-      {/* Flow Traces / Wires */}
       <path
         d="M10 10 L16 16 M22 10 L16 16 M10 22 L16 16 M22 22 L16 16"
         stroke="url(#mpyGrad)"

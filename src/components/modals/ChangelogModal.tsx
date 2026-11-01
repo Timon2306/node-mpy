@@ -27,7 +27,6 @@ export const ChangelogModal: React.FC = () => {
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-[480px] bg-[#1E222B] border border-[#374151] rounded-xl shadow-2xl overflow-hidden flex flex-col text-xs"
       >
-        {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-[#374151] bg-[#171A21]">
           <div className="flex items-center gap-2">
             <span className="text-base">📋</span>
@@ -43,9 +42,7 @@ export const ChangelogModal: React.FC = () => {
           </button>
         </div>
 
-        {/* Scrollable Changelog Body */}
         <div className="p-4 space-y-4 overflow-y-auto max-h-[440px] scrollbar-thin scrollbar-thumb-gray-600 select-text">
-          {/* Version 1.1.1 Control Flow, Try/Except & Multi-Branching */}
           <div className="space-y-3 p-3.5 rounded-lg bg-[#161920] border border-teal-500/50 shadow-lg">
             <div className="flex items-center justify-between">
               <span className="px-2.5 py-0.5 rounded text-[11px] font-mono font-bold bg-teal-500/20 text-teal-300 border border-teal-500/40">
@@ -99,7 +96,6 @@ export const ChangelogModal: React.FC = () => {
             </div>
           </div>
 
-          {/* Version 1.1.0 Visual Dashboard & PinLab Suite */}
           <div className="space-y-3 p-3.5 rounded-lg bg-[#161920] border border-rose-500/50 shadow-lg">
             <div className="flex items-center justify-between">
               <span className="px-2.5 py-0.5 rounded text-[11px] font-mono font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40">
@@ -153,7 +149,6 @@ export const ChangelogModal: React.FC = () => {
             </div>
           </div>
 
-          {/* Version 1.0.1 WASM & Updater Release */}
           <div className="space-y-3 p-3.5 rounded-lg bg-[#161920] border border-teal-500/50 shadow-lg">
             <div className="flex items-center justify-between">
               <span className="px-2.5 py-0.5 rounded text-[11px] font-mono font-bold bg-teal-500/20 text-teal-300 border border-teal-500/40">
@@ -164,8 +159,8 @@ export const ChangelogModal: React.FC = () => {
 
             <p className="text-[11px] text-gray-300 leading-relaxed">
               {isRu
-                ? 'Крупное функциональное обновление: внедрение реальной виртуальной машины MicroPython v1.26 в WebAssembly, IoT-ноды HTTP GET/POST для связи с Node-RED и система автоматической проверки обновлений с GitHub.'
-                : 'Major feature release: Real MicroPython v1.26 WebAssembly VM engine, IoT HTTP GET/POST nodes for Node-RED integration, and cross-platform GitHub auto-updater.'}
+                ? 'Крупное функциональное обновление: внедрение реальной виртуальной машины MicroPython v1.26 в WebAssembly, IoT-ноды HTTP GET/POST для связи с сервером дашборда и система автоматической проверки обновлений с GitHub.'
+                : 'Major feature release: Real MicroPython v1.26 WebAssembly VM engine, IoT HTTP GET/POST nodes for dashboard integration, and cross-platform GitHub auto-updater.'}
             </p>
 
             <div className="space-y-2 text-gray-300">
@@ -184,7 +179,7 @@ export const ChangelogModal: React.FC = () => {
               <div className="space-y-1">
                 <span className="text-[11px] font-semibold text-blue-400 flex items-center gap-1.5">
                   <Layers className="w-3.5 h-3.5 text-blue-400" />
-                  {isRu ? 'Ноды HTTP GET и HTTP POST (IoT и Node-RED)' : 'HTTP GET & HTTP POST Nodes (IoT & Node-RED)'}
+                  {isRu ? 'Ноды HTTP GET и HTTP POST (IoT)' : 'HTTP GET & HTTP POST Nodes (IoT)'}
                 </span>
                 <p className="text-[11px] text-gray-400 pl-5 leading-snug">
                   {isRu
@@ -207,7 +202,6 @@ export const ChangelogModal: React.FC = () => {
             </div>
           </div>
 
-          {/* Version 1.0.0 Official Release */}
           <div className="space-y-3 p-3.5 rounded-lg bg-[#161920] border border-[#2B3240]">
             <div className="flex items-center justify-between">
               <span className="px-2.5 py-0.5 rounded text-[11px] font-mono font-bold bg-gray-700/60 text-gray-300 border border-gray-600">
@@ -218,8 +212,8 @@ export const ChangelogModal: React.FC = () => {
 
             <p className="text-[11px] text-gray-400 leading-relaxed">
               {isRu
-                ? 'Базовый релиз визуальной среды Node-MPY: 79 нод, Kahn компилятор, интерактивные GPIO, темная палитра Node-RED.'
-                : 'Initial baseline release of Node-MPY: 79 nodes, Kahn dependency compiler, interactive GPIOs, calm Node-RED aesthetic.'}
+                ? 'Базовый релиз визуальной среды Node-MPY: 79 нод, Kahn компилятор, интерактивные GPIO, тёмная палитра.'
+                : 'Initial baseline release of Node-MPY: 79 nodes, Kahn dependency compiler, interactive GPIOs, dark palette.'}
             </p>
 
             <div className="space-y-2 text-gray-300">
@@ -242,8 +236,8 @@ export const ChangelogModal: React.FC = () => {
                 </span>
                 <p className="text-[11px] text-gray-400 pl-5 leading-snug">
                   {isRu
-                    ? 'Переключатель 1 кликом: визуальный пошаговый обход графа или реальная виртуальная машина MicroPython v1.26 в WebAssembly без зависаний, с интерактивными GPIO, симуляцией Node-RED reverse polling и виртуальным I2C ACK без сбоев железа.'
-                    : 'One-click toggle: Visual step-by-step flow traversal or real MicroPython v1.26 WebAssembly VM execution, with interactive live GPIO, Node-RED reverse polling simulation, and crash-proof virtual I2C ACK.'}
+                    ? 'Переключатель 1 кликом: визуальный пошаговый обход графа или реальная виртуальная машина MicroPython v1.26 в WebAssembly без зависаний, с интерактивными GPIO, симуляцией обмена с дашбордом и виртуальным I2C ACK без сбоев железа.'
+                    : 'One-click toggle: Visual step-by-step flow traversal or real MicroPython v1.26 WebAssembly VM execution, with interactive live GPIO, dashboard exchange simulation, and crash-proof virtual I2C ACK.'}
                 </p>
               </div>
 
@@ -298,7 +292,6 @@ export const ChangelogModal: React.FC = () => {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="px-4 py-2.5 border-t border-[#374151] bg-[#171A21] flex justify-end">
           <button
             onClick={() => setChangelogModalOpen(false)}

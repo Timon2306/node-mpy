@@ -47,11 +47,15 @@ function FlowCanvasInner() {
   } = useFlowStore();
 
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const { screenToFlowPosition } = useReactFlow();
+  const { screenToFlowPosition, fitView } = useReactFlow();
+  useEffect(() => {
+    const fit = () => fitView({ padding: 0.2, duration: 200 });
+    window.addEventListener('nodempy-fit', fit);
+    return () => window.removeEventListener('nodempy-fit', fit);
+  }, [fitView]);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const lastMousePos = useRef<{ x: number; y: number }>({ x: 300, y: 200 });
 
-  // Track mouse coordinates for pasting
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       lastMousePos.current = { x: e.clientX, y: e.clientY };
@@ -60,10 +64,8 @@ function FlowCanvasInner() {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
-  // Global Keyboard Shortcuts (Ctrl+Z, Ctrl+Y, Ctrl+C, Ctrl+V, Ctrl+D, Delete)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if user is currently typing in an input or textarea
       const active = document.activeElement;
       const isInput =
         active instanceof HTMLInputElement ||
@@ -74,34 +76,29 @@ function FlowCanvasInner() {
 
       const isCtrlOrCmd = e.ctrlKey || e.metaKey;
 
-      // Undo: Ctrl+Z (without shift)
       if (isCtrlOrCmd && !e.shiftKey && e.key.toLowerCase() === 'z') {
         e.preventDefault();
         undo();
         return;
       }
 
-      // Redo: Ctrl+Y or Ctrl+Shift+Z
       if ((isCtrlOrCmd && e.key.toLowerCase() === 'y') || (isCtrlOrCmd && e.shiftKey && e.key.toLowerCase() === 'z')) {
         e.preventDefault();
         redo();
         return;
       }
 
-      // Select All: Ctrl+A
       if (isCtrlOrCmd && e.key.toLowerCase() === 'a') {
         e.preventDefault();
         selectAllNodes();
         return;
       }
 
-      // Copy: Ctrl+C
       if (isCtrlOrCmd && e.key.toLowerCase() === 'c') {
         copySelectedNodes();
         return;
       }
 
-      // Paste: Ctrl+V
       if (isCtrlOrCmd && e.key.toLowerCase() === 'v') {
         e.preventDefault();
         const flowPos = screenToFlowPosition(lastMousePos.current);
@@ -109,14 +106,12 @@ function FlowCanvasInner() {
         return;
       }
 
-      // Duplicate: Ctrl+D
       if (isCtrlOrCmd && e.key.toLowerCase() === 'd') {
         e.preventDefault();
         duplicateSelectedNodes();
         return;
       }
 
-      // Delete: Delete or Backspace
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
         deleteSelectedNode();
@@ -128,7 +123,6 @@ function FlowCanvasInner() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [undo, redo, selectAllNodes, copySelectedNodes, pasteNodes, duplicateSelectedNodes, deleteSelectedNode, screenToFlowPosition]);
 
-  // Validates connections interactively during wire drag
   const isValidConnection = useCallback(
     (connection: Connection | Edge) => {
       if (!connection.source || !connection.target) return false;
@@ -193,11 +187,9 @@ function FlowCanvasInner() {
     [addNode, screenToFlowPosition, draggedDefinitionId, setDraggedDefinitionId]
   );
 
-  // Right-click on a node
   const onNodeContextMenu = useCallback(
     (event: MouseEvent | React.MouseEvent, node: any) => {
       event.preventDefault();
-      // If the node is not part of multi-selection, select only this node
       const target = nodes.find((n) => n.id === node.id);
       if (!target?.selected) {
         selectNode(node.id);
@@ -216,7 +208,6 @@ function FlowCanvasInner() {
     [nodes, selectNode, screenToFlowPosition]
   );
 
-  // Right-click on canvas pane
   const onPaneContextMenu = useCallback(
     (event: MouseEvent | React.MouseEvent) => {
       event.preventDefault();
@@ -291,7 +282,6 @@ function FlowCanvasInner() {
         />
       </ReactFlow>
 
-      {/* Connection guidance toast */}
       {connectionToast && (
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2.5 px-4 py-2.5 bg-[#251717] border border-red-500/60 text-red-200 text-xs rounded-lg shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-2 duration-200 max-w-lg pointer-events-auto">
           <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
@@ -305,7 +295,6 @@ function FlowCanvasInner() {
         </div>
       )}
 
-      {/* Node & Canvas Context Menu */}
       {contextMenu && (
         <NodeContextMenu
           menu={contextMenu}

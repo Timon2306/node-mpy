@@ -106,7 +106,6 @@ export const NodeMpyNode = memo(({ id, data, selected }: NodeProps) => {
   const def = LibraryRegistry.getNodeDefinition(nodeData?.definitionId);
   const IconComponent = (nodeData?.icon && ICON_MAP[nodeData.icon]) || Cpu;
 
-  // Subtitle and label calculation based on properties
   let subtitle = '';
   let displayLabel = nodeData.label;
   let importLines: string[] = [];
@@ -273,7 +272,10 @@ export const NodeMpyNode = memo(({ id, data, selected }: NodeProps) => {
   }
 
   const inputs = def?.inputs || [];
-  const outputs = def?.outputs || [];
+  const allOutputs = def?.outputs || [];
+  const usedOutputs = useFlowStore((st) => st.edges).filter((e) => e.source === id).map((e) => e.sourceHandle);
+  const hiding = !selected && allOutputs.length > 3;
+  const outputs = hiding ? allOutputs.filter((o) => o.type === 'flow' || usedOutputs.includes(o.id)) : allOutputs;
   const isMultiPort = inputs.length > 1 || outputs.length > 1;
   const maxPorts = Math.max(inputs.length, outputs.length);
   const nodeColor = nodeData.color || '#3B82F6';
@@ -322,7 +324,6 @@ export const NodeMpyNode = memo(({ id, data, selected }: NodeProps) => {
         !selected && !nodeData.hasWarning && !isSimActive && !isSimError ? 'hover:border-gray-500' : ''
       }`}
     >
-      {/* Simulation Active Indicator Pulse Badge */}
       {isSimActive && (
         <div className="absolute -top-3 -left-1 px-1.5 py-0.5 rounded-full bg-teal-500 text-slate-950 font-bold font-mono text-[9px] shadow-md z-30 animate-pulse flex items-center gap-1">
           <span className="w-1.5 h-1.5 rounded-full bg-slate-950" />
@@ -330,7 +331,6 @@ export const NodeMpyNode = memo(({ id, data, selected }: NodeProps) => {
         </div>
       )}
 
-      {/* Simulation Error Badge */}
       {isSimError && (
         <div className="absolute -top-3 -left-1 px-1.5 py-0.5 rounded-full bg-red-600 text-white font-bold font-mono text-[9px] shadow-lg z-30 animate-bounce flex items-center gap-1">
           <AlertTriangle className="w-3 h-3" />
@@ -338,7 +338,6 @@ export const NodeMpyNode = memo(({ id, data, selected }: NodeProps) => {
         </div>
       )}
 
-      {/* Warning badge if library is not imported */}
       {nodeData.hasWarning && !isSimError && (
         <div
           title={nodeData.warningMessage}
@@ -349,9 +348,7 @@ export const NodeMpyNode = memo(({ id, data, selected }: NodeProps) => {
       )}
 
       {isMultiPort ? (
-        /* Multi-port Node (Header + Port Rows) */
         <div className="w-full">
-          {/* Header */}
           <div className="h-[34px] flex items-center justify-between border-b border-[#374151] bg-[#1C2027] rounded-t-[5px]">
             <div className="flex items-center gap-2 h-full overflow-hidden">
               <div
@@ -381,7 +378,6 @@ export const NodeMpyNode = memo(({ id, data, selected }: NodeProps) => {
             />
           </div>
 
-          {/* Port Rows */}
           <div className="py-1.5 space-y-1">
             {Array.from({ length: maxPorts }).map((_, idx) => {
               const inp = inputs[idx];
@@ -392,7 +388,6 @@ export const NodeMpyNode = memo(({ id, data, selected }: NodeProps) => {
                   key={idx}
                   className="relative h-[22px] flex items-center justify-between px-2 text-[10px] font-mono"
                 >
-                  {/* Left Port */}
                   {inp ? (
                     <div className="flex items-center gap-1.5 overflow-hidden mr-2">
                       <Handle
@@ -420,7 +415,6 @@ export const NodeMpyNode = memo(({ id, data, selected }: NodeProps) => {
                     <div />
                   )}
 
-                  {/* Right Port */}
                   {out ? (
                     <div className="flex items-center gap-1.5 overflow-hidden ml-auto">
                       <span className="text-gray-300 font-medium truncate text-right">
@@ -453,9 +447,7 @@ export const NodeMpyNode = memo(({ id, data, selected }: NodeProps) => {
           </div>
         </div>
       ) : (
-        /* Compact Single-Port Node */
         <>
-          {/* Left Icon Square with solid colored accent line */}
           <div
             className="w-8 flex items-center justify-center bg-[#1C2027] border-r border-[#374151] rounded-l-[5px] flex-shrink-0 self-stretch"
             style={{ borderLeft: `3.5px solid ${nodeColor}` }}
@@ -466,7 +458,6 @@ export const NodeMpyNode = memo(({ id, data, selected }: NodeProps) => {
             />
           </div>
 
-          {/* Node content: Title + Subtitle or Import Lines Column */}
           <div className="flex flex-col px-2.5 py-1 overflow-hidden w-full leading-tight justify-center">
             <span className="text-[12px] font-semibold text-gray-100 truncate">
               {displayLabel}
@@ -492,7 +483,6 @@ export const NodeMpyNode = memo(({ id, data, selected }: NodeProps) => {
             )}
           </div>
 
-          {/* Single Input Socket (Left) */}
           {inputs.length === 1 && (
             <Handle
               id={inputs[0].id}
@@ -509,7 +499,6 @@ export const NodeMpyNode = memo(({ id, data, selected }: NodeProps) => {
             />
           )}
 
-          {/* Single Output Socket (Right) */}
           {outputs.length === 1 && (
             <Handle
               id={outputs[0].id}
@@ -533,5 +522,4 @@ export const NodeMpyNode = memo(({ id, data, selected }: NodeProps) => {
 
 NodeMpyNode.displayName = 'NodeMpyNode';
 export const NodeTealNode = NodeMpyNode;
-
 

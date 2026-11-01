@@ -5,7 +5,6 @@ import { NodeInstanceData } from '../src/types/nodes';
 
 console.log('=== RUNNING NODE-MPY COMPILER & REGISTRY TESTS ===\n');
 
-// 1. Test all 65 nodes individually
 console.log('--- TEST 1: Individual Node Code Generation ---');
 const allLibs = LibraryRegistry.getAllLibraries();
 let nodesPassCount = 0;
@@ -31,7 +30,6 @@ for (const lib of allLibs) {
       },
     };
 
-    // If it's a flow node, connect from while_loop to test execution rendering
     const nodes: Node<NodeInstanceData>[] = [testNode];
     const edges: Edge[] = [];
 
@@ -61,7 +59,6 @@ for (const lib of allLibs) {
 
     const result = CodeGenerator.generateCode(nodes, edges);
 
-    // Assert no unreplaced template placeholders
     const unparsedTemplates = result.code.match(/\{\{[^}]+\}\}/g);
     if (unparsedTemplates) {
       console.error(`FAILED for node ${nodeDef.id}: unparsed templates found:`, unparsedTemplates);
@@ -81,7 +78,6 @@ for (const lib of allLibs) {
 }
 console.log(`✓ All ${nodesPassCount} node definitions compile without any unparsed template artifacts.\n`);
 
-// 2. Test Demo Project Compilation
 console.log('--- TEST 2: Demo Project Compilation ---');
 const demoNodes: Node<NodeInstanceData>[] = [
   {
@@ -234,20 +230,16 @@ const demoEdges: Edge[] = [
 const demoResult = CodeGenerator.generateCode(demoNodes, demoEdges);
 console.log('Demo Generated Code:\n' + demoResult.code + '\n');
 
-// Verify variable matching in demo code:
-// 1. pin_dht produces pin_4, and dht_init consumes pin_4
 if (!demoResult.code.includes('pin_4 = machine.Pin(4') || !demoResult.code.includes('dht.DHT22(pin_4)')) {
   console.error('FAILED: pin_4 was not properly passed from pin_init to dht.DHT22');
   process.exit(1);
 }
 
-// 2. i2c_bus produces i2c_i2c_bus, and oled_init consumes i2c_i2c_bus
 if (!demoResult.code.includes('i2c_i2c_bus = machine.I2C(0') || !demoResult.code.includes('ssd1306.SSD1306_I2C(128, 64, i2c_i2c_bus')) {
   console.error('FAILED: i2c_i2c_bus was not properly passed to ssd1306.SSD1306_I2C');
   process.exit(1);
 }
 
-// 3. oled_init produces oled_oled_init, and oled_clear/oled_text/oled_show all consume oled_oled_init
 if (!demoResult.code.includes('oled_oled_init = ssd1306.SSD1306_I2C') ||
     !demoResult.code.includes('oled_oled_init.fill(0)') ||
     !demoResult.code.includes('oled_oled_init.show()')) {
@@ -255,7 +247,6 @@ if (!demoResult.code.includes('oled_oled_init = ssd1306.SSD1306_I2C') ||
   process.exit(1);
 }
 
-// 4. dht_read produces temp_dht_read, and oled_text receives temp_dht_read
 if (!demoResult.code.includes('temp_dht_read = dht_sensor_dht_init.temperature()') ||
     !demoResult.code.includes('oled_oled_init.text(str(temp_dht_read)')) {
   console.error('FAILED: temp_dht_read variable was not passed to oled.text');
@@ -264,7 +255,6 @@ if (!demoResult.code.includes('temp_dht_read = dht_sensor_dht_init.temperature()
 
 console.log('✓ Demo project compiles with 100% accurate variable binding and valid MicroPython syntax!\n');
 
-// 3. Test Complex Multi-Node Flow with new nodes
 console.log('--- TEST 3: Logic, Math, Strings, Tone, Random Flow ---');
 const complexNodes: Node<NodeInstanceData>[] = [
   {
@@ -413,40 +403,30 @@ const complexNodes: Node<NodeInstanceData>[] = [
 ];
 
 const complexEdges: Edge[] = [
-  // Setup flow: setup -> wifi_conn -> wifi_ip
   { id: 'ce1', source: 'setup_node', sourceHandle: 'flow_out', target: 'wifi_conn', targetHandle: 'flow_in' },
   { id: 'ce2', source: 'wifi_conn', sourceHandle: 'flow_out', target: 'wifi_ip', targetHandle: 'flow_in' },
   { id: 'ce3', source: 'wifi_conn', sourceHandle: 'wlan_obj', target: 'wifi_ip', targetHandle: 'wlan' },
 
-  // While loop body -> rand_gen
   { id: 'ce4', source: 'while_loop', sourceHandle: 'loop_body', target: 'rand_gen', targetHandle: 'flow_in' },
 
-  // Expression flow: rand_gen (result) -> math_op (a)
   { id: 'ce5', source: 'rand_gen', sourceHandle: 'result', target: 'math_op', targetHandle: 'a' },
 
-  // math_op (result) -> cmp_op (a)
   { id: 'ce6', source: 'math_op', sourceHandle: 'result', target: 'cmp_op', targetHandle: 'a' },
 
-  // cmp_op (result) -> logic_op (a)
   { id: 'ce7', source: 'cmp_op', sourceHandle: 'result', target: 'logic_op', targetHandle: 'a' },
 
-  // rand_gen (flow_out) -> if_branch (flow_in)
   { id: 'ce8', source: 'rand_gen', sourceHandle: 'flow_out', target: 'if_branch', targetHandle: 'flow_in' },
 
-  // logic_op (result) -> if_branch (condition)
   { id: 'ce9', source: 'logic_op', sourceHandle: 'result', target: 'if_branch', targetHandle: 'condition' },
 
-  // if_branch (flow_true) -> print_true
   { id: 'ce10', source: 'if_branch', sourceHandle: 'flow_true', target: 'print_true', targetHandle: 'flow_in' },
 
-  // if_branch (flow_false) -> print_false
   { id: 'ce11', source: 'if_branch', sourceHandle: 'flow_false', target: 'print_false', targetHandle: 'flow_in' },
 ];
 
 const complexResult = CodeGenerator.generateCode(complexNodes, complexEdges);
 console.log('Complex Flow Code:\n' + complexResult.code + '\n');
 
-// Assertions on complex flow:
 if (!complexResult.code.includes('wlan_wifi_conn = network.WLAN(network.STA_IF)')) {
   console.error('FAILED: wlan_wifi_conn initialization missing');
   process.exit(1);
@@ -489,7 +469,6 @@ if (!complexResult.code.includes('if logic_logic_op:')) {
 
 console.log('✓ Complex multi-node flow with Math, Logic, Random, Network, If/Else passed with flying colors!\n');
 
-// --- TEST 4: MicroPyServer + File I/O + String Replace ---
 const serverNodes: Node<NodeInstanceData>[] = [
   {
     id: 'srv_init',
@@ -559,27 +538,21 @@ const serverNodes: Node<NodeInstanceData>[] = [
 ];
 
 const serverEdges: Edge[] = [
-  // Wire srv_init to srv_route
   { id: 'se1', source: 'srv_init', sourceHandle: 'server', target: 'srv_route', targetHandle: 'server' },
 
-  // Route flow: route -> file_read -> send
   { id: 'se2', source: 'srv_route', sourceHandle: 'flow_out', target: 'file_read_node', targetHandle: 'flow_in' },
   { id: 'se3', source: 'file_read_node', sourceHandle: 'flow_out', target: 'srv_send', targetHandle: 'flow_in' },
 
-  // Data flow: file_read (content) -> str_replace (text)
   { id: 'se4', source: 'file_read_node', sourceHandle: 'content', target: 'str_replace_node', targetHandle: 'text' },
 
-  // Data flow: str_replace (result) -> send (content)
   { id: 'se5', source: 'str_replace_node', sourceHandle: 'result', target: 'srv_send', targetHandle: 'content' },
 
-  // Wire srv_init to srv_send
   { id: 'se6', source: 'srv_init', sourceHandle: 'server', target: 'srv_send', targetHandle: 'server' },
 ];
 
 const serverResult = CodeGenerator.generateCode(serverNodes, serverEdges);
 console.log('MicroPyServer Flow Code:\n' + serverResult.code + '\n');
 
-// Assertions on MicroPyServer flow:
 if (!serverResult.code.includes('from micropyserver import MicroPyServer')) {
   console.error('FAILED: MicroPyServer import missing');
   process.exit(1);
@@ -622,7 +595,6 @@ if (!serverResult.code.includes('server_srv_init.start()')) {
 
 console.log('✓ MicroPyServer + File Read + String Replace + Route Registration passed with 100% accuracy!\n');
 
-// --- TEST 5: Selective Imports from Module (e.g. from machine import Pin) ---
 console.log('--- TEST 5: Selective Imports from Module (from machine import Pin) ---');
 const selectiveImportNodes = [
   {
@@ -681,7 +653,6 @@ if (selectiveResult.code.includes('machine.Pin')) {
 
 console.log('✓ Selective import test passed: clean "from machine import Pin" and "Pin(4, Pin.OUT)" without "import machine"!\n');
 
-// --- TEST 6: Dashboard Client Node (IoT Telemetry & Command) ---
 console.log('--- TEST 6: Dashboard Client Node (IoT Telemetry & Command) ---');
 const dashClientNodes = [
   {
@@ -728,21 +699,16 @@ const dashClientEdges = [
 ];
 
 const dashClientRes = CodeGenerator.generateCode(dashClientNodes as any, dashClientEdges as any);
-if (!dashClientRes.code.includes("connect(('192.168.17.14', 1880))")) {
-  console.error('FAILED: Expected socket connect with server_ip and server_port. Got:', dashClientRes.code);
+if (!dashClientRes.code.includes("'192.168.17.14', 1880, '/light'")) {
+  console.error('FAILED: Expected dashboard_sync call with server_ip, server_port and path. Got:', dashClientRes.code);
   process.exit(1);
 }
-if (!dashClientRes.code.includes("'/light?value='")) {
-  console.error('FAILED: Expected /light?value= in request query string');
+if ((dashClientRes.code.match(/def dashboard_sync/g) || []).length !== 1) {
+  console.error('FAILED: Expected dashboard_sync helper to be emitted exactly once');
   process.exit(1);
 }
-if (!dashClientRes.code.includes("b'CMD_ON' in _raw_dash_client_1")) {
-  console.error('FAILED: Expected CMD_ON check in response');
-  process.exit(1);
-}
-console.log('✓ Dashboard client node compiles cleanly with socket telemetry and CMD_ON command check!\n');
+console.log('✓ Dashboard client node compiles cleanly with the dashboard_sync helper!\n');
 
-// --- TEST 7: Try / Except Node with Error Capture & Outer Continuation ---
 console.log('--- TEST 7: Try / Except Node with Error Capture & Outer Continuation ---');
 const tryExceptNodes = [
   {
@@ -834,14 +800,12 @@ if (!tryRes.code.includes('print(str("Error caught: ") + str(str(err)))') && !tr
   console.error('FAILED: error_msg (str(err)) was not passed to print_err node');
   process.exit(1);
 }
-// sleep_after MUST be unindented (4 spaces inside while True, not 8 spaces inside try or except)
 if (!tryRes.code.includes('\n    time.sleep_ms(1000)')) {
   console.error('FAILED: time.sleep_ms(1000) was not emitted unindented outside try/except block');
   process.exit(1);
 }
 console.log('✓ Try / Except node compiles cleanly with error binding and unindented flow_next!\n');
 
-// --- TEST 8: If / Else with flow_next Continuation & Convergence ---
 console.log('--- TEST 8: If / Else with flow_next Continuation & Convergence ---');
 const ifElseNextNodes = [
   {
@@ -925,14 +889,12 @@ if (!ifElseNextRes.code.includes('if True:') || !ifElseNextRes.code.includes('el
   console.error('FAILED: if / else branches missing');
   process.exit(1);
 }
-// print_after MUST be emitted outside the if/else block at indent level 1 (4 spaces)
 if (!ifElseNextRes.code.includes('\n    print("Always Runs After")')) {
   console.error('FAILED: print_after was not emitted unindented outside if/else block');
   process.exit(1);
 }
 console.log('✓ If / Else flow_next unindented continuation verified!\n');
 
-// --- TEST 8b: Implicit Convergence (both branches wiring into the same downstream node) ---
 console.log('--- TEST 8b: Implicit Convergence (both branches wiring into the same downstream node) ---');
 const ifElseConvEdges = [
   { id: 'e_loop_if', source: 'while_loop', sourceHandle: 'loop_body', target: 'if_node', targetHandle: 'flow_in' },
@@ -951,7 +913,6 @@ if (!ifElseConvRes.code.includes('\n    print("Always Runs After")')) {
 }
 console.log('✓ If / Else implicit convergence verified with 100% success!\n');
 
-// --- TEST 9: If / Elif / Else Multi-Branching ---
 console.log('--- TEST 9: If / Elif / Else Multi-Branching ---');
 const elifNodes = [
   {
@@ -1055,7 +1016,6 @@ if (!elifRes.code.includes('\n    print("Continue Flow")')) {
 }
 console.log('✓ If / Elif / Else multi-branching verified with 100% accuracy!\n');
 
-// --- TEST 10: Multi-Pin Init, Multi-Variables & Standalone ADC Init ---
 console.log('--- TEST 10: Multi-Pin Init, Multi-Variables & Standalone ADC Init ---');
 const compactNodes = [
   {
@@ -1126,17 +1086,14 @@ const compactEdges = [
 const compactRes = CodeGenerator.generateCode(compactNodes as any, compactEdges as any);
 console.log('Compact Multi-Pins & Multi-Variables Code:\n' + compactRes.code + '\n');
 
-// 1. ADC Init must use machine.ADC(0), NEVER undefined pin_0!
 if (compactRes.code.includes('pin_0') || !compactRes.code.includes('machine.ADC(0)')) {
   console.error('FAILED: ADC Init emitted undefined pin_0 instead of machine.ADC(0)');
   process.exit(1);
 }
-// 2. Multi-Pins must emit in Section 2
 if (!compactRes.code.includes('led1 = machine.PWM(machine.Pin(4)') || !compactRes.code.includes('led2 = machine.PWM(machine.Pin(5)')) {
   console.error('FAILED: Multi-Pin setup lines missing in Section 2');
   process.exit(1);
 }
-// 3. Multi-Variables must emit inside loop
 if (!compactRes.code.includes('\n    DARK_VAL = 330') || !compactRes.code.includes('\n    LIGHT_VAL = 1024')) {
   console.error('FAILED: Multi-variables assignments not properly indented in loop');
   process.exit(1);

@@ -22,6 +22,8 @@ import {
   Copy,
   Layout,
   Zap,
+  Usb,
+  LayoutGrid,
   Radio,
   Globe,
 } from 'lucide-react';
@@ -29,6 +31,8 @@ import { useFlowStore } from '../../store/useFlowStore';
 import { translations } from '../../i18n';
 import { NodeMpyLogo } from '../brand/NodeMpyLogo';
 import { FlowTab } from '../../types/project';
+import { EXAMPLES, buildExampleProject } from '../../store/examples';
+import { openBoardPanel } from '../../services/boardService';
 import {
   exportProjectSchema,
   exportFlowAsSvg,
@@ -74,6 +78,7 @@ export const Topbar: React.FC = () => {
     flows,
     activeFlowId,
     addFlow,
+    arrangeNodes,
     deleteFlow,
     switchFlow,
     renameFlow,
@@ -98,7 +103,6 @@ export const Topbar: React.FC = () => {
     setEditingTabId(null);
   };
 
-  // Open saved file's folder in Windows Explorer
   const handleOpenFileFolder = async (path: string) => {
     try {
       if (typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__) {
@@ -110,7 +114,6 @@ export const Topbar: React.FC = () => {
     }
   };
 
-  // Export main.py file
   const handleExportMainPy = async () => {
     try {
       const result = await exportMainPyCode(
@@ -135,7 +138,6 @@ export const Topbar: React.FC = () => {
     }
   };
 
-  // Export Full Dashboard Bundle (server.ts + dashboard.html)
   const handleExportDashboardBundle = async () => {
     setSaveMenuOpen(false);
     try {
@@ -162,7 +164,6 @@ export const Topbar: React.FC = () => {
     }
   };
 
-  // Export Dashboard Server as server.ts
   const handleExportDashboardServer = async () => {
     setSaveMenuOpen(false);
     try {
@@ -189,7 +190,6 @@ export const Topbar: React.FC = () => {
     }
   };
 
-  // Export Dashboard HTML as dashboard.html
   const handleExportDashboardHtml = async () => {
     setSaveMenuOpen(false);
     try {
@@ -212,7 +212,6 @@ export const Topbar: React.FC = () => {
     }
   };
 
-  // Save Project as .nodempy.json
   const handleSaveSchema = async () => {
     setSaveMenuOpen(false);
     try {
@@ -239,7 +238,6 @@ export const Topbar: React.FC = () => {
     }
   };
 
-  // Export Flow as SVG
   const handleSaveSvg = async () => {
     setSaveMenuOpen(false);
     try {
@@ -270,7 +268,6 @@ export const Topbar: React.FC = () => {
     }
   };
 
-  // Export Flow as PNG
   const handleSavePng = async () => {
     setSaveMenuOpen(false);
     try {
@@ -301,7 +298,6 @@ export const Topbar: React.FC = () => {
     }
   };
 
-  // Copy Schema JSON to clipboard
   const handleCopyClipboard = async () => {
     setSaveMenuOpen(false);
     try {
@@ -322,7 +318,6 @@ export const Topbar: React.FC = () => {
     }
   };
 
-  // Open Project (.nodempy.json or .nodeteal.json)
   const handleOpenProjectFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -353,7 +348,6 @@ export const Topbar: React.FC = () => {
 
   return (
     <header className="h-[48px] bg-slate-topbar border-b border-slate-border px-3 sm:px-4 flex items-center justify-between z-20 flex-shrink-0 gap-2">
-      {/* Hidden file input for opening projects */}
       <input
         ref={fileInputRef}
         type="file"
@@ -362,9 +356,7 @@ export const Topbar: React.FC = () => {
         onChange={handleOpenProjectFile}
       />
 
-      {/* Left section: Distinct Brand Logo & Node-RED style Flow Tabs */}
       <div className="flex items-center gap-3 overflow-hidden flex-1 max-w-[65%]">
-        {/* Brand Logo & Name */}
         <div className="flex items-center gap-2 flex-shrink-0">
           <NodeMpyLogo size={24} className="flex-shrink-0" />
           <span className="text-sm font-bold tracking-tight text-white hidden sm:flex items-center select-none">
@@ -374,7 +366,6 @@ export const Topbar: React.FC = () => {
 
         <div className="h-4 w-[1px] bg-slate-border flex-shrink-0 mx-0.5" />
 
-        {/* Node-RED Style Flow Tabs */}
         <div className="flex items-center gap-1 overflow-x-auto scrollbar-none py-1 flex-1">
           {flows.map((flow) => {
             const isActive = flow.id === activeFlowId;
@@ -392,12 +383,10 @@ export const Topbar: React.FC = () => {
                     : 'bg-slate-panel/70 text-gray-400 hover:text-gray-200 hover:bg-slate-hover border-transparent'
                 }`}
               >
-                {/* Active indicator dot */}
                 {isActive && (
                   <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse flex-shrink-0" />
                 )}
 
-                {/* Mode Icon */}
                 {flow.mode === 'dashboard' ? (
                   <Layout className="w-3.5 h-3.5 text-rose-400 flex-shrink-0" />
                 ) : (
@@ -422,7 +411,6 @@ export const Topbar: React.FC = () => {
                   <span className="truncate max-w-[110px]">{flow.name}</span>
                 )}
 
-                {/* Close Tab Button */}
                 {flows.length > 1 && (
                   <button
                     onClick={(e) => {
@@ -441,7 +429,6 @@ export const Topbar: React.FC = () => {
             );
           })}
 
-          {/* Add New Flow Tab Button (+) with Dropdown Menu */}
           <div className="relative flex-shrink-0">
             <button
               ref={addBtnRef}
@@ -469,9 +456,7 @@ export const Topbar: React.FC = () => {
         </div>
       </div>
 
-      {/* Center & Right sections */}
       <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-        {/* Undo / Redo Toolbar buttons */}
         <div className="flex items-center gap-0.5 bg-slate-panel border border-slate-border rounded-md p-0.5">
           <button
             onClick={undo}
@@ -499,7 +484,6 @@ export const Topbar: React.FC = () => {
           </button>
         </div>
 
-        {/* Project Open / Save / Clear */}
         <button
           onClick={() => fileInputRef.current?.click()}
           title={t.openTooltip}
@@ -509,7 +493,6 @@ export const Topbar: React.FC = () => {
           <span className="hidden md:inline">{t.openButton}</span>
         </button>
 
-        {/* Launch Dashboard Button (Visible when on Dashboard flow) */}
         {currentFlow?.mode === 'dashboard' && (
           <button
             onClick={() => setDashboardModalOpen(true)}
@@ -521,7 +504,26 @@ export const Topbar: React.FC = () => {
           </button>
         )}
 
-        {/* Project Save Dropdown Menu */}
+        <button
+          onClick={arrangeNodes}
+          title={language === 'ru' ? 'Расставить ноды в порядке выполнения кода' : 'Arrange nodes in execution order'}
+          className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-gray-300 hover:text-white hover:bg-slate-hover rounded-md border border-slate-border transition-colors"
+        >
+          <LayoutGrid className="w-3.5 h-3.5" />
+          <span className="hidden md:inline">{language === 'ru' ? 'Упорядочить' : 'Arrange'}</span>
+        </button>
+
+        {currentFlow?.mode !== 'dashboard' && (
+          <button
+            onClick={openBoardPanel}
+            title={language === 'ru' ? 'Залить main.py на плату по USB' : 'Upload main.py to the board over USB'}
+            className="flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-500 active:bg-teal-700 rounded-md transition-all"
+          >
+            <Usb className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">{language === 'ru' ? 'На плату' : 'To board'}</span>
+          </button>
+        )}
+
         <div className="relative">
           <button
             onClick={() => setSaveMenuOpen(!saveMenuOpen)}
@@ -548,7 +550,6 @@ export const Topbar: React.FC = () => {
                   {language === 'ru' ? 'Формат экспорта и сохранения' : 'Export & Save Formats'}
                 </div>
 
-                {/* Dashboard-specific Export options */}
                 {currentFlow?.mode === 'dashboard' ? (
                   <>
                     <button
@@ -613,7 +614,6 @@ export const Topbar: React.FC = () => {
                   </>
                 ) : null}
 
-                {/* 1. Project Schema (.nodempy.json) */}
                 <button
                   onClick={handleSaveSchema}
                   className="w-full px-3 py-2 text-left text-gray-200 hover:bg-slate-hover flex items-start gap-2.5 transition-colors group"
@@ -630,7 +630,6 @@ export const Topbar: React.FC = () => {
                   </div>
                 </button>
 
-                {/* 2. Vector Diagram (.svg) */}
                 <button
                   onClick={handleSaveSvg}
                   className="w-full px-3 py-2 text-left text-gray-200 hover:bg-slate-hover flex items-start gap-2.5 transition-colors group"
@@ -647,7 +646,6 @@ export const Topbar: React.FC = () => {
                   </div>
                 </button>
 
-                {/* 3. Image Snapshot (.png) */}
                 <button
                   onClick={handleSavePng}
                   className="w-full px-3 py-2 text-left text-gray-200 hover:bg-slate-hover flex items-start gap-2.5 transition-colors group"
@@ -664,7 +662,6 @@ export const Topbar: React.FC = () => {
                   </div>
                 </button>
 
-                {/* 4. MicroPython Script (.py) - For MicroPython flows */}
                 {currentFlow?.mode !== 'dashboard' && (
                   <button
                     onClick={() => {
@@ -688,7 +685,6 @@ export const Topbar: React.FC = () => {
 
                 <div className="h-[1px] bg-slate-border my-1" />
 
-                {/* 5. Copy JSON to Clipboard */}
                 <button
                   onClick={handleCopyClipboard}
                   className="w-full px-3 py-2 text-left text-gray-200 hover:bg-slate-hover flex items-start gap-2.5 transition-colors group"
@@ -714,7 +710,6 @@ export const Topbar: React.FC = () => {
           <RotateCcw className="w-3.5 h-3.5" />
         </button>
 
-        {/* Main Export Button (Mode-aware: main.py for MicroPython, Dashboard bundle for Dashboard) */}
         <button
           onClick={currentFlow?.mode === 'dashboard' ? handleExportDashboardBundle : handleExportMainPy}
           title={
@@ -755,7 +750,6 @@ export const Topbar: React.FC = () => {
           )}
         </button>
 
-        {/* Burger Dropdown Menu (Node-RED style) */}
         <div className="relative">
           <button
             onClick={() => setMenuOpen(!menuOpen)}
@@ -774,7 +768,6 @@ export const Topbar: React.FC = () => {
                 onClick={() => setMenuOpen(false)}
               />
               <div className="absolute right-0 top-full mt-1.5 w-60 bg-slate-panel border border-slate-border rounded-lg shadow-xl py-1.5 z-40 text-xs">
-                {/* Simulation Toggle */}
                 <button
                   onClick={() => {
                     toggleSimulation();
@@ -802,7 +795,6 @@ export const Topbar: React.FC = () => {
 
                 <div className="h-[1px] bg-slate-border my-1" />
 
-                {/* Settings & Updates */}
                 <button
                   onClick={() => {
                     setSettingsModalOpen(true);
@@ -821,7 +813,6 @@ export const Topbar: React.FC = () => {
 
                 <div className="h-[1px] bg-slate-border my-1" />
 
-                {/* Palette Manager */}
                 <button
                   onClick={() => {
                     setPaletteModalOpen(true);
@@ -838,7 +829,6 @@ export const Topbar: React.FC = () => {
 
                 <div className="h-[1px] bg-slate-border my-1" />
 
-                {/* Shortcuts */}
                 <button
                   onClick={() => {
                     setShortcutsModalOpen(true);
@@ -850,7 +840,6 @@ export const Topbar: React.FC = () => {
                   <span>{t.shortcuts}</span>
                 </button>
 
-                {/* About Modal */}
                 <button
                   onClick={() => {
                     setAboutModalOpen(true);
@@ -867,7 +856,6 @@ export const Topbar: React.FC = () => {
         </div>
       </div>
 
-      {/* File Saved Notification Toast */}
       {savedNotification && (
         <div className="fixed top-14 right-4 z-50 flex items-center gap-3 px-4 py-2.5 bg-[#1C202A] border border-teal-500/60 text-white text-xs rounded-lg shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200">
           <Check className="w-4 h-4 text-teal-400 flex-shrink-0" />
@@ -896,7 +884,6 @@ export const Topbar: React.FC = () => {
         </div>
       )}
 
-      {/* Add New Flow Mode Picker Dropdown (Rendered fixed to avoid overflow clipping) */}
       {addFlowMenuOpen && addFlowMenuPos && (
         <>
           <div
@@ -956,6 +943,24 @@ export const Topbar: React.FC = () => {
                 </div>
               </div>
             </button>
+            <div className="px-3 py-1.5 mt-1 text-[10px] uppercase font-bold tracking-wider text-gray-400 border-t border-b border-slate-border/60">
+              {language === 'ru' ? 'Готовые примеры' : 'Ready examples'}
+            </div>
+            {EXAMPLES.map((example) => (
+              <button
+                key={example.id}
+                onClick={() => {
+                  setAddFlowMenuOpen(false);
+                  const hasWork = flows.some((f) => f.nodes.length > 0);
+                  if (hasWork && !window.confirm(language === 'ru' ? 'Пример заменит текущий проект. Продолжить?' : 'The example will replace the current project. Continue?')) return;
+                  loadProject(buildExampleProject(example.id));
+                }}
+                className="w-full px-3 py-2 text-left hover:bg-slate-hover transition-colors"
+              >
+                <div className="font-semibold text-gray-100">{example.title}</div>
+                <div className="text-[10px] text-gray-400 leading-tight">{example.description}</div>
+              </button>
+            ))}
           </div>
         </>
       )}

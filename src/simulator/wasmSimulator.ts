@@ -17,8 +17,8 @@ class WasmSimulatorEngine {
   private initSharedBuffers() {
     try {
       if (typeof SharedArrayBuffer !== 'undefined') {
-        this.controlBuffer = new SharedArrayBuffer(16); // 4 ints: [paused, speed*100, step, reserved]
-        this.pinBuffer = new SharedArrayBuffer(144); // 36 ints: pins 0..31, pin 32 is ADC
+        this.controlBuffer = new SharedArrayBuffer(16);
+        this.pinBuffer = new SharedArrayBuffer(144);
         this.controlArray = new Int32Array(this.controlBuffer);
         this.pinArray = new Int32Array(this.pinBuffer);
       }
@@ -40,7 +40,6 @@ class WasmSimulatorEngine {
       return;
     }
 
-    // Generate real MicroPython code from the canvas flow
     const { code, errors } = CodeGenerator.generateCode(nodes, edges);
 
     if (errors && errors.length > 0) {
@@ -64,21 +63,19 @@ class WasmSimulatorEngine {
       'Инициализация виртуальных шин GPIO 0..16, ADC, I2C, SPI, Web & urequests...'
     );
 
-    // Sync initial pin state into shared memory
     if (this.pinArray) {
       for (let p = 0; p <= 16; p++) {
         const val = virtualPins[p]?.value ?? (p === 2 ? 1 : 0);
         Atomics.store(this.pinArray, p, val);
       }
-      Atomics.store(this.pinArray, 32, 485); // Default photoresistor ADC
+      Atomics.store(this.pinArray, 32, 485);
     }
     if (this.controlArray) {
-      Atomics.store(this.controlArray, 0, 0); // paused = false
+      Atomics.store(this.controlArray, 0, 0);
       Atomics.store(this.controlArray, 1, Math.round(simSpeed * 100));
     }
 
     try {
-      // Spawn fresh worker
       this.worker = new Worker(new URL('./mpWorker.ts', import.meta.url), {
         type: 'module',
       });
@@ -92,7 +89,6 @@ class WasmSimulatorEngine {
         this.stop();
       };
 
-      // Send start payload to worker
       this.worker.postMessage({
         type: 'start',
         code,
@@ -130,7 +126,6 @@ class WasmSimulatorEngine {
         store.updateVirtualPin(pin, { value });
 
         if (pin === 2) {
-          // ESP8266 Builtin LED is active-low (0 = ON, 1 = OFF)
           const ledOn = value === 0;
           store.addSimLog(
             'gpio',
@@ -210,7 +205,6 @@ class WasmSimulatorEngine {
       this.start();
       return;
     }
-    // Step: briefly unpause, then re-pause
     this.resume();
     setTimeout(() => {
       this.pause();

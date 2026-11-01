@@ -328,9 +328,9 @@
         { "id": "bus", "name": "bus", "type": "bus", "label": "I2C Bus" }
       ],
       "properties": [
-        { "id": "bus_id", "name": "bus_id", "type": "number", "label": "I2C Номер (0 или 1)", "defaultValue": 0 },
-        { "id": "scl", "name": "scl", "type": "number", "label": "SCL Пин", "defaultValue": 22 },
-        { "id": "sda", "name": "sda", "type": "number", "label": "SDA Пин", "defaultValue": 21 },
+        { "id": "bus_id", "name": "bus_id", "type": "number", "label": "I2C Номер (-1 — программная, для ESP8266)", "defaultValue": -1 },
+        { "id": "scl", "name": "scl", "type": "number", "label": "SCL Пин (D1 = 5)", "defaultValue": 5 },
+        { "id": "sda", "name": "sda", "type": "number", "label": "SDA Пин (D2 = 4)", "defaultValue": 4 },
         { "id": "freq", "name": "freq", "type": "number", "label": "Частота шины (Hz)", "defaultValue": 400000 }
       ],
       "codeTemplate": {
@@ -354,11 +354,11 @@
         { "id": "bus", "name": "bus", "type": "bus", "label": "SPI Bus" }
       ],
       "properties": [
-        { "id": "spi_id", "name": "spi_id", "type": "number", "label": "SPI Номер (1 или 2)", "defaultValue": 1 },
-        { "id": "baudrate", "name": "baudrate", "type": "number", "label": "Baudrate (Hz)", "defaultValue": 10000000 },
-        { "id": "sck", "name": "sck", "type": "number", "label": "SCK Пин", "defaultValue": 18 },
-        { "id": "mosi", "name": "mosi", "type": "number", "label": "MOSI Пин", "defaultValue": 23 },
-        { "id": "miso", "name": "miso", "type": "number", "label": "MISO Пин", "defaultValue": 19 }
+        { "id": "spi_id", "name": "spi_id", "type": "number", "label": "SPI Номер (-1 — программная, для ESP8266)", "defaultValue": -1 },
+        { "id": "baudrate", "name": "baudrate", "type": "number", "label": "Baudrate (Hz)", "defaultValue": 1000000 },
+        { "id": "sck", "name": "sck", "type": "number", "label": "SCK Пин (D5 = 14)", "defaultValue": 14 },
+        { "id": "mosi", "name": "mosi", "type": "number", "label": "MOSI Пин (D7 = 13)", "defaultValue": 13 },
+        { "id": "miso", "name": "miso", "type": "number", "label": "MISO Пин (D6 = 12)", "defaultValue": 12 }
       ],
       "codeTemplate": {
         "section": "init",

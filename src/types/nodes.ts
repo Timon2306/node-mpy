@@ -27,7 +27,8 @@ export interface CodeTemplate {
   section: CodeSection;
   template: string;
   imports?: string[];
-  outputVariables?: Record<string, string>; // Maps output port id to expression / variable name
+  helpers?: string[];
+  outputVariables?: Record<string, string>;
 }
 
 export interface NodeDefinition {
@@ -53,7 +54,7 @@ export interface NodeInstanceData extends Record<string, unknown> {
   properties: Record<string, any>;
   hasWarning?: boolean;
   warningMessage?: string;
-  customCode?: string; // For custom functions
+  customCode?: string;
   [key: string]: unknown;
 }
 

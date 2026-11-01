@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0]
+
+### Dashboard
+- Values now travel along the wires: each widget shows only what is connected to it. `Function` and `HTTP Response` nodes work, LED and text widgets update, gauges respect min/max.
+- Each switch and slider has its own channel, and the ESP receives all channels at once, so commands no longer overwrite each other. **Firmware from older versions must be regenerated**: the reply is now JSON.
+- Added the `Значение канала` node.
+- Each endpoint handles only its own path. An unknown path shows a warning on the dashboard page.
+- The page shows real server and ESP connection status. The in-app window is labelled as a simulation instead of a fake ONLINE badge, and runs the same engine as the server.
+
+### App
+- Built-in dashboard server (real ESP status, phone access) instead of export-only.
+- Upload `main.py` and drivers to the board over USB, with board output.
+- Ready examples; all nodes are in the palette from the start; ESP8266 default pins; Wi-Fi connect now waits; link dashboard endpoints from the firmware node.
+- «Упорядочить» button: arranges nodes in code order (flow top to bottom, loop body indented, sensors on the left).
+- Nodes hide unused outputs until selected, so wide nodes take less room.
+- `Python Code` and `Python Block` nodes for anything without a node (classes, custom logic).
+- Source code and exports cleaned of comments.
+- Not yet tested on real hardware or in a built desktop app.
+
+### Compiler
+- Fixed `NameError` when a value was used both inside a branch and after `Далее`.
+- Fixed invalid Python for LCD and TFT nodes: lost indentation in imports, and `{% elif %}` / `{% else %}` in templates were not supported.
+- One output wired to several nodes now runs all of them, top to bottom.
+- Cleaner `main.py`: short variable names, no empty sections, the dashboard client moved into one helper function.
+- The canvas warns about nodes that are not connected to the flow, missing devices or buses, and extra `While True` nodes.
+
+### Simulator
+- A branch wired into the node after `Далее` no longer runs that node twice.
+
 ## [1.1.1] — 2026-10-22 (Try/Except, Elif Multi-Branching & Flow Continuation)
 
 ### 🚀 Highlights
@@ -48,14 +77,14 @@ All notable changes to this project will be documented in this file.
 ### 🚀 Highlights
 - **Real MicroPython v1.26 WebAssembly VM**: Runs real compiled MicroPython bytecode in an isolated Web Worker without UI stutter. Full virtual `machine` (Pin, ADC, PWM, I2C, SPI), `network` and `time` modules.
 - **Dual-Mode Simulator**: Instant 1-click toggle between **Visual Flow** (step-by-step canvas highlighting) and **MicroPython WASM VM** (real WebAssembly virtual processor).
-- **HTTP GET & HTTP POST IoT Nodes**: Reverse-polling nodes for IoT projects (sends photoresistor ADC readings to Node-RED on PC and receives `/on` or `/off` response commands to toggle the onboard LED). Safe `try/except` wrappers and auto-import of `urequests` & `ujson`.
+- **HTTP GET & HTTP POST IoT Nodes**: Reverse-polling nodes for IoT projects (sends photoresistor ADC readings to the dashboard server on PC and receives `/on` or `/off` response commands to toggle the onboard LED). Safe `try/except` wrappers and auto-import of `urequests` & `ujson`.
 - **Cross-Platform GitHub Updates & Settings Modal**: Automatic OS detection (Windows `.exe`, Linux `.AppImage`, macOS `.dmg`) with 1-click update check and direct package download via GitHub Releases API.
 - **Virtual Bus ACK**: Virtual I2C (`0x3C`, `0x27`) and SPI bus ACK prevents missing-hardware panics (`ENODEV`) while preserving clean Python runtime semantics.
 
 ## [1.0.0] — 2026-10-18 (Official First Release)
 
 ### 🚀 Highlights
-- **Visual Flow Programming Studio for MicroPython**: Designed in the aesthetic of Node-RED for ESP8266, ESP32, Raspberry Pi Pico, and compatible boards.
+- **Visual Flow Programming Studio for MicroPython**: For ESP8266, ESP32, Raspberry Pi Pico, and compatible boards.
 - **81 Pre-packaged Nodes across 12 Libraries**:
   - **Core (19 nodes)**: Start/Init, While Loop, For Range Loop, If/Else, Comparison, Math Operation, Math Functions (abs, round, sqrt, min, max, pow), Map Range, Print to Console, Set Variable, Get Variable, Value/Constant, Custom Function, Logic Gates (AND/OR/NOT), String Formatter, Random Number, Type Cast, Comments.
   - **Hardware & GPIO (19 nodes)**: Pin Init, Pin Write, Pin Read, Pin Toggle, Pin Is Active, ADC Init/Read, PWM Init/Freq/Duty/Deinit, Tone Buzzer, I2C Init/Scan, SPI Init, UART Init, Hardware Timer Init/Deinit, Deep Sleep.
@@ -68,7 +97,7 @@ All notable changes to this project will be documented in this file.
 ### ⚡ Dual-Mode Hardware Simulator & WebAssembly MicroPython
 - **Real MicroPython v1.26 WebAssembly VM**: Runs actual compiled MicroPython bytecode in a background Web Worker without blocking the UI, complete with virtual `machine`, `urequests`, `network`, and display drivers.
 - **Visual Flow Mode**: Step-by-step graphical node highlighting on the canvas with adjustable simulation speed (0.5x, 1x, 2x, 5x).
-- **Node-RED IoT Reverse Polling Simulation**: Automated handling of HTTP GET/POST requests and response commands (`/on`, `/off`) for IoT projects.
+- **IoT Reverse Polling Simulation**: Automated handling of HTTP GET/POST requests and response commands (`/on`, `/off`) for IoT projects.
 - **Hardware-Resilient Virtual Buses**: Virtual I2C (`0x3C`, `0x27`) and SPI bus ACK prevents missing-hardware panics (`ENODEV`) while preserving clean Python runtime semantics.
 - **Live Interactive GPIO Pins**: Clickable GPIO indicators (`G0`, `G4`, `G5`, `G12`, `G14`, `D4`) with zero-latency concurrent memory synchronization.
 

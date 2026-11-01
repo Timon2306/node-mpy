@@ -5,7 +5,6 @@ let mpInstance: MicroPythonInstance | null = null;
 let controlArray: Int32Array | null = null;
 let pinArray: Int32Array | null = null;
 
-// Local fallback state if SharedArrayBuffer is not passed
 const localPins: Record<number, number> = {
   0: 1,
   2: 1, // Builtin LED on ESP8266 (active-low, 1 = OFF)
@@ -22,7 +21,6 @@ let localSpeed = 1;
 let localPaused = 0;
 
 function injectVirtualModules(mp: MicroPythonInstance) {
-  // 1. machine.py
   mp.FS.writeFile(
     '/machine.py',
     `
@@ -143,7 +141,6 @@ def reset():
 `
   );
 
-  // 2. network.py
   mp.FS.writeFile(
     '/network.py',
     `
@@ -184,11 +181,10 @@ class WLAN:
         return STAT_GOT_IP
 
     def scan(self):
-        return [(b'Node-RED-AP', b'\\x00\\x11\\x22\\x33\\x44\\x55', 6, -42, 3, False)]
+        return [(b'MPY-AP', b'\\x00\\x11\\x22\\x33\\x44\\x55', 6, -42, 3, False)]
 `
   );
 
-  // 3. urequests.py & requests.py
   const urequestsPy = `
 import nt_bridge
 import ujson
@@ -222,7 +218,6 @@ def post(url, data=None, json=None, **kwargs):
   mp.FS.writeFile('/urequests.py', urequestsPy);
   mp.FS.writeFile('/requests.py', urequestsPy);
 
-  // 4. dht.py
   mp.FS.writeFile(
     '/dht.py',
     `
@@ -241,7 +236,6 @@ class DHT22(DHTBase): pass
 `
   );
 
-  // 5. ssd1306.py
   mp.FS.writeFile(
     '/ssd1306.py',
     `
@@ -279,7 +273,6 @@ SSD1306_SPI = SSD1306_I2C
 `
   );
 
-  // 6. i2c_lcd.py
   const lcdPy = `
 import nt_bridge
 
@@ -306,7 +299,6 @@ class I2cLcd:
   mp.FS.writeFile('/i2c_lcd.py', lcdPy);
   mp.FS.writeFile('/esp8266_i2c_lcd.py', lcdPy);
 
-  // 7. neopixel.py
   mp.FS.writeFile(
     '/neopixel.py',
     `
@@ -329,7 +321,6 @@ class NeoPixel:
 `
   );
 
-  // 8. bmp280.py
   mp.FS.writeFile(
     '/bmp280.py',
     `
@@ -346,7 +337,6 @@ class BMP280:
 `
   );
 
-  // 9. Patch time module for speed and pause support
   mp.runPython(`
 import time
 import nt_bridge
@@ -384,7 +374,6 @@ async function getOrInitVM(): Promise<MicroPythonInstance> {
     },
   });
 
-  // Register JS Bridge
   mpInstance.registerJsModule('nt_bridge', {
     notifyPinChange: (pin: number, value: number) => {
       if (pinArray) {
@@ -435,7 +424,6 @@ async function getOrInitVM(): Promise<MicroPythonInstance> {
         text: `[HTTP ${method}] ➔ ${url} ${payloadStr && payloadStr !== '{}' ? `| Payload: ${payloadStr}` : ''}`,
       });
 
-      // Reverse Polling logic for Node-RED / IoT telemetry
       let responseText = '/off';
       let payloadObj: any = null;
       try {
@@ -458,7 +446,7 @@ async function getOrInitVM(): Promise<MicroPythonInstance> {
       self.postMessage({
         type: 'log',
         logType: 'info',
-        text: `[HTTP 200] 🗲 Node-RED Ответ: "${responseText}"`,
+        text: `[HTTP 200] 🗲 Ответ сервера: "${responseText}"`,
       });
 
       return JSON.stringify({ status: 200, text: responseText });
@@ -481,7 +469,6 @@ self.onmessage = async (e: MessageEvent) => {
     try {
       const vm = await getOrInitVM();
       self.postMessage({ type: 'ready' });
-      // Execute the user flow Python code
       vm.runPython(code);
       self.postMessage({ type: 'done' });
     } catch (err: any) {

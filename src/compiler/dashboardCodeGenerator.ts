@@ -1,43 +1,162 @@
 import { Edge, Node } from '@xyflow/react';
 import { NodeInstanceData } from '../types/nodes';
-import { LibraryRegistry } from '../registry/registryLoader';
+import { DASHBOARD_ENGINE_SOURCE } from './dashboardEngine';
 
 export interface DashboardCompilerResult {
   serverCode: string;
   htmlCode: string;
   widgetsCount: number;
   endpointsCount: number;
+  nodeWarnings: Record<string, string>;
 }
 
-export class DashboardCodeGenerator {
-  /**
-   * Generates both TypeScript server code and standalone HTML dashboard
-   */
-  public static generateCode(nodes: Node<NodeInstanceData>[], edges: Edge[]): DashboardCompilerResult {
-    const dashboardNodes = nodes.filter(n => n.data?.definitionId?.startsWith('dashboard:'));
-    const widgetsCount = dashboardNodes.filter(n =>
-      ['dashboard:gauge', 'dashboard:chart', 'dashboard:button', 'dashboard:switch', 'dashboard:slider', 'dashboard:text_display', 'dashboard:led_indicator'].includes(n.data?.definitionId)
-    ).length;
-    const endpointsCount = dashboardNodes.filter(n => n.data?.definitionId === 'dashboard:http_endpoint').length;
+export interface DashboardConfig {
+  endpoints: Array<{ id: string; path: string; param: string }>;
+  controls: Record<string, { kind: 'switch' | 'slider' | 'button'; channel: string; on?: string; off?: string; payload?: string; min?: number }>;
+  functions: Record<string, string>;
+  displays: Record<string, { kind: 'gauge' | 'chart' | 'text' | 'led'; points?: number }>;
+  responses: Record<string, { text: string; status: number }>;
+  wires: Array<[string, string, string, string]>;
+  replies: Record<string, string>;
+}
 
-    const serverCode = this.generateServerTs(nodes, edges);
-    const htmlCode = this.generateHtml(nodes, edges);
+type DashNode = Node<NodeInstanceData>;
+
+const DISPLAY_KINDS: Record<string, 'gauge' | 'chart' | 'text' | 'led'> = {
+  'dashboard:gauge': 'gauge',
+  'dashboard:chart': 'chart',
+  'dashboard:text_display': 'text',
+  'dashboard:led_indicator': 'led',
+};
+
+const FLOW_PORTS = new Set(['flow_in', 'flow_out']);
+
+const ofType = (nodes: DashNode[], definitionId: string) => nodes.filter(n => n.data?.definitionId === definitionId);
+const propsOf = (node: DashNode) => node.data?.properties || {};
+
+const escapeHtml = (value: unknown) =>
+  String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
+
+const normalizePath = (path: unknown) => {
+  const trimmed = String(path || '/light').trim();
+  return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+};
+
+export class DashboardCodeGenerator {
+  public static generateCode(nodes: DashNode[], edges: Edge[]): DashboardCompilerResult {
+    const dashboardNodes = nodes.filter(n => n.data?.definitionId?.startsWith('dashboard:'));
+    const config = this.buildConfig(nodes, edges);
 
     return {
-      serverCode,
-      htmlCode,
-      widgetsCount,
-      endpointsCount,
+      serverCode: this.generateServerTs(nodes, edges),
+      htmlCode: this.generateHtml(nodes, edges),
+      widgetsCount: Object.keys(config.displays).length + Object.keys(config.controls).length,
+      endpointsCount: dashboardNodes.filter(n => n.data?.definitionId === 'dashboard:http_endpoint').length,
+      nodeWarnings: this.collectNodeWarnings(nodes, edges, config),
     };
   }
 
-  /**
-   * Generates readable, self-contained TypeScript server (runs with: npx tsx server.ts / bun server.ts)
-   */
-  public static generateServerTs(nodes: Node<NodeInstanceData>[], edges: Edge[]): string {
+  public static buildConfig(nodes: DashNode[], edges: Edge[]): DashboardConfig {
+    const endpoints = ofType(nodes, 'dashboard:http_endpoint');
+    const responses = ofType(nodes, 'dashboard:http_response');
+
+    const channelFor = (node: DashNode, autoName: string) => String(propsOf(node).channel || '').trim() || autoName;
+
+    const controls: DashboardConfig['controls'] = {};
+    ofType(nodes, 'dashboard:switch').forEach((node, i) => {
+      const p = propsOf(node);
+      controls[node.id] = { kind: 'switch', channel: channelFor(node, `switch${i + 1}`), on: String(p.on_payload ?? 'CMD_ON'), off: String(p.off_payload ?? 'CMD_OFF') };
+    });
+    ofType(nodes, 'dashboard:slider').forEach((node, i) => {
+      controls[node.id] = { kind: 'slider', channel: channelFor(node, `slider${i + 1}`), min: Number(propsOf(node).min ?? 0) };
+    });
+    ofType(nodes, 'dashboard:button').forEach(node => {
+      controls[node.id] = { kind: 'button', channel: channelFor(node, 'buttons'), payload: String(propsOf(node).payload ?? 'CMD_ON') };
+    });
+
+    const functions: DashboardConfig['functions'] = {};
+    ofType(nodes, 'dashboard:function').forEach(node => {
+      functions[node.id] = String(propsOf(node).code ?? 'return msg;');
+    });
+
+    const displays: DashboardConfig['displays'] = {};
+    for (const node of nodes) {
+      const kind = DISPLAY_KINDS[node.data?.definitionId];
+      if (!kind) continue;
+      displays[node.id] = kind === 'chart' ? { kind, points: Number(propsOf(node).points ?? 30) } : { kind };
+    }
+
+    const responseConfigs: DashboardConfig['responses'] = {};
+    responses.forEach(node => {
+      const p = propsOf(node);
+      responseConfigs[node.id] = { text: String(p.default_text ?? 'OK'), status: Number(p.status_code ?? 200) };
+    });
+
+    const known = new Set(nodes.map(n => n.id));
+    const wires = edges
+      .filter(e => known.has(e.source) && known.has(e.target) && !FLOW_PORTS.has(e.sourceHandle || '') && !FLOW_PORTS.has(e.targetHandle || ''))
+      .map((e): [string, string, string, string] => [e.source, e.sourceHandle || '', e.target, e.targetHandle || '']);
+
+    const replies: DashboardConfig['replies'] = {};
+    for (const ep of endpoints) {
+      const seen = new Set<string>([ep.id]);
+      const queue = [ep.id];
+      while (queue.length > 0 && !replies[ep.id]) {
+        const id = queue.shift()!;
+        for (const edge of edges) {
+          if (edge.source !== id || edge.sourceHandle !== 'flow_out' || seen.has(edge.target)) continue;
+          if (edge.target in responseConfigs) replies[ep.id] = edge.target;
+          seen.add(edge.target);
+          queue.push(edge.target);
+        }
+      }
+    }
+
+    return {
+      endpoints: endpoints.map(ep => ({ id: ep.id, path: normalizePath(propsOf(ep).path), param: String(propsOf(ep).param_name || 'value').trim() })),
+      controls,
+      functions,
+      displays,
+      responses: responseConfigs,
+      wires,
+      replies,
+    };
+  }
+
+  private static collectNodeWarnings(nodes: DashNode[], edges: Edge[], config: DashboardConfig): Record<string, string> {
+    const warnings: Record<string, string> = {};
+    const wiredIn = (id: string) => edges.some(e => e.target === id);
+
+    for (const id of Object.keys(config.displays)) {
+      if (!wiredIn(id)) warnings[id] = 'Виджет не подключён: соедините его вход с HTTP Endpoint или другой нодой';
+    }
+    for (const id of Object.keys(config.functions)) {
+      if (!wiredIn(id)) warnings[id] = 'Функция не получает данных: подключите её вход';
+    }
+    for (const id of Object.keys(config.responses)) {
+      if (!Object.values(config.replies).includes(id)) warnings[id] = 'Ответ не сработает: соедините выход Request у HTTP Endpoint с входом этой ноды';
+    }
+
+    const owners = new Map<string, string>();
+    for (const [id, control] of Object.entries(config.controls)) {
+      const owner = owners.get(control.channel);
+      if (owner && !(control.kind === 'button' && config.controls[owner].kind === 'button')) {
+        warnings[id] = `Канал "${control.channel}" уже занят другим виджетом, значения будут затирать друг друга`;
+      }
+      owners.set(control.channel, id);
+    }
+
+    for (const node of nodes) {
+      if (node.data?.definitionId && !node.data.definitionId.startsWith('dashboard:')) {
+        warnings[node.id] = 'На дашборде эта нода не выполняется';
+      }
+    }
+    return warnings;
+  }
+
+  public static generateServerTs(nodes: DashNode[], edges: Edge[]): string {
     const dashboardNodes = nodes.filter(n => n.data?.definitionId?.startsWith('dashboard:'));
 
-    // If canvas is empty, return clean, compact 20-line starter template with instructions
     if (dashboardNodes.length === 0) {
       return [
         '// =========================================================',
@@ -65,200 +184,109 @@ export class DashboardCodeGenerator {
       ].join('\n');
     }
 
-    const endpoints = nodes.filter(n => n.data?.definitionId === 'dashboard:http_endpoint');
-    const buttons = nodes.filter(n => n.data?.definitionId === 'dashboard:button');
-    const switches = nodes.filter(n => n.data?.definitionId === 'dashboard:switch');
-    const gauges = nodes.filter(n => n.data?.definitionId === 'dashboard:gauge');
-    const charts = nodes.filter(n => n.data?.definitionId === 'dashboard:chart');
-    const leds = nodes.filter(n => n.data?.definitionId === 'dashboard:led_indicator');
+    const config = this.buildConfig(nodes, edges);
+    const firstPath = config.endpoints[0]?.path || '/light';
+    const firstParam = config.endpoints[0]?.param || 'value';
 
-    // Find response logic connected to endpoints
-    const endpointConfigs = endpoints.map(ep => {
-      const path = (ep.data?.properties?.path || '/light').trim();
-      const param = (ep.data?.properties?.param_name || 'value').trim();
-      const method = (ep.data?.properties?.method || 'GET').toUpperCase();
+    return `import http from "node:http";
+import fs from "node:fs";
+import path from "node:path";
 
-      // Find connected nodes
-      const outEdges = edges.filter(e => e.source === ep.id);
-      const connectedNodeIds = outEdges.map(e => e.target);
+const PORT = 1880;
 
-      // Check if button/switch command exists
-      let defaultCommand = 'OK';
-      for (const btn of buttons) {
-        if (btn.data?.properties?.payload) {
-          defaultCommand = btn.data.properties.payload;
-          break;
-        }
-      }
+const config = ${JSON.stringify(config, null, 2)};
 
-      return {
-        id: ep.id,
-        path: path.startsWith('/') ? path : `/${path}`,
-        param,
-        method,
-        defaultCommand,
-        connectedNodeIds,
-      };
-    });
+${DASHBOARD_ENGINE_SOURCE.replace(/function createDashboardEngine\(config\)/, 'function createDashboardEngine(config: any): any')}
 
-    const lines: string[] = [
-      '// =========================================================',
-      '// Node-MPY — Сервер дашборда (TypeScript)',
-      '// Запуск: npx tsx server.ts  ИЛИ  bun server.ts',
-      '// =========================================================\n',
-      'import http from "node:http";',
-      'import url from "node:url";',
-      'import fs from "node:fs";',
-      'import path from "node:path";\n',
-      'const PORT = 1880;',
-      'console.log(`[Node-MPY Dashboard] Запуск сервера на порту ${PORT}...`);\n',
-      '// --- 1. СОСТОЯНИЕ ДАШБОРДА И ПЕРЕМЕННЫЕ ---',
-      'interface DashboardState {',
-      '  lastCommand: string;',
-      '  sliderValue: number;',
-      '  values: Record<string, number | string | boolean>;',
-      '  chartHistory: Record<string, Array<{ time: string; value: number }>>;',
-      '}',
-      'const state: DashboardState = {',
-      '  lastCommand: "CMD_OFF",',
-      '  sliderValue: 0,',
-      '  values: {},',
-      '  chartHistory: {},',
-      '};\n',
-      '// Список активных SSE-клиентов (браузер дашборда)',
-      'const sseClients: http.ServerResponse[] = [];',
-      'function broadcastUpdate(data: Record<string, any>) {',
-      '  const msg = `data: ${JSON.stringify(data)}\\n\\n`;',
-      '  for (let i = sseClients.length - 1; i >= 0; i--) {',
-      '    try {',
-      '      sseClients[i].write(msg);',
-      '    } catch {',
-      '      sseClients.splice(i, 1);',
-      '    }',
-      '  }',
-      '}\n',
-      '// --- 2. HTTP СЕРВЕР ОБРАБОТКИ ЗАПРОСОВ ---',
-      'const server = http.createServer((req, res) => {',
-      '  // Включаем CORS для свободного доступа',
-      '  res.setHeader("Access-Control-Allow-Origin", "*");',
-      '  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");',
-      '  res.setHeader("Access-Control-Allow-Headers", "Content-Type");',
-      '  if (req.method === "OPTIONS") { res.writeHead(204); res.end(); return; }\n',
-      '  const parsed = url.parse(req.url || "/", true);',
-      '  const pathname = parsed.pathname || "/";\n',
-      '  // 2.1. Поток событий дашборда (Server-Sent Events для живого обновления)',
-      '  if (pathname === "/api/events") {',
-      '    res.writeHead(200, {',
-      '      "Content-Type": "text/event-stream",',
-      '      "Cache-Control": "no-cache",',
-      '      "Connection": "keep-alive",',
-      '    });',
-      '    res.write(`data: ${JSON.stringify({ type: "init", state })}\\n\\n`);',
-      '    sseClients.push(res);',
-      '    req.on("close", () => {',
-      '      const idx = sseClients.indexOf(res);',
-      '      if (idx !== -1) sseClients.splice(idx, 1);',
-      '    });',
-      '    return;',
-      '  }\n',
-      '  // 2.2. Приём действий от кнопок и переключателей дашборда',
-      '  if (pathname === "/api/action" && req.method === "POST") {',
-      '    let body = "";',
-      '    req.on("data", chunk => body += chunk);',
-      '    req.on("end", () => {',
-      '      try {',
-      '        const action = JSON.parse(body || "{}");',
-      '        if (action.command) {',
-      '          state.lastCommand = String(action.command);',
-      '          console.log(`[Dashboard] Команда для ESP: "${state.lastCommand}"`);',
-      '        }',
-      '        if (action.value !== undefined) {',
-      '          state.values[action.id] = action.value;',
-      '          if (typeof action.value === "number") state.sliderValue = action.value;',
-      '        }',
-      '        broadcastUpdate({ type: "action", action, state });',
-      '        res.writeHead(200, { "Content-Type": "application/json" });',
-      '        res.end(JSON.stringify({ ok: true, state }));',
-      '      } catch {',
-      '        res.writeHead(400); res.end("Bad JSON");',
-      '      }',
-      '    });',
-      '    return;',
-      '  }\n',
-    ];
+const engine = createDashboardEngine(config);
 
-    // Generate endpoints from canvas
-    if (endpointConfigs.length === 0) {
-      endpointConfigs.push({
-        id: 'ep_default',
-        path: '/api/data',
-        param: 'value',
-        method: 'GET',
-        defaultCommand: 'CMD_ON',
-        connectedNodeIds: [],
-      });
-    }
+const sseClients = new Set<http.ServerResponse>();
+function broadcast() {
+  const message = \`data: \${JSON.stringify(engine.state)}\\n\\n\`;
+  for (const client of sseClients) client.write(message);
+}
 
-    lines.push('  // 2.3. Маршруты интеграции с контроллером ESP (HTTP Endpoints)');
-    endpointConfigs.forEach((ep, idx) => {
-      lines.push(`  // Маршрут ${idx + 1}: ${ep.method} ${ep.path}`);
-      lines.push(`  if (pathname === "${ep.path}" || pathname === "/api/data" || pathname === "/light") {`);
-      lines.push(`    const rawVal = parsed.query["${ep.param}"] || parsed.query["value"] || parsed.query["temp"] || "";`);
-      lines.push(`    const numVal = Number(rawVal) || 0;`);
-      lines.push('    console.log(`[ESP -> Server] ${req.method} ${pathname} => ${JSON.stringify(parsed.query)}`);');
-      lines.push(`    state.values["${ep.id}"] = numVal;`);
-      lines.push('    Object.assign(state.values, parsed.query);\n');
-      if (charts.length > 0) {
-        lines.push('    // Добавляем в историю графиков');
-        lines.push(`    const nowTime = new Date().toLocaleTimeString();`);
-        charts.forEach(ch => {
-          lines.push(`    if (!state.chartHistory["${ch.id}"]) state.chartHistory["${ch.id}"] = [];`);
-          lines.push(`    state.chartHistory["${ch.id}"].push({ time: nowTime, value: numVal });`);
-          lines.push(`    if (state.chartHistory["${ch.id}"].length > 30) state.chartHistory["${ch.id}"].shift();`);
-        });
-      }
-      lines.push('    // Рассылаем обновление в браузер дашборда');
-      lines.push('    broadcastUpdate({ type: "telemetry", endpointId: "' + ep.id + '", value: numVal, state });\n');
-      lines.push('    // Отправляем ответ контроллеру (активная команда от кнопок/тумблеров/ползунков)');
-      lines.push('    res.writeHead(200, { "Content-Type": "text/plain" });');
-      lines.push('    res.end(state.lastCommand || String(state.sliderValue ?? "OK"));');
-      lines.push('    return;');
-      lines.push('  }\n');
-    });
+function readBody(req: http.IncomingMessage): Promise<string> {
+  return new Promise((resolve) => {
+    let body = "";
+    req.on("data", (chunk) => (body += chunk));
+    req.on("end", () => resolve(body));
+  });
+}
 
-    lines.push('  // 2.4. Главная страница дашборда (раздаёт dashboard.html)');
-    lines.push('  if (pathname === "/" || pathname === "/dashboard") {');
-    lines.push('    const localHtml = path.join(process.cwd(), "dashboard.html");');
-    lines.push('    if (fs.existsSync(localHtml)) {');
-    lines.push('      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });');
-    lines.push('      res.end(fs.readFileSync(localHtml, "utf-8"));');
-    lines.push('      return;');
-    lines.push('    }');
-    lines.push('    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });');
-    lines.push('    res.end(FALLBACK_PAGE);');
-    lines.push('    return;');
-    lines.push('  }\n');
-    lines.push('  res.writeHead(404);');
-    lines.push('  res.end("Not Found");');
-    lines.push('});\n');
-    lines.push('server.listen(PORT, () => {');
-    lines.push('  console.log(`\\n======================================================`);');
-    lines.push('  console.log(`[ГОТОВО] Дашборд открыт:  http://localhost:${PORT}`);');
-    const firstEpPath = endpointConfigs[0]?.path || '/light';
-    lines.push('  console.log(`[ЭНДПОИНТ ДЛЯ ESP]:     http://<IP_ЭТОГО_ПК>:${PORT}' + firstEpPath + '?value=...`);');
-    lines.push('  console.log(`======================================================\\n`);');
-    lines.push('});\n');
+const server = http.createServer(async (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  if (req.method === "OPTIONS") { res.writeHead(204); res.end(); return; }
 
-    lines.push('// Запасная страница (если dashboard.html не лежит в одной папке с server.ts)');
-    lines.push('const FALLBACK_PAGE = `<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><title>Node-MPY</title><style>body{background:#0F1115;color:#F3F4F6;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}.box{text-align:center;padding:32px 40px;background:#1C2027;border:1px solid #2D3748;border-radius:12px}h2{color:#00D4B2;margin-bottom:8px}p{color:#9CA3AF;font-size:14px}code{background:#12161F;color:#38BDF8;padding:2px 6px;border-radius:4px;font-family:monospace}</style></head><body><div class="box"><h2>Node-MPY Dashboard</h2><p>Поместите файл <code>dashboard.html</code> в одну папку с <code>server.ts</code></p></div></body></html>`;');
+  const url = new URL(req.url || "/", "http://localhost");
+  const pathname = url.pathname;
 
-    return lines.join('\n');
+  if (pathname === "/favicon.ico") { res.writeHead(204); res.end(); return; }
+
+  if (pathname === "/api/events") {
+    res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", "Connection": "keep-alive" });
+    res.write(\`data: \${JSON.stringify(engine.state)}\\n\\n\`);
+    sseClients.add(res);
+    req.on("close", () => sseClients.delete(res));
+    return;
   }
 
-  /**
-   * Generates standalone dark-themed HTML dashboard
-   */
-  public static generateHtml(nodes: Node<NodeInstanceData>[], edges: Edge[]): string {
+  if (pathname === "/api/action" && req.method === "POST") {
+    try {
+      const { id, value } = JSON.parse((await readBody(req)) || "{}");
+      const ok = engine.action(id, value);
+      broadcast();
+      res.writeHead(ok ? 200 : 400, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ ok }));
+    } catch {
+      res.writeHead(400);
+      res.end("Bad JSON");
+    }
+    return;
+  }
+
+  if (pathname === "/" || pathname === "/dashboard") {
+    const htmlPath = path.join(process.cwd(), "dashboard.html");
+    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+    res.end(fs.existsSync(htmlPath) ? fs.readFileSync(htmlPath, "utf-8") : "Положите dashboard.html в одну папку с server.ts");
+    return;
+  }
+
+  const query: Record<string, string> = Object.fromEntries(url.searchParams);
+  if (req.method === "POST") {
+    const body = await readBody(req);
+    try {
+      const parsed = JSON.parse(body);
+      if (parsed && typeof parsed === "object") Object.assign(query, parsed);
+      else for (const ep of config.endpoints) if (ep.path === pathname) query[ep.param] ??= String(parsed);
+    } catch {
+      for (const ep of config.endpoints) if (ep.path === pathname) query[ep.param] ??= body;
+    }
+  }
+
+  const reply = engine.request(pathname, query);
+  broadcast();
+  if (!reply) {
+    console.log(\`[ESP] Неизвестный путь \${pathname}. Сервер ждёт: \${config.endpoints.map((ep) => ep.path).join(", ") || "нет эндпоинтов"}\`);
+    res.writeHead(404);
+    res.end("Not Found");
+    return;
+  }
+  console.log(\`[ESP] \${req.method} \${req.url} -> \${reply.body}\`);
+  res.writeHead(reply.status, { "Content-Type": "text/plain; charset=utf-8" });
+  res.end(reply.body);
+});
+
+server.listen(PORT, () => {
+  console.log(\`Дашборд:       http://localhost:\${PORT}\`);
+  console.log(\`Адрес для ESP: http://<IP_ЭТОГО_ПК>:\${PORT}${firstPath}?${firstParam}=...\`);
+});
+`;
+  }
+
+  public static generateHtml(nodes: DashNode[], edges: Edge[]): string {
     const dashboardNodes = nodes.filter(n => n.data?.definitionId?.startsWith('dashboard:'));
     if (dashboardNodes.length === 0) {
       return `<!DOCTYPE html>
@@ -282,13 +310,64 @@ export class DashboardCodeGenerator {
 </html>`;
     }
 
-    const gauges = nodes.filter(n => n.data?.definitionId === 'dashboard:gauge');
-    const charts = nodes.filter(n => n.data?.definitionId === 'dashboard:chart');
-    const buttons = nodes.filter(n => n.data?.definitionId === 'dashboard:button');
-    const switches = nodes.filter(n => n.data?.definitionId === 'dashboard:switch');
-    const sliders = nodes.filter(n => n.data?.definitionId === 'dashboard:slider');
-    const texts = nodes.filter(n => n.data?.definitionId === 'dashboard:text_display');
-    const leds = nodes.filter(n => n.data?.definitionId === 'dashboard:led_indicator');
+    const gauges = ofType(nodes, 'dashboard:gauge');
+    const charts = ofType(nodes, 'dashboard:chart');
+    const buttons = ofType(nodes, 'dashboard:button');
+    const switches = ofType(nodes, 'dashboard:switch');
+    const sliders = ofType(nodes, 'dashboard:slider');
+    const texts = ofType(nodes, 'dashboard:text_display');
+    const leds = ofType(nodes, 'dashboard:led_indicator');
+
+    const card = (title: unknown, body: string) => `
+    <section class="card">
+      <h2 class="card-title">${escapeHtml(title)}</h2>
+      ${body}
+    </section>`;
+
+    const widgets = [
+      ...gauges.map(g => {
+        const p = propsOf(g);
+        const min = Number(p.min ?? 0);
+        const max = Number(p.max ?? 1024);
+        return card(p.label || 'Шкала', `<div class="gauge" data-widget="gauge" data-id="${escapeHtml(g.id)}" data-min="${min}" data-max="${max}">
+        <svg viewBox="0 0 200 120" aria-hidden="true">
+          <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#2D3748" stroke-width="16" stroke-linecap="round" />
+          <path class="arc" d="M 20 100 A 80 80 0 0 1 20 100" fill="none" stroke="#00D4B2" stroke-width="16" stroke-linecap="round" />
+        </svg>
+        <div class="gauge-value">—</div>
+        <div class="muted">${escapeHtml(p.units ?? '')} (${min}..${max})</div>
+      </div>`);
+      }),
+      ...charts.map(c => card(propsOf(c).label || 'График', `<canvas class="chart" data-widget="chart" data-id="${escapeHtml(c.id)}" width="600" height="220"></canvas>`)),
+      ...switches.map(s => card(propsOf(s).label || 'Переключатель', `<div class="row">
+        <span class="switch-state" data-id="${escapeHtml(s.id)}">ВЫКЛ</span>
+        <label class="toggle"><input type="checkbox" data-widget="switch" data-id="${escapeHtml(s.id)}"><span class="track"></span></label>
+      </div>`)),
+      ...sliders.map(s => {
+        const p = propsOf(s);
+        const min = Number(p.min ?? 0);
+        const max = Number(p.max ?? 1023);
+        return card(p.label || 'Ползунок', `<output class="slider-value" data-id="${escapeHtml(s.id)}">${min}</output>
+      <input type="range" data-widget="slider" data-id="${escapeHtml(s.id)}" min="${min}" max="${max}" step="${Number(p.step ?? 10)}" value="${min}">
+      <div class="row muted"><span>${min}</span><span>${max}</span></div>`);
+      }),
+      ...buttons.map(b => {
+        const p = propsOf(b);
+        const color = ['red', 'blue', 'green'].includes(p.button_color) ? ` btn-${p.button_color}` : '';
+        return card('Команда', `<button class="btn${color}" data-widget="button" data-id="${escapeHtml(b.id)}">${escapeHtml(p.label || 'Отправить команду')}</button>`);
+      }),
+      ...leds.map(l => {
+        const p = propsOf(l);
+        return card('Индикатор', `<div class="row start">
+        <span class="led" data-widget="led" data-id="${escapeHtml(l.id)}" data-color="${escapeHtml(p.color_on || '#10B981')}"></span>
+        <span>${escapeHtml(p.label || 'Светодиод')}</span>
+      </div>`);
+      }),
+      ...texts.map(t => {
+        const p = propsOf(t);
+        return card(p.label || 'Инфо', `<div class="text-value" data-widget="text" data-id="${escapeHtml(t.id)}" data-prefix="${escapeHtml(p.prefix ?? '')}">Ожидание данных...</div>`);
+      }),
+    ].join('\n');
 
     return `<!DOCTYPE html>
 <html lang="ru">
@@ -297,275 +376,163 @@ export class DashboardCodeGenerator {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Node-MPY — Dashboard</title>
   <style>
-    :root {
-      --bg-canvas: #0F1115;
-      --bg-card: #1C2027;
-      --bg-card-hover: #242832;
-      --border: #2D3748;
-      --text-main: #F3F4F6;
-      --text-muted: #9CA3AF;
-      --accent-teal: #00D4B2;
-      --accent-red: #E11D48;
-      --accent-green: #10B981;
-      --accent-blue: #38BDF8;
-    }
+    :root { --bg: #0F1115; --card: #1C2027; --border: #2D3748; --text: #F3F4F6; --muted: #9CA3AF; --teal: #00D4B2; --red: #E11D48; --green: #10B981; --blue: #0284C7; --amber: #F59E0B; }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: var(--bg-canvas); color: var(--text-main); min-height: 100vh; padding: 24px; }
-    header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 20px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
-    .brand { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 700; }
-    .brand span { color: var(--accent-teal); }
-    .status-badge { display: flex; align-items: center; gap: 8px; font-size: 12px; background: rgba(16, 185, 129, 0.1); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.3); padding: 4px 12px; rounded: 9999px; border-radius: 9999px; font-family: monospace; }
-    .status-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); box-shadow: 0 0 8px var(--accent-green); }
-    
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; max-width: 1200px; margin: 0 auto; }
-    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; display: flex; flex-col; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: transform 0.15s ease, border-color 0.15s ease; }
-    .card:hover { border-color: #4A5568; }
-    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-    .card-title { font-size: 14px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-
-    /* Gauge styling */
-    .gauge-container { display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
-    .gauge-svg { width: 220px; height: 130px; }
-    .gauge-val { font-size: 32px; font-weight: 700; color: var(--text-main); font-family: 'Fira Code', monospace; margin-top: -10px; }
-    .gauge-unit { font-size: 13px; color: var(--text-muted); }
-
-    /* Button */
-    .btn-action { width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; color: #fff; background: var(--accent-teal); transition: all 0.15s; box-shadow: 0 4px 12px rgba(0, 212, 178, 0.25); }
-    .btn-action:hover { filter: brightness(1.15); transform: translateY(-1px); }
-    .btn-action:active { transform: translateY(1px); filter: brightness(0.9); }
-    .btn-red { background: var(--accent-red); box-shadow: 0 4px 12px rgba(225, 29, 72, 0.25); }
-    .btn-blue { background: var(--accent-blue); box-shadow: 0 4px 12px rgba(56, 189, 248, 0.25); }
-
-    /* Switch */
-    .switch-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; }
-    .switch-label { font-size: 15px; font-weight: 500; }
-    .toggle { position: relative; width: 56px; height: 30px; }
-    .toggle input { opacity: 0; width: 0; height: 0; }
-    .slider-track { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #374151; transition: .3s; border-radius: 30px; }
-    .slider-track:before { position: absolute; content: ""; height: 22px; width: 22px; left: 4px; bottom: 4px; background-color: white; transition: .3s; border-radius: 50%; }
-    input:checked + .slider-track { background-color: var(--accent-teal); }
-    input:checked + .slider-track:before { transform: translateX(26px); }
-
-    /* Canvas chart */
-    canvas.chart-canvas { width: 100%; height: 160px; background: #13171F; border-radius: 8px; border: 1px solid #232936; }
-
-    /* LED */
-    .led-row { display: flex; align-items: center; gap: 14px; padding: 12px 0; }
-    .led-circle { width: 24px; height: 24px; border-radius: 50%; background: #374151; border: 2px solid #4B5563; transition: all 0.3s; }
-    .led-circle.active { background: var(--accent-green); border-color: #34D399; box-shadow: 0 0 16px var(--accent-green); }
-
-    .last-cmd-box { margin-top: 24px; padding: 14px; background: #181B21; border-radius: 8px; border: 1px solid var(--border); font-family: monospace; font-size: 13px; display: flex; align-items: center; justify-content: space-between; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; padding: 16px; }
+    header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; max-width: 1200px; margin: 0 auto 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+    .brand { font-size: 20px; font-weight: 700; }
+    .brand span { color: var(--teal); }
+    .badges { display: flex; flex-wrap: wrap; gap: 8px; }
+    .badge { font-size: 12px; padding: 4px 12px; border-radius: 9999px; border: 1px solid var(--border); color: var(--muted); }
+    .badge.ok { color: var(--green); border-color: var(--green); }
+    .badge.bad { color: #FCA5A5; border-color: var(--red); }
+    .alert { display: none; max-width: 1200px; margin: 0 auto 20px; padding: 12px 16px; border: 1px solid var(--amber); border-radius: 8px; color: #FDE68A; font-size: 14px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 16px; max-width: 1200px; margin: 0 auto; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; min-width: 0; }
+    .card-title { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; }
+    .muted { font-size: 12px; color: var(--muted); }
+    .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .row.start { justify-content: flex-start; }
+    .gauge { text-align: center; }
+    .gauge svg { width: 100%; max-width: 220px; }
+    .gauge-value { font-size: 32px; font-weight: 700; font-family: monospace; }
+    .chart { display: block; width: 100%; height: 160px; background: #13171F; border: 1px solid #232936; border-radius: 8px; }
+    .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; color: #06201C; background: var(--teal); }
+    .btn:hover { filter: brightness(1.1); }
+    .btn:active { filter: brightness(0.9); }
+    .btn-red { background: var(--red); color: #fff; }
+    .btn-blue { background: var(--blue); color: #fff; }
+    .btn-green { background: var(--green); color: #06201C; }
+    .toggle { position: relative; display: inline-block; width: 56px; height: 30px; cursor: pointer; }
+    .toggle input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+    .track { position: absolute; inset: 0; background: #374151; border-radius: 30px; transition: background .2s; pointer-events: none; }
+    .track::before { content: ""; position: absolute; width: 22px; height: 22px; left: 4px; top: 4px; background: #fff; border-radius: 50%; transition: transform .2s; }
+    input:checked + .track { background: var(--teal); }
+    input:checked + .track::before { transform: translateX(26px); }
+    input:focus-visible + .track { outline: 2px solid var(--teal); outline-offset: 2px; }
+    input[type=range] { width: 100%; accent-color: var(--teal); cursor: pointer; margin: 12px 0 4px; }
+    .slider-value { font-size: 24px; font-weight: 700; font-family: monospace; color: var(--teal); }
+    .led { width: 24px; height: 24px; flex: none; border-radius: 50%; background: #374151; border: 2px solid #4B5563; transition: all .2s; }
+    .text-value { font-size: 20px; font-weight: 600; color: #38BDF8; overflow-wrap: anywhere; }
   </style>
 </head>
 <body>
   <header>
-    <div class="brand">
-      Node<span>-MPY</span> Dashboard
-    </div>
-    <div class="status-badge">
-      <div class="dot"></div>
-      <span id="connStatus">ONLINE • PORT 1880</span>
+    <div class="brand">Node<span>-MPY</span> Dashboard</div>
+    <div class="badges">
+      <span class="badge" id="serverStatus">Подключение к серверу...</span>
+      <span class="badge" id="espStatus">ESP: нет данных</span>
     </div>
   </header>
-
-  <div class="grid">
-    ${gauges.map(g => `
-    <div class="card" id="card_${g.id}">
-      <div class="card-header">
-        <span class="card-title">${g.data?.properties?.label || 'Шкала'}</span>
-      </div>
-      <div class="gauge-container">
-        <svg class="gauge-svg" viewBox="0 0 200 120">
-          <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#2D3748" stroke-width="16" stroke-linecap="round" />
-          <path id="gaugeArc_${g.id}" d="M 20 100 A 80 80 0 0 1 20 100" fill="none" stroke="#00D4B2" stroke-width="16" stroke-linecap="round" />
-        </svg>
-        <div class="gauge-val" id="gaugeVal_${g.id}">0</div>
-        <div class="gauge-unit">${g.data?.properties?.units || 'лк'} (0..${g.data?.properties?.max || 1024})</div>
-      </div>
-    </div>
-    `).join('')}
-
-    ${charts.map(c => `
-    <div class="card" id="card_${c.id}">
-      <div class="card-header">
-        <span class="card-title">${c.data?.properties?.label || 'График'}</span>
-      </div>
-      <canvas class="chart-canvas" id="chart_${c.id}" width="300" height="150"></canvas>
-    </div>
-    `).join('')}
-
-    ${switches.map(sw => `
-    <div class="card" id="card_${sw.id}">
-      <div class="card-header">
-        <span class="card-title">${sw.data?.properties?.label || 'Переключатель'}</span>
-      </div>
-      <div class="switch-row">
-        <span class="switch-label" id="swLabel_${sw.id}">Состояние: ВЫКЛ</span>
-        <label class="toggle">
-          <input type="checkbox" id="sw_${sw.id}" onchange="toggleSwitch('${sw.id}', this.checked, '${sw.data?.properties?.on_payload || 'CMD_ON'}', '${sw.data?.properties?.off_payload || 'CMD_OFF'}')">
-          <span class="slider-track"></span>
-        </label>
-      </div>
-    </div>
-    `).join('')}
-
-    ${sliders.map(sl => `
-    <div class="card" id="card_${sl.id}">
-      <div class="card-header">
-        <span class="card-title">${sl.data?.properties?.label || 'Ползунок'}</span>
-        <span id="slVal_${sl.id}" style="font-family: monospace; color: var(--accent-teal); font-weight: 700;">${sl.data?.properties?.min || 0}</span>
-      </div>
-      <div style="padding: 12px 0;">
-        <input type="range" id="sl_${sl.id}" min="${sl.data?.properties?.min || 0}" max="${sl.data?.properties?.max || 1023}" step="${sl.data?.properties?.step || 10}" value="${sl.data?.properties?.min || 0}" style="width: 100%; accent-color: var(--accent-teal); cursor: pointer;" oninput="updateSlider('${sl.id}', this.value)">
-      </div>
-      <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); font-family: monospace;">
-        <span>${sl.data?.properties?.min || 0}</span>
-        <span>${sl.data?.properties?.max || 1023}</span>
-      </div>
-    </div>
-    `).join('')}
-
-    ${buttons.map(b => `
-    <div class="card" id="card_${b.id}">
-      <div class="card-header">
-        <span class="card-title">Команда</span>
-      </div>
-      <button class="btn-action ${b.data?.properties?.button_color === 'red' ? 'btn-red' : b.data?.properties?.button_color === 'blue' ? 'btn-blue' : ''}" onclick="sendButtonAction('${b.id}', '${b.data?.properties?.payload || 'CMD_ON'}')">
-        ${b.data?.properties?.label || 'Отправить команду'}
-      </button>
-    </div>
-    `).join('')}
-
-    ${leds.map(l => `
-    <div class="card" id="card_${l.id}">
-      <div class="card-header">
-        <span class="card-title">Индикатор</span>
-      </div>
-      <div class="led-row">
-        <div class="led-circle" id="led_${l.id}"></div>
-        <span style="font-weight: 500">${l.data?.properties?.label || 'Светодиод'}</span>
-      </div>
-    </div>
-    `).join('')}
-
-    ${texts.map(t => `
-    <div class="card" id="card_${t.id}">
-      <div class="card-header">
-        <span class="card-title">${t.data?.properties?.label || 'Инфо'}</span>
-      </div>
-      <div style="font-size: 20px; font-weight: 600; color: #38BDF8;" id="txt_${t.id}">
-        ${t.data?.properties?.prefix || ''} Ожидание данных...
-      </div>
-    </div>
-    `).join('')}
-  </div>
-
-  <div class="last-cmd-box">
-    <span>Активная команда / значение: <strong id="activeCmd" style="color: #00D4B2;">CMD_OFF</strong></span>
-    <span style="color: #6B7280;">Порт: 1880 (/api/data)</span>
-  </div>
+  <div class="alert" id="pathAlert" role="alert"></div>
+  <main class="grid">
+${widgets}
+  </main>
 
   <script>
-    const chartHistories = {};
-    function updateGauge(id, val, min = 0, max = 1024) {
-      const elVal = document.getElementById('gaugeVal_' + id);
-      const elArc = document.getElementById('gaugeArc_' + id);
-      if (elVal) elVal.innerText = Math.round(val);
-      if (elArc) {
-        const clamped = Math.max(min, Math.min(max, val));
-        const pct = (clamped - min) / (max - min);
-        const angle = -Math.PI + pct * Math.PI;
-        const x = 100 + 80 * Math.cos(angle);
-        const y = 100 + 80 * Math.sin(angle);
-        elArc.setAttribute('d', 'M 20 100 A 80 80 0 0 1 ' + x + ' ' + y);
-        elArc.setAttribute('stroke', pct > 0.8 ? '#EF4444' : pct > 0.5 ? '#F59E0B' : '#00D4B2');
-      }
+    const ESP_TIMEOUT_MS = 10000;
+    let state = null;
+    let draggingSlider = null;
+
+    const all = (kind) => document.querySelectorAll('[data-widget="' + kind + '"]');
+    const send = (id, value) => fetch('/api/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, value }),
+    }).catch(() => {});
+
+    function drawGauge(el, value) {
+      const min = Number(el.dataset.min), max = Number(el.dataset.max);
+      const number = Number(value);
+      if (value === undefined || !Number.isFinite(number)) return;
+      el.querySelector('.gauge-value').textContent = Math.round(number * 10) / 10;
+      const pct = Math.max(0, Math.min(1, (number - min) / (max - min || 1)));
+      const angle = -Math.PI + pct * Math.PI;
+      const arc = el.querySelector('.arc');
+      arc.setAttribute('d', 'M 20 100 A 80 80 0 0 1 ' + (100 + 80 * Math.cos(angle)) + ' ' + (100 + 80 * Math.sin(angle)));
+      arc.setAttribute('stroke', pct > 0.8 ? '#EF4444' : pct > 0.5 ? '#F59E0B' : '#00D4B2');
     }
 
-    function drawChart(id, points) {
-      const canvas = document.getElementById('chart_' + id);
-      if (!canvas) return;
+    function drawChart(canvas, points) {
       const ctx = canvas.getContext('2d');
-      const w = canvas.width;
-      const h = canvas.height;
+      const w = canvas.width, h = canvas.height;
       ctx.clearRect(0, 0, w, h);
-
-      // Grid
       ctx.strokeStyle = '#232936';
       ctx.lineWidth = 1;
-      for (let y = 30; y < h; y += 30) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
-      }
-
-      if (!points || points.length < 2) return;
-      const vals = points.map(p => p.value);
-      const min = Math.min(...vals, 0);
-      const max = Math.max(...vals, 1024);
-
-      // Path
-      ctx.beginPath();
+      for (let y = 40; y < h; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+      if (!points || points.length === 0) return;
+      const min = Math.min(...points), max = Math.max(...points);
+      const range = max - min || 1;
+      const yOf = (v) => h - 24 - ((v - min) / range) * (h - 48);
+      ctx.fillStyle = '#9CA3AF';
+      ctx.font = '13px monospace';
+      ctx.fillText(String(max), 6, 16);
+      ctx.fillText(String(min), 6, h - 6);
       ctx.strokeStyle = '#00D4B2';
       ctx.lineWidth = 2.5;
+      ctx.beginPath();
       points.forEach((p, i) => {
-        const x = (i / (points.length - 1)) * (w - 20) + 10;
-        const y = h - 15 - ((p.value - min) / (max - min || 1)) * (h - 30);
-        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        const x = points.length === 1 ? w / 2 : (i / (points.length - 1)) * (w - 20) + 10;
+        if (i === 0) ctx.moveTo(x, yOf(p)); else ctx.lineTo(x, yOf(p));
       });
       ctx.stroke();
     }
 
-    function sendButtonAction(id, cmd) {
-      document.getElementById('activeCmd').innerText = cmd;
-      fetch('/api/action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, command: cmd })
-      }).catch(() => {});
+    function render() {
+      if (!state) return;
+      const w = state.widgets;
+      all('gauge').forEach((el) => drawGauge(el, w[el.dataset.id]));
+      all('chart').forEach((el) => drawChart(el, state.history[el.dataset.id]));
+      all('text').forEach((el) => {
+        if (w[el.dataset.id] !== undefined) el.textContent = el.dataset.prefix + w[el.dataset.id];
+      });
+      all('led').forEach((el) => {
+        const v = w[el.dataset.id];
+        const on = v === true || (typeof v === 'number' && v !== 0) || (typeof v === 'string' && /ON$|^1$|^true$/i.test(v));
+        el.style.background = on ? el.dataset.color : '';
+        el.style.boxShadow = on ? '0 0 16px ' + el.dataset.color : '';
+      });
+      all('switch').forEach((el) => {
+        el.checked = w[el.dataset.id] === true;
+        document.querySelector('.switch-state[data-id="' + el.dataset.id + '"]').textContent = el.checked ? 'ВКЛ' : 'ВЫКЛ';
+      });
+      all('slider').forEach((el) => {
+        if (el === draggingSlider || w[el.dataset.id] === undefined) return;
+        el.value = w[el.dataset.id];
+        document.querySelector('.slider-value[data-id="' + el.dataset.id + '"]').textContent = el.value;
+      });
+      const alert = document.getElementById('pathAlert');
+      alert.style.display = state.unknownPath ? 'block' : 'none';
+      alert.textContent = state.unknownPath ? 'ESP обращается к пути ' + state.unknownPath + ', а на схеме нет такого HTTP Endpoint. Проверьте путь в обеих нодах.' : '';
+      renderEspStatus();
     }
 
-    function toggleSwitch(id, checked, onCmd, offCmd) {
-      const cmd = checked ? onCmd : offCmd;
-      document.getElementById('activeCmd').innerText = cmd;
-      const lbl = document.getElementById('swLabel_' + id);
-      if (lbl) lbl.innerText = 'Состояние: ' + (checked ? 'ВКЛ' : 'ВЫКЛ');
-      fetch('/api/action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, value: checked, command: cmd })
-      }).catch(() => {});
+    function renderEspStatus() {
+      const el = document.getElementById('espStatus');
+      const online = state && state.lastSeen && Date.now() - state.lastSeen < ESP_TIMEOUT_MS;
+      el.textContent = online ? 'ESP на связи' : (state && state.lastSeen ? 'ESP не отвечает' : 'ESP: нет данных');
+      el.className = 'badge' + (online ? ' ok' : state && state.lastSeen ? ' bad' : '');
     }
 
-    function updateSlider(id, val) {
-      const lbl = document.getElementById('slVal_' + id);
-      if (lbl) lbl.innerText = val;
-      document.getElementById('activeCmd').innerText = val;
-      fetch('/api/action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, value: Number(val), command: String(val) })
-      }).catch(() => {});
-    }
+    all('button').forEach((el) => el.addEventListener('click', () => send(el.dataset.id)));
+    all('switch').forEach((el) => el.addEventListener('change', () => send(el.dataset.id, el.checked)));
+    all('slider').forEach((el) => {
+      el.addEventListener('input', () => {
+        draggingSlider = el;
+        document.querySelector('.slider-value[data-id="' + el.dataset.id + '"]').textContent = el.value;
+      });
+      el.addEventListener('change', () => {
+        draggingSlider = null;
+        send(el.dataset.id, Number(el.value));
+      });
+    });
 
-    // Connect to live updates via Server-Sent Events
-    try {
-      const evt = new EventSource('/api/events');
-      evt.onmessage = (e) => {
-        const msg = JSON.parse(e.data);
-        if (msg.state?.lastCommand) {
-          document.getElementById('activeCmd').innerText = msg.state.lastCommand;
-        }
-        if (msg.type === 'telemetry') {
-          // Update gauges & charts
-          ${gauges.map(g => `updateGauge('${g.id}', msg.value);`).join('\n')}
-          ${charts.map(c => `
-          if (!chartHistories['${c.id}']) chartHistories['${c.id}'] = [];
-          chartHistories['${c.id}'].push({ value: msg.value });
-          if (chartHistories['${c.id}'].length > 30) chartHistories['${c.id}'].shift();
-          drawChart('${c.id}', chartHistories['${c.id}']);
-          `).join('\n')}
-        }
-      };
-    } catch {}
+    const status = document.getElementById('serverStatus');
+    const events = new EventSource('/api/events');
+    events.onopen = () => { status.textContent = 'Сервер на связи'; status.className = 'badge ok'; };
+    events.onerror = () => { status.textContent = 'Нет связи с сервером'; status.className = 'badge bad'; };
+    events.onmessage = (e) => { state = JSON.parse(e.data); render(); };
+    setInterval(renderEspStatus, 1000);
   </script>
 </body>
 </html>`;

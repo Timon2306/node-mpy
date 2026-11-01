@@ -22,7 +22,7 @@ export interface NodeMpyProject {
   activeFlowId?: string;
   nodes: Node<NodeInstanceData>[];
   edges: Edge[];
-  customLibraries?: LibraryPackageJSON[]; // User-imported libraries saved with the project
+  customLibraries?: LibraryPackageJSON[];
 }
 
 export type NodeTealProject = NodeMpyProject;

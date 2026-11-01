@@ -18,19 +18,47 @@
       "icon": "Wifi",
       "description": "Подключение контроллера к домашней Wi-Fi сети в режиме Station",
       "inputs": [
-        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" }
+        {
+          "id": "flow_in",
+          "name": "flow_in",
+          "type": "flow",
+          "label": "Flow"
+        }
       ],
       "outputs": [
-        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" },
-        { "id": "wlan_obj", "name": "wlan_obj", "type": "device", "label": "WLAN" }
+        {
+          "id": "flow_out",
+          "name": "flow_out",
+          "type": "flow",
+          "label": "Flow"
+        },
+        {
+          "id": "wlan_obj",
+          "name": "wlan_obj",
+          "type": "device",
+          "label": "WLAN"
+        }
       ],
       "properties": [
-        { "id": "ssid", "name": "ssid", "type": "text", "label": "Имя сети (SSID)", "defaultValue": "MyWiFi" },
-        { "id": "password", "name": "password", "type": "text", "label": "Пароль сети", "defaultValue": "12345678" }
+        {
+          "id": "ssid",
+          "name": "ssid",
+          "type": "text",
+          "label": "Имя сети (SSID)",
+          "defaultValue": "MyWiFi"
+        },
+        {
+          "id": "password",
+          "name": "password",
+          "type": "text",
+          "label": "Пароль сети",
+          "defaultValue": "12345678"
+        }
       ],
       "codeTemplate": {
         "section": "flow",
-        "template": "{{output.wlan_obj}} = network.WLAN(network.STA_IF)\n{{output.wlan_obj}}.active(True)\n{{output.wlan_obj}}.connect('{{props.ssid}}', '{{props.password}}')",
+        "imports": ["import time"],
+        "template": "{{output.wlan_obj}} = network.WLAN(network.STA_IF)\n{{output.wlan_obj}}.active(True)\n{{output.wlan_obj}}.connect('{{props.ssid}}', '{{props.password}}')\nfor _ in range(200):\n    if {{output.wlan_obj}}.isconnected():\n        break\n    time.sleep_ms(100)",
         "outputVariables": {
           "wlan_obj": "wlan_{{id}}"
         }
@@ -45,12 +73,32 @@
       "icon": "Radio",
       "description": "Проверка наличия активного подключения к Wi-Fi",
       "inputs": [
-        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
-        { "id": "wlan", "name": "wlan", "type": "device", "label": "WLAN" }
+        {
+          "id": "flow_in",
+          "name": "flow_in",
+          "type": "flow",
+          "label": "Flow"
+        },
+        {
+          "id": "wlan",
+          "name": "wlan",
+          "type": "device",
+          "label": "WLAN"
+        }
       ],
       "outputs": [
-        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" },
-        { "id": "status", "name": "status", "type": "boolean", "label": "Connected?" }
+        {
+          "id": "flow_out",
+          "name": "flow_out",
+          "type": "flow",
+          "label": "Flow"
+        },
+        {
+          "id": "status",
+          "name": "status",
+          "type": "boolean",
+          "label": "Connected?"
+        }
       ],
       "properties": [],
       "codeTemplate": {
@@ -70,15 +118,50 @@
       "icon": "Wifi",
       "description": "Получение сетевого IP-адреса, маски подсети, шлюза и DNS",
       "inputs": [
-        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
-        { "id": "wlan", "name": "wlan", "type": "device", "label": "WLAN" }
+        {
+          "id": "flow_in",
+          "name": "flow_in",
+          "type": "flow",
+          "label": "Flow"
+        },
+        {
+          "id": "wlan",
+          "name": "wlan",
+          "type": "device",
+          "label": "WLAN"
+        }
       ],
       "outputs": [
-        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" },
-        { "id": "ip", "name": "ip", "type": "string", "label": "IP Address" },
-        { "id": "subnet", "name": "subnet", "type": "string", "label": "Subnet Mask" },
-        { "id": "gateway", "name": "gateway", "type": "string", "label": "Gateway" },
-        { "id": "dns", "name": "dns", "type": "string", "label": "DNS" }
+        {
+          "id": "flow_out",
+          "name": "flow_out",
+          "type": "flow",
+          "label": "Flow"
+        },
+        {
+          "id": "ip",
+          "name": "ip",
+          "type": "string",
+          "label": "IP Address"
+        },
+        {
+          "id": "subnet",
+          "name": "subnet",
+          "type": "string",
+          "label": "Subnet Mask"
+        },
+        {
+          "id": "gateway",
+          "name": "gateway",
+          "type": "string",
+          "label": "Gateway"
+        },
+        {
+          "id": "dns",
+          "name": "dns",
+          "type": "string",
+          "label": "DNS"
+        }
       ],
       "properties": [],
       "codeTemplate": {
@@ -101,15 +184,42 @@
       "icon": "Wifi",
       "description": "Создание собственной точки доступа Wi-Fi (режим AP)",
       "inputs": [
-        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" }
+        {
+          "id": "flow_in",
+          "name": "flow_in",
+          "type": "flow",
+          "label": "Flow"
+        }
       ],
       "outputs": [
-        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" },
-        { "id": "ap_obj", "name": "ap_obj", "type": "device", "label": "AP Object" }
+        {
+          "id": "flow_out",
+          "name": "flow_out",
+          "type": "flow",
+          "label": "Flow"
+        },
+        {
+          "id": "ap_obj",
+          "name": "ap_obj",
+          "type": "device",
+          "label": "AP Object"
+        }
       ],
       "properties": [
-        { "id": "ssid", "name": "ssid", "type": "text", "label": "Имя точки доступа (SSID)", "defaultValue": "ESP-AccessPoint" },
-        { "id": "password", "name": "password", "type": "text", "label": "Пароль (пусто для открытой)", "defaultValue": "12345678" }
+        {
+          "id": "ssid",
+          "name": "ssid",
+          "type": "text",
+          "label": "Имя точки доступа (SSID)",
+          "defaultValue": "ESP-AccessPoint"
+        },
+        {
+          "id": "password",
+          "name": "password",
+          "type": "text",
+          "label": "Пароль (пусто для открытой)",
+          "defaultValue": "12345678"
+        }
       ],
       "codeTemplate": {
         "section": "flow",
@@ -128,11 +238,26 @@
       "icon": "Power",
       "description": "Отключение от Wi-Fi сети и деактивация интерфейса",
       "inputs": [
-        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
-        { "id": "wlan", "name": "wlan", "type": "device", "label": "WLAN" }
+        {
+          "id": "flow_in",
+          "name": "flow_in",
+          "type": "flow",
+          "label": "Flow"
+        },
+        {
+          "id": "wlan",
+          "name": "wlan",
+          "type": "device",
+          "label": "WLAN"
+        }
       ],
       "outputs": [
-        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" }
+        {
+          "id": "flow_out",
+          "name": "flow_out",
+          "type": "flow",
+          "label": "Flow"
+        }
       ],
       "properties": [],
       "codeTemplate": {
@@ -140,7 +265,6 @@
         "template": "{{inputs.wlan || wlan}}.disconnect()\n{{inputs.wlan || wlan}}.active(False)"
       }
     },
-
     {
       "id": "network:http_post",
       "libraryId": "network",
@@ -148,19 +272,55 @@
       "category": "Network",
       "color": "#06B6D4",
       "icon": "Radio",
-      "description": "Отправка показаний датчиков (АЦП) в Node-RED с получением ответа",
+      "description": "Отправка показаний датчиков (АЦП) на сервер с получением ответа",
       "inputs": [
-        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
-        { "id": "url", "name": "url", "type": "string", "label": "URL (если провод)" },
-        { "id": "data", "name": "data", "type": "any", "label": "Data / Sensor Val" }
+        {
+          "id": "flow_in",
+          "name": "flow_in",
+          "type": "flow",
+          "label": "Flow"
+        },
+        {
+          "id": "url",
+          "name": "url",
+          "type": "string",
+          "label": "URL (если провод)"
+        },
+        {
+          "id": "data",
+          "name": "data",
+          "type": "any",
+          "label": "Data / Sensor Val"
+        }
       ],
       "outputs": [
-        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" },
-        { "id": "response", "name": "response", "type": "string", "label": "Response Text" },
-        { "id": "status_code", "name": "status_code", "type": "number", "label": "Status Code" }
+        {
+          "id": "flow_out",
+          "name": "flow_out",
+          "type": "flow",
+          "label": "Flow"
+        },
+        {
+          "id": "response",
+          "name": "response",
+          "type": "string",
+          "label": "Response Text"
+        },
+        {
+          "id": "status_code",
+          "name": "status_code",
+          "type": "number",
+          "label": "Status Code"
+        }
       ],
       "properties": [
-        { "id": "url", "name": "url", "type": "text", "label": "URL сервера Node-RED", "defaultValue": "http://192.168.1.100:1880/sensor" },
+        {
+          "id": "url",
+          "name": "url",
+          "type": "text",
+          "label": "URL сервера",
+          "defaultValue": "http://192.168.1.100:1880/sensor"
+        },
         {
           "id": "payload_format",
           "name": "payload_format",
@@ -168,12 +328,30 @@
           "label": "Формат отправки",
           "defaultValue": "text",
           "options": [
-            { "label": "Plain Text / Number (Сырой текст/число)", "value": "text" },
-            { "label": "JSON Объект ({\"value\": ...})", "value": "json" }
+            {
+              "label": "Plain Text / Number (Сырой текст/число)",
+              "value": "text"
+            },
+            {
+              "label": "JSON Объект ({\"value\": ...})",
+              "value": "json"
+            }
           ]
         },
-        { "id": "json_key", "name": "json_key", "type": "text", "label": "Ключ JSON (для формата JSON)", "defaultValue": "value" },
-        { "id": "timeout", "name": "timeout", "type": "number", "label": "Таймаут (сек)", "defaultValue": 5 }
+        {
+          "id": "json_key",
+          "name": "json_key",
+          "type": "text",
+          "label": "Ключ JSON (для формата JSON)",
+          "defaultValue": "value"
+        },
+        {
+          "id": "timeout",
+          "name": "timeout",
+          "type": "number",
+          "label": "Таймаут (сек)",
+          "defaultValue": 5
+        }
       ],
       "codeTemplate": {
         "section": "flow",
@@ -193,17 +371,54 @@
       "icon": "DownloadCloud",
       "description": "Выполнение HTTP GET запроса для получения данных (погода, REST API, облака IoT)",
       "inputs": [
-        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
-        { "id": "url", "name": "url", "type": "string", "label": "URL (если провод)" }
+        {
+          "id": "flow_in",
+          "name": "flow_in",
+          "type": "flow",
+          "label": "Flow"
+        },
+        {
+          "id": "url",
+          "name": "url",
+          "type": "string",
+          "label": "URL (если провод)"
+        }
       ],
       "outputs": [
-        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" },
-        { "id": "response", "name": "response", "type": "string", "label": "Response Text" },
-        { "id": "status_code", "name": "status_code", "type": "number", "label": "Status Code" }
+        {
+          "id": "flow_out",
+          "name": "flow_out",
+          "type": "flow",
+          "label": "Flow"
+        },
+        {
+          "id": "response",
+          "name": "response",
+          "type": "string",
+          "label": "Response Text"
+        },
+        {
+          "id": "status_code",
+          "name": "status_code",
+          "type": "number",
+          "label": "Status Code"
+        }
       ],
       "properties": [
-        { "id": "url", "name": "url", "type": "text", "label": "URL запроса", "defaultValue": "http://api.weatherbit.io/v2.0/current?city=Moscow,RU&key=YOUR_KEY" },
-        { "id": "timeout", "name": "timeout", "type": "number", "label": "Таймаут (сек)", "defaultValue": 10 }
+        {
+          "id": "url",
+          "name": "url",
+          "type": "text",
+          "label": "URL запроса",
+          "defaultValue": "http://api.weatherbit.io/v2.0/current?city=Moscow,RU&key=YOUR_KEY"
+        },
+        {
+          "id": "timeout",
+          "name": "timeout",
+          "type": "number",
+          "label": "Таймаут (сек)",
+          "defaultValue": 10
+        }
       ],
       "codeTemplate": {
         "section": "flow",
@@ -223,35 +438,113 @@
       "icon": "Radio",
       "description": "Отправляет показания датчиков на сервер дашборда (порт 1880) и получает команды от кнопок, тумблеров и ползунков",
       "inputs": [
-        { "id": "flow_in", "name": "flow_in", "type": "flow", "label": "Flow" },
-        { "id": "value", "name": "value", "type": "any", "label": "Датчик 1 (Свет/Темп)" },
-        { "id": "val2", "name": "val2", "type": "any", "label": "Датчик 2 (опц.)" }
+        {
+          "id": "flow_in",
+          "name": "flow_in",
+          "type": "flow",
+          "label": "Flow"
+        },
+        {
+          "id": "value",
+          "name": "value",
+          "type": "any",
+          "label": "Датчик 1 (Свет/Темп)"
+        },
+        {
+          "id": "val2",
+          "name": "val2",
+          "type": "any",
+          "label": "Датчик 2 (опц.)"
+        }
       ],
       "outputs": [
-        { "id": "flow_out", "name": "flow_out", "type": "flow", "label": "Flow" },
-        { "id": "command", "name": "command", "type": "string", "label": "Команда (Текст)" },
-        { "id": "slider_val", "name": "slider_val", "type": "number", "label": "Число ползунка" },
-        { "id": "is_on", "name": "is_on", "type": "boolean", "label": "Команда ON?" },
-        { "id": "response", "name": "response", "type": "string", "label": "Ответ сервера" },
-        { "id": "status_code", "name": "status_code", "type": "number", "label": "Status" }
+        {
+          "id": "flow_out",
+          "name": "flow_out",
+          "type": "flow",
+          "label": "Flow"
+        },
+        {
+          "id": "command",
+          "name": "command",
+          "type": "string",
+          "label": "Команды"
+        },
+        {
+          "id": "slider_val",
+          "name": "slider_val",
+          "type": "number",
+          "label": "Число ползунка"
+        },
+        {
+          "id": "is_on",
+          "name": "is_on",
+          "type": "boolean",
+          "label": "Есть ON?"
+        },
+        {
+          "id": "response",
+          "name": "response",
+          "type": "string",
+          "label": "Ответ сервера"
+        },
+        {
+          "id": "status_code",
+          "name": "status_code",
+          "type": "number",
+          "label": "Status"
+        }
       ],
       "properties": [
-        { "id": "server_ip", "name": "server_ip", "type": "text", "label": "IP-адрес сервера (ПК)", "defaultValue": "192.168.1.100" },
-        { "id": "server_port", "name": "server_port", "type": "number", "label": "Порт сервера", "defaultValue": 1880 },
-        { "id": "path", "name": "path", "type": "text", "label": "Путь эндпоинта", "defaultValue": "/api/data" },
-        { "id": "param", "name": "param", "type": "text", "label": "Параметр 1", "defaultValue": "value" },
-        { "id": "param2", "name": "param2", "type": "text", "label": "Параметр 2", "defaultValue": "val2" }
+        {
+          "id": "server_ip",
+          "name": "server_ip",
+          "type": "text",
+          "label": "IP-адрес сервера (ПК)",
+          "defaultValue": "192.168.1.100"
+        },
+        {
+          "id": "server_port",
+          "name": "server_port",
+          "type": "number",
+          "label": "Порт сервера",
+          "defaultValue": 1880
+        },
+        {
+          "id": "path",
+          "name": "path",
+          "type": "text",
+          "label": "Путь эндпоинта",
+          "defaultValue": "/light"
+        },
+        {
+          "id": "param",
+          "name": "param",
+          "type": "text",
+          "label": "Параметр 1",
+          "defaultValue": "value"
+        },
+        {
+          "id": "param2",
+          "name": "param2",
+          "type": "text",
+          "label": "Параметр 2",
+          "defaultValue": "val2"
+        }
       ],
       "codeTemplate": {
         "section": "flow",
-        "template": "try:\n    import socket as _sock_{{id}}\n    _s_{{id}} = _sock_{{id}}.socket()\n    _s_{{id}}.settimeout(1.0)\n    _s_{{id}}.connect(('{{props.server_ip}}', {{props.server_port}}))\n    _v1_{{id}} = str({{inputs.value || 0}})\n    _q_{{id}} = '{{props.path}}?{{props.param}}=' + _v1_{{id}}\n    _v2_{{id}} = ('&{{props.param2}}=' + str({{inputs.val2 || \"None\"}})) if str({{inputs.val2 || \"None\"}}) != 'None' else ''\n    _req_{{id}} = 'GET ' + _q_{{id}} + _v2_{{id}} + ' HTTP/1.1\\r\\nHost: {{props.server_ip}}\\r\\nConnection: close\\r\\n\\r\\n'\n    _s_{{id}}.send(_req_{{id}}.encode())\n    _raw_{{id}} = _s_{{id}}.recv(256)\n    _s_{{id}}.close()\n    _raw_str_{{id}} = str(_raw_{{id}}, 'utf-8', 'ignore') if _raw_{{id}} else ''\n    _body_{{id}} = _raw_str_{{id}}.split('\\r\\n\\r\\n', 1)[1] if '\\r\\n\\r\\n' in _raw_str_{{id}} else _raw_str_{{id}}\n    _body_{{id}} = _body_{{id}}.strip()\n    {{output.command}} = _body_{{id}}\n    {{output.response}} = _raw_str_{{id}}\n    {{output.is_on}} = (b'CMD_ON' in _raw_{{id}} or 'ON' in _body_{{id}} or _body_{{id}} == '1')\n    try:\n        {{output.slider_val}} = float(''.join(c for c in _body_{{id}} if c.isdigit() or c in '.-')) or 0\n    except Exception:\n        {{output.slider_val}} = 0\n    {{output.status_code}} = 200\nexcept Exception:\n    {{output.command}} = ''\n    {{output.response}} = ''\n    {{output.is_on}} = False\n    {{output.slider_val}} = 0\n    {{output.status_code}} = -1",
+        "template": "{{output.command}}, {{output.slider_val}}, {{output.is_on}}, {{output.response}}, {{output.status_code}} = dashboard_sync(\n    '{{props.server_ip}}', {{props.server_port}}, '{{props.path}}',\n    '{{props.param}}', {{inputs.value || 0}}, '{{props.param2}}', {{inputs.val2 || None}})",
         "outputVariables": {
           "command": "dash_cmd_{{id}}",
           "slider_val": "dash_slider_{{id}}",
           "is_on": "dash_on_{{id}}",
           "response": "dash_res_{{id}}",
           "status_code": "dash_code_{{id}}"
-        }
+        },
+        "helpers": [
+          "def dashboard_sync(host, port, path, param1, value1, param2, value2):\n    try:\n        import socket\n        import json\n        query = path + '?' + param1 + '=' + str(value1)\n        if value2 is not None:\n            query += '&' + param2 + '=' + str(value2)\n        s = socket.socket()\n        try:\n            s.settimeout(2)\n            s.connect((host, port))\n            s.send(('GET ' + query + ' HTTP/1.0\\r\\nHost: ' + host + '\\r\\n\\r\\n').encode())\n            raw = b''\n            while len(raw) < 1024:\n                chunk = s.recv(256)\n                if not chunk:\n                    break\n                raw += chunk\n        finally:\n            s.close()\n        parts = raw.split(b'\\r\\n\\r\\n', 1)\n        code = int(parts[0].split()[1])\n        body = parts[-1].decode().strip()\n        try:\n            reply = json.loads(body)\n        except ValueError:\n            reply = body\n        number = 0\n        is_on = False\n        for v in (reply.values() if isinstance(reply, dict) else [reply]):\n            if v is True or v == '1' or str(v).endswith('ON'):\n                is_on = True\n            elif isinstance(v, (int, float)) and v is not False:\n                number = v\n        return reply, number, is_on, body, code\n    except Exception:\n        return '', 0, False, '', -1\n"
+        ]
       }
     },
     {
@@ -261,21 +554,85 @@
       "category": "Network",
       "color": "#06B6D4",
       "icon": "CheckSquare",
-      "description": "Проверяет, совпадает ли полученная с дашборда команда с заданной (например FAN_ON, MOTOR_START, DOOR_OPEN)",
+      "description": "Проверяет, есть ли заданная команда среди текущих команд дашборда (например FAN_ON, MOTOR_START, DOOR_OPEN)",
       "inputs": [
-        { "id": "command", "name": "command", "type": "string", "label": "Команда" }
+        {
+          "id": "command",
+          "name": "command",
+          "type": "string",
+          "label": "Команда"
+        }
       ],
       "outputs": [
-        { "id": "is_match", "name": "is_match", "type": "boolean", "label": "Совпало?" }
+        {
+          "id": "is_match",
+          "name": "is_match",
+          "type": "boolean",
+          "label": "Совпало?"
+        }
       ],
       "properties": [
-        { "id": "target_cmd", "name": "target_cmd", "type": "text", "label": "Ожидаемая команда", "defaultValue": "CMD_ON" }
+        {
+          "id": "target_cmd",
+          "name": "target_cmd",
+          "type": "text",
+          "label": "Ожидаемая команда",
+          "defaultValue": "CMD_ON"
+        }
       ],
       "codeTemplate": {
         "section": "flow",
-        "template": "{{output.is_match}} = (str({{inputs.command || '\"\"'}}).strip() == '{{props.target_cmd}}')",
+        "template": "{{output.is_match}} = ('{{props.target_cmd}}' in {{inputs.command || ''}}.values()) if isinstance({{inputs.command || ''}}, dict) else (str({{inputs.command || ''}}).strip() == '{{props.target_cmd}}')",
         "outputVariables": {
           "is_match": "cmd_match_{{id}}"
+        }
+      }
+    },
+    {
+      "id": "network:dashboard_value",
+      "libraryId": "network",
+      "label": "Значение канала",
+      "category": "Network",
+      "color": "#06B6D4",
+      "icon": "Sliders",
+      "description": "Читает значение одного тумблера или ползунка дашборда по имени его канала (например pwm или relay)",
+      "inputs": [
+        {
+          "id": "command",
+          "name": "command",
+          "type": "string",
+          "label": "Команды"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "value",
+          "name": "value",
+          "type": "any",
+          "label": "Значение"
+        }
+      ],
+      "properties": [
+        {
+          "id": "channel",
+          "name": "channel",
+          "type": "text",
+          "label": "Имя канала",
+          "defaultValue": "slider1"
+        },
+        {
+          "id": "default_val",
+          "name": "default_val",
+          "type": "number",
+          "label": "Значение, если канала нет",
+          "defaultValue": 0
+        }
+      ],
+      "codeTemplate": {
+        "section": "flow",
+        "template": "{{output.value}} = {{inputs.command || ''}}.get('{{props.channel}}', {{props.default_val}}) if isinstance({{inputs.command || ''}}, dict) else {{props.default_val}}",
+        "outputVariables": {
+          "value": "channel_{{id}}"
         }
       }
     }

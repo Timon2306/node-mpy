@@ -145,11 +145,30 @@
           "label": "Цвет кнопки",
           "defaultValue": "teal",
           "options": [
-            { "label": "Бирюзовый (Teal)", "value": "teal" },
-            { "label": "Зелёный (Green)", "value": "green" },
-            { "label": "Красный (Red)", "value": "red" },
-            { "label": "Синий (Blue)", "value": "blue" }
+            {
+              "label": "Бирюзовый (Teal)",
+              "value": "teal"
+            },
+            {
+              "label": "Зелёный (Green)",
+              "value": "green"
+            },
+            {
+              "label": "Красный (Red)",
+              "value": "red"
+            },
+            {
+              "label": "Синий (Blue)",
+              "value": "blue"
+            }
           ]
+        },
+        {
+          "id": "channel",
+          "name": "channel",
+          "type": "text",
+          "label": "Канал для ESP (пусто = авто)",
+          "defaultValue": ""
         }
       ],
       "codeTemplate": {
@@ -210,6 +229,13 @@
           "type": "text",
           "label": "Команда при ВЫКЛ",
           "defaultValue": "CMD_OFF"
+        },
+        {
+          "id": "channel",
+          "name": "channel",
+          "type": "text",
+          "label": "Канал для ESP (пусто = авто)",
+          "defaultValue": ""
         }
       ],
       "codeTemplate": {
@@ -272,6 +298,13 @@
           "type": "number",
           "label": "Шаг",
           "defaultValue": 10
+        },
+        {
+          "id": "channel",
+          "name": "channel",
+          "type": "text",
+          "label": "Канал для ESP (пусто = авто)",
+          "defaultValue": ""
         }
       ],
       "codeTemplate": {
@@ -352,10 +385,22 @@
           "label": "Цвет при включении",
           "defaultValue": "#10B981",
           "options": [
-            { "label": "Зелёный (#10B981)", "value": "#10B981" },
-            { "label": "Красный (#EF4444)", "value": "#EF4444" },
-            { "label": "Синий (#3B82F6)", "value": "#3B82F6" },
-            { "label": "Жёлтый (#F59E0B)", "value": "#F59E0B" }
+            {
+              "label": "Зелёный (#10B981)",
+              "value": "#10B981"
+            },
+            {
+              "label": "Красный (#EF4444)",
+              "value": "#EF4444"
+            },
+            {
+              "label": "Синий (#3B82F6)",
+              "value": "#3B82F6"
+            },
+            {
+              "label": "Жёлтый (#F59E0B)",
+              "value": "#F59E0B"
+            }
           ]
         }
       ],
@@ -408,8 +453,14 @@
           "label": "HTTP Метод",
           "defaultValue": "GET",
           "options": [
-            { "label": "GET (запрос от контроллера)", "value": "GET" },
-            { "label": "POST (отправка тела)", "value": "POST" }
+            {
+              "label": "GET (запрос от контроллера)",
+              "value": "GET"
+            },
+            {
+              "label": "POST (отправка тела)",
+              "value": "POST"
+            }
           ]
         },
         {
@@ -480,7 +531,7 @@
       "category": "Dashboard",
       "color": "#E11D48",
       "icon": "Code2",
-      "description": "Простая JavaScript/TypeScript функция для преобразования данных (как нода function в Node-RED)",
+      "description": "Простая JavaScript/TypeScript функция для преобразования данных",
       "inputs": [
         {
           "id": "flow_in",

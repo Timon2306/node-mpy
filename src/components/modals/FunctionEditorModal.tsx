@@ -44,7 +44,6 @@ export const FunctionEditorModal: React.FC = () => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
       <div className="w-full max-w-2xl bg-slate-panel border border-slate-border rounded-lg shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
-        {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-border bg-slate-panelHeader">
           <div className="flex items-center gap-2">
             <Code2 className="w-5 h-5 text-blue-400" />
@@ -60,7 +59,6 @@ export const FunctionEditorModal: React.FC = () => {
           </button>
         </div>
 
-        {/* Content */}
         <div className="p-5 space-y-4 overflow-y-auto">
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -100,7 +98,6 @@ export const FunctionEditorModal: React.FC = () => {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-slate-border bg-slate-panelHeader">
           <button
             onClick={() => setFunctionModalOpen(false)}

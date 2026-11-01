@@ -2,8 +2,6 @@ import { LibraryRegistry } from '../src/registry/registryLoader';
 import { generateFlowSvg } from '../src/services/exportService';
 import fs from 'fs';
 
-// LibraryRegistry auto-loads statically
-
 const flow = {
   id: 'flow_1',
   name: 'Blink Flow',

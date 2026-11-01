@@ -80,7 +80,6 @@ export const PaletteManagerModal: React.FC = () => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
       <div className="w-full max-w-2xl bg-slate-panel border border-slate-border rounded-lg shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
-        {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-border bg-slate-panelHeader">
           <div className="flex items-center gap-2">
             <Package className="w-5 h-5 text-blue-400" />
@@ -96,7 +95,6 @@ export const PaletteManagerModal: React.FC = () => {
           </button>
         </div>
 
-        {/* Navigation Tabs */}
         <div className="flex border-b border-slate-border bg-slate-panel px-4">
           <button
             onClick={() => { setActiveTab('libraries'); setImportMessage(null); }}
@@ -134,9 +132,7 @@ export const PaletteManagerModal: React.FC = () => {
           </button>
         </div>
 
-        {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-5 select-text">
-          {/* Tab 1: Libraries list */}
           {activeTab === 'libraries' && (
             <div className="space-y-3">
               <p className="text-xs text-gray-400">
@@ -200,7 +196,6 @@ export const PaletteManagerModal: React.FC = () => {
             </div>
           )}
 
-          {/* Tab 2: Import Custom JSON */}
           {activeTab === 'import' && (
             <div className="space-y-4">
               <div className="p-3 bg-slate-card border border-slate-border rounded-md text-xs text-gray-300 space-y-2">
@@ -212,7 +207,6 @@ export const PaletteManagerModal: React.FC = () => {
                 </p>
               </div>
 
-              {/* File upload input */}
               <div>
                 <label className="block text-xs font-medium text-gray-300 mb-1">
                   {t.uploadFileLabel}
@@ -225,7 +219,6 @@ export const PaletteManagerModal: React.FC = () => {
                 />
               </div>
 
-              {/* Paste textarea */}
               <div>
                 <label className="block text-xs font-medium text-gray-300 mb-1">
                   {t.pasteJsonLabel}
@@ -261,7 +254,6 @@ export const PaletteManagerModal: React.FC = () => {
             </div>
           )}
 
-          {/* Tab 3: AI Prompt Generator */}
           {activeTab === 'ai_prompt' && (
             <div className="space-y-4">
               <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-md text-xs text-gray-200 space-y-1">

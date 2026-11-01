@@ -39,26 +39,15 @@ export const PORT_LABELS: Record<PortType, string> = {
   any: 'Any Type',
 };
 
-/**
- * Validates whether an output port of type source can connect to an input port of type target
- */
 export function arePortsCompatible(source: PortType, target: PortType): boolean {
   if (source === target) return true;
-  // White Flow execution connections are strictly isolated: Flow only connects to Flow
   if (source === 'flow' || target === 'flow') return false;
-  // 'any' socket accepts any non-flow data port, and 'any' output can feed any non-flow input
   if (target === 'any' || source === 'any') return true;
-  // In MicroPython, numbers (0, 1) and booleans (False, True) are interchangeable in logic & conditions
-  // e.g. Pin Read returns 0/1, which can connect directly to Boolean condition ports of If/Else or Comparison
   if ((source === 'number' && target === 'boolean') || (source === 'boolean' && target === 'number')) return true;
-  // Strings can receive numbers or booleans for printing or formatting
   if (target === 'string' && (source === 'number' || source === 'boolean')) return true;
   return false;
 }
 
-/**
- * Returns clear, helpful hover connection hints for ports
- */
 export function getPortTooltip(
   name: string,
   type: PortType,
@@ -142,9 +131,6 @@ export function getPortTooltip(
   }
 }
 
-/**
- * Explains clearly why two ports cannot be connected
- */
 export function getIncompatibleConnectionReason(
   sourceType: PortType,
   targetType: PortType,

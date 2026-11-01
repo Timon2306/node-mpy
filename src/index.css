@@ -41,7 +41,6 @@
   fill: #2B3240 !important;
 }
 
-/* Node-RED style compact rectangular socket tabs */
 .react-flow__handle {
   width: 9px !important;
   height: 9px !important;

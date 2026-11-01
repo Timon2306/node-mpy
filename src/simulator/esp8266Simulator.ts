@@ -15,7 +15,6 @@ class ESP8266SimulatorEngine {
   private forLoopCounters: Map<string, number> = new Map();
   private continuationStack: string[] = [];
 
-  // Runtime simulator memory
   private virtualVariables: Record<string, any> = {};
   private nodeOutputs: Map<string, Record<string, any>> = new Map();
 
@@ -47,10 +46,8 @@ class ESP8266SimulatorEngine {
     store.addSimLog('boot', 'Запуск ESP8266 MicroPython v1.20 (Xtensa LX106 @ 80MHz, 4MB Flash)...');
     store.addSimLog('boot', 'Системные шины и порты GPIO 0..16 инициализированы.');
 
-    // Phase 1: Run hardware initialization nodes (pin_init, imports, etc.)
     this.runInitializations(nodes, edges);
 
-    // Phase 2: Find starting execution point (core:setup or core:while_loop)
     const setupNode = nodes.find((n) => n.data.definitionId === 'core:setup');
     const loopNode = nodes.find((n) => n.data.definitionId === 'core:while_loop');
 
@@ -61,7 +58,6 @@ class ESP8266SimulatorEngine {
       this.currentNodeId = loopNode.id;
       this.currentHandle = 'loop_body';
     } else {
-      // Find first flow node with flow_out
       const firstFlowNode = nodes.find((n) =>
         edges.some((e) => e.source === n.id && (e.sourceHandle === 'flow_out' || !e.sourceHandle))
       );
@@ -75,7 +71,6 @@ class ESP8266SimulatorEngine {
       }
     }
 
-    // Begin execution loop
     this.scheduleNextStep(50);
   }
 
@@ -134,13 +129,11 @@ class ESP8266SimulatorEngine {
   private runInitializations(nodes: Node<NodeInstanceData>[], _edges: Edge[]) {
     const store = useFlowStore.getState();
 
-    // 1. Imports
     const importNodes = nodes.filter((n) => n.data.definitionId === 'core:import_module');
     if (importNodes.length > 0) {
       store.addSimLog('info', `Импортировано модулей: ${importNodes.length}`);
     }
 
-    // 2. Pin Init nodes
     const pinInits = nodes.filter((n) => n.data.definitionId === 'machine:pin_init');
     for (const pNode of pinInits) {
       const pinNum = Number(pNode.data.properties?.pin ?? 2);
@@ -163,9 +156,6 @@ class ESP8266SimulatorEngine {
     }, adjustedDelay);
   }
 
-  /**
-   * Helper to resolve the pin number targeted by a node via its 'pin' input or properties
-   */
   private resolvePinNumber(node: Node<NodeInstanceData>, edges: Edge[], nodes: Node<NodeInstanceData>[]): number {
     const pinEdge = edges.find((e) => e.target === node.id && e.targetHandle === 'pin');
     if (pinEdge) {
@@ -177,12 +167,9 @@ class ESP8266SimulatorEngine {
     if (node.data.properties?.pin !== undefined) {
       return Number(node.data.properties.pin);
     }
-    return 2; // default ESP8266 GPIO
+    return 2;
   }
 
-  /**
-   * Evaluates or retrieves the output value of a node at runtime
-   */
   private resolveNodeOutputValue(
     nodeId: string,
     portId: string,
@@ -190,7 +177,7 @@ class ESP8266SimulatorEngine {
     edges: Edge[],
     depth = 0
   ): any {
-    if (depth > 15) return 0; // prevent recursion loops
+    if (depth > 15) return 0;
 
     const node = nodes.find((n) => n.id === nodeId);
     if (!node) return 0;
@@ -198,7 +185,6 @@ class ESP8266SimulatorEngine {
     const defId = node.data.definitionId;
     const props = node.data.properties || {};
 
-    // 1. Constant Value
     if (defId === 'core:constant') {
       const type = props.data_type || 'number';
       let val: any = 0;
@@ -212,19 +198,16 @@ class ESP8266SimulatorEngine {
       return val;
     }
 
-    // 2. Variable Get
     if (defId === 'core:variable_get') {
       const name = String(props.var_name || 'x');
       return this.virtualVariables[name] ?? 0;
     }
 
-    // 3. Variable Set
     if (defId === 'core:variable_set') {
       const name = String(props.var_name || 'x');
       return this.virtualVariables[name] ?? (props.default_val ?? 0);
     }
 
-    // 4. Pin Read / Pin Active
     if (defId === 'machine:pin_read' || defId === 'machine:pin_is_active') {
       const pinNum = this.resolvePinNumber(node, edges, nodes);
       const pinVal = useFlowStore.getState().virtualPins[pinNum]?.value ?? 0;
@@ -233,17 +216,14 @@ class ESP8266SimulatorEngine {
       return pinVal;
     }
 
-    // Check cached runtime outputs first
     if (this.nodeOutputs.has(nodeId) && this.nodeOutputs.get(nodeId)![portId] !== undefined) {
       return this.nodeOutputs.get(nodeId)![portId];
     }
 
-    // 5. Comparison
     if (defId === 'core:comparison') {
       return this.evaluateComparison(node, nodes, edges, depth + 1);
     }
 
-    // 6. Logic Gate
     if (defId === 'core:logic') {
       const op = props.operator || 'and';
       const edgeA = edges.find((e) => e.target === node.id && e.targetHandle === 'a');
@@ -265,7 +245,6 @@ class ESP8266SimulatorEngine {
       return res;
     }
 
-    // 7. Math Operation
     if (defId === 'core:math') {
       const edgeA = edges.find((e) => e.target === node.id && e.targetHandle === 'a');
       const edgeB = edges.find((e) => e.target === node.id && e.targetHandle === 'b');
@@ -284,7 +263,6 @@ class ESP8266SimulatorEngine {
       return result;
     }
 
-    // 8. String Format
     if (defId === 'core:string_format') {
       const prefix = props.prefix !== undefined ? String(props.prefix) : 'Val: ';
       const suffix = props.suffix !== undefined ? String(props.suffix) : '';
@@ -295,7 +273,6 @@ class ESP8266SimulatorEngine {
       return result;
     }
 
-    // 9. Random Number
     if (defId === 'core:random') {
       const minVal = Number(props.min_val ?? 0);
       const maxVal = Number(props.max_val ?? 100);
@@ -304,7 +281,6 @@ class ESP8266SimulatorEngine {
       return result;
     }
 
-    // 10. Map Range
     if (defId === 'core:map_range') {
       const edgeVal = edges.find((e) => e.target === node.id && e.targetHandle === 'val');
       const val = edgeVal ? Number(this.resolveNodeOutputValue(edgeVal.source, edgeVal.sourceHandle || 'val', nodes, edges, depth + 1)) : Number(props.default_val ?? 0);
@@ -317,14 +293,12 @@ class ESP8266SimulatorEngine {
       return result;
     }
 
-    // 11. ADC Read
     if (defId === 'machine:adc_read') {
       const rawVal = Math.round(28000 + Math.sin(Date.now() / 2000) * 8000);
       this.nodeOutputs.set(nodeId, { val: rawVal });
       return rawVal;
     }
 
-    // 12. DHT Read (Temperature / Humidity)
     if (defId === 'dht:read') {
       const temp = Math.round((23.0 + Math.sin(Date.now() / 5000) * 3.5) * 10) / 10;
       const hum = Math.round((50.0 + Math.cos(Date.now() / 6000) * 8.0) * 10) / 10;
@@ -332,7 +306,6 @@ class ESP8266SimulatorEngine {
       return portId === 'humidity' ? hum : temp;
     }
 
-    // 13. BMP280 Read (Temperature / Pressure / Altitude)
     if (defId === 'bmp280:read') {
       const temp = Math.round((24.2 + Math.sin(Date.now() / 7000) * 2.0) * 10) / 10;
       const press = Math.round(1013.25 + Math.sin(Date.now() / 10000) * 5.0);
@@ -343,7 +316,6 @@ class ESP8266SimulatorEngine {
       return temp;
     }
 
-    // 14. Math Functions (abs, round, min, max, pow, sqrt)
     if (defId === 'core:math_func') {
       const func = props.func || 'round';
       const edgeVal = edges.find((e) => e.target === nodeId && e.targetHandle === 'val');
@@ -361,7 +333,6 @@ class ESP8266SimulatorEngine {
       return res;
     }
 
-    // 15. Type Cast (int, float, str, bool)
     if (defId === 'core:type_cast') {
       const targetType = props.target_type || 'int';
       const edgeVal = edges.find((e) => e.target === nodeId && e.targetHandle === 'val');
@@ -375,14 +346,12 @@ class ESP8266SimulatorEngine {
       return res;
     }
 
-    // 16. Time Ticks US
     if (defId === 'time:ticks_us') {
       const elapsedUs = (Date.now() - this.virtualTicks) * 1000;
       this.nodeOutputs.set(nodeId, { ticks: elapsedUs });
       return elapsedUs;
     }
 
-    // 17. Time Ticks Add
     if (defId === 'time:ticks_add') {
       const tEdge = edges.find((e) => e.target === nodeId && e.targetHandle === 'ticks');
       const dEdge = edges.find((e) => e.target === nodeId && e.targetHandle === 'delta');
@@ -393,19 +362,16 @@ class ESP8266SimulatorEngine {
       return res;
     }
 
-    // 18. I2C Bus Scan
     if (defId === 'machine:i2c_scan') {
       const addrs = ['0x3c', '0x68', '0x76'];
       this.nodeOutputs.set(nodeId, { devices: addrs });
       return addrs;
     }
 
-    // 19. Network IP Config
     if (defId === 'network:ifconfig') {
       return portId === 'ip' ? '192.168.1.105' : '255.255.255.0';
     }
 
-    // 20. Smart Fallback for ANY custom or user-defined node (never fails!)
     if (props[portId] !== undefined) return props[portId];
     if (props.default_val !== undefined) return props.default_val;
     if (props.val !== undefined) return props.val;
@@ -415,9 +381,6 @@ class ESP8266SimulatorEngine {
     return 0;
   }
 
-  /**
-   * Evaluates comparison at runtime
-   */
   private evaluateComparison(
     node: Node<NodeInstanceData>,
     nodes: Node<NodeInstanceData>[],
@@ -438,7 +401,6 @@ class ESP8266SimulatorEngine {
       ? this.resolveNodeOutputValue(edgeB.source, edgeB.sourceHandle || 'val', nodes, edges, depth)
       : (props.val_b ?? 1);
 
-    // Normalize types if numeric or boolean
     if (typeof valA === 'string' && /^-?\d+(\.\d+)?$/.test(valA)) valA = Number(valA);
     if (typeof valB === 'string' && /^-?\d+(\.\d+)?$/.test(valB)) valB = Number(valB);
     if (valA === 'True') valA = true;
@@ -492,11 +454,10 @@ class ESP8266SimulatorEngine {
       return;
     }
 
-    // Highlight current node on canvas
     store.setActiveSimNodeId(currentNode.id);
     store.setErrorSimNodeId(null);
 
-    let nextStepDelay = 300; // default step pause in ms for visual clarity
+    let nextStepDelay = 300;
     let nextHandle = 'flow_out';
     let targetNodeId: string | null = null;
 
@@ -504,14 +465,12 @@ class ESP8266SimulatorEngine {
       const defId = currentNode.data.definitionId;
       const props = currentNode.data.properties || {};
 
-      // 1. While True Loop
       if (defId === 'core:while_loop') {
         this.loopCount++;
         store.addSimLog('info', `--- Цикл While True (Итерация #${this.loopCount}) ---`);
         nextHandle = 'loop_body';
       }
 
-      // 1b. For Range Loop
       else if (defId === 'core:for_range') {
         const countEdge = edges.find((e) => e.target === currentNode.id && e.targetHandle === 'count');
         const count = countEdge ? Number(this.resolveNodeOutputValue(countEdge.source, countEdge.sourceHandle || 'result', nodes, edges)) : Number(props.count ?? 5);
@@ -531,7 +490,6 @@ class ESP8266SimulatorEngine {
         }
       }
 
-      // 2. Pin Toggle
       else if (defId === 'machine:pin_toggle') {
         const pinNum = this.resolvePinNumber(currentNode, edges, nodes);
         const currentPin = store.virtualPins[pinNum] || { mode: 'OUT', value: 0 };
@@ -547,7 +505,6 @@ class ESP8266SimulatorEngine {
         );
       }
 
-      // 3. Pin Write / Pin Set
       else if (defId === 'machine:pin_write' || defId === 'machine:pin_set') {
         const pinNum = this.resolvePinNumber(currentNode, edges, nodes);
         const valEdge = edges.find((e) => e.target === currentNode.id && e.targetHandle === 'val');
@@ -568,7 +525,6 @@ class ESP8266SimulatorEngine {
         );
       }
 
-      // 4. Pin Read
       else if (defId === 'machine:pin_read') {
         const pinNum = this.resolvePinNumber(currentNode, edges, nodes);
         const pinVal = store.virtualPins[pinNum]?.value ?? 0;
@@ -582,7 +538,6 @@ class ESP8266SimulatorEngine {
         );
       }
 
-      // 5. Time Sleep MS
       else if (defId === 'time:sleep_ms') {
         const msEdge = edges.find((e) => e.target === currentNode.id && e.targetHandle === 'ms');
         const duration = msEdge
@@ -592,7 +547,6 @@ class ESP8266SimulatorEngine {
         nextStepDelay = duration;
       }
 
-      // 6. Time Sleep Sec
       else if (defId === 'time:sleep_s') {
         const sEdge = edges.find((e) => e.target === currentNode.id && e.targetHandle === 's');
         const duration = sEdge
@@ -602,7 +556,6 @@ class ESP8266SimulatorEngine {
         nextStepDelay = duration * 1000;
       }
 
-      // 7. Time Sleep Microsec
       else if (defId === 'time:sleep_us') {
         const usEdge = edges.find((e) => e.target === currentNode.id && e.targetHandle === 'us');
         const duration = usEdge
@@ -612,14 +565,12 @@ class ESP8266SimulatorEngine {
         nextStepDelay = 30;
       }
 
-      // 8. Time Ticks MS
       else if (defId === 'time:ticks_ms') {
         const elapsed = Date.now() - this.virtualTicks;
         this.nodeOutputs.set(currentNode.id, { ticks: elapsed });
         store.addSimLog('time', `time.ticks_ms() ➔ ${elapsed} мс (отметка времени)`);
       }
 
-      // 9. Time Ticks Diff
       else if (defId === 'time:ticks_diff') {
         const t1Edge = edges.find((e) => e.target === currentNode.id && e.targetHandle === 't1');
         const t2Edge = edges.find((e) => e.target === currentNode.id && e.targetHandle === 't2');
@@ -630,7 +581,6 @@ class ESP8266SimulatorEngine {
         store.addSimLog('time', `time.ticks_diff(${t1}, ${t2}) ➔ ${diff} мс`);
       }
 
-      // 10. Print to Console
       else if (defId === 'core:print') {
         const msgEdge = edges.find((e) => e.target === currentNode.id && e.targetHandle === 'msg');
         const prefix = (props.prefix !== undefined ? String(props.prefix) : '').trim();
@@ -650,7 +600,6 @@ class ESP8266SimulatorEngine {
         }
       }
 
-      // 11. Variable Set
       else if (defId === 'core:variable_set') {
         const varName = String(props.var_name || 'x');
         const valEdge = edges.find((e) => e.target === currentNode.id && e.targetHandle === 'val');
@@ -665,7 +614,6 @@ class ESP8266SimulatorEngine {
         store.addSimLog('info', `Задана переменная: ${varName} = ${JSON.stringify(val)}`);
       }
 
-      // 11b. Variables Multi Set
       else if (defId === 'core:variables_multi') {
         const raw = String(props.assignments || '');
         const lines = raw.split('\n');
@@ -689,7 +637,6 @@ class ESP8266SimulatorEngine {
         store.addSimLog('info', `Заданы переменные: ${assigned.join(', ')}`);
       }
 
-      // 12. If / Else branching
       else if (defId === 'core:if_else') {
         const condEdge = edges.find((e) => e.target === currentNode.id && (e.targetHandle === 'condition' || e.targetHandle === 'cond_if'));
         let condVal = true;
@@ -702,7 +649,6 @@ class ESP8266SimulatorEngine {
         if (condVal) {
           nextHandle = 'flow_true';
         } else {
-          // Check if elif is connected and true
           const elifEdge = edges.find(e => e.target === currentNode.id && e.targetHandle === 'cond_elif');
           const hasElifBranch = edges.some(e => e.source === currentNode.id && e.sourceHandle === 'flow_elif');
           if (elifEdge && hasElifBranch) {
@@ -718,10 +664,8 @@ class ESP8266SimulatorEngine {
           }
         }
 
-        // Check if there is an outer continuation after this if/else
         const nextContEdge = edges.find(e => e.source === currentNode.id && (e.sourceHandle === 'flow_next' || e.sourceHandle === 'flow_out'));
 
-        // Fallback to flow_next if the chosen branch has no outgoing edge
         const hasChosenEdge = edges.some(e => e.source === currentNode.id && e.sourceHandle === nextHandle);
         if (!hasChosenEdge) {
           if (nextContEdge) {
@@ -737,7 +681,6 @@ class ESP8266SimulatorEngine {
         );
       }
 
-      // 12b. If / Elif / Else multi-branching
       else if (defId === 'core:if_elif_else') {
         const condIfEdge = edges.find(e => e.target === currentNode.id && (e.targetHandle === 'cond_if' || e.targetHandle === 'condition'));
         let condVal = true;
@@ -780,7 +723,6 @@ class ESP8266SimulatorEngine {
         store.addSimLog('info', `If / Elif / Else ➔ переход в ветку ${nextHandle}`);
       }
 
-      // 12c. Try / Except error handling
       else if (defId === 'core:try_except') {
         this.nodeOutputs.set(currentNode.id, { error_msg: 'None' });
         nextHandle = 'flow_try';
@@ -796,7 +738,6 @@ class ESP8266SimulatorEngine {
         store.addSimLog('info', `Try / Except ➔ безопасное исполнение блока try`);
       }
 
-      // 13. Format String
       else if (defId === 'core:string_format') {
         const valEdge = edges.find((e) => e.target === currentNode.id && e.targetHandle === 'val');
         const val = valEdge ? this.resolveNodeOutputValue(valEdge.source, valEdge.sourceHandle || 'val', nodes, edges) : (props.default_val ?? 0);
@@ -807,7 +748,6 @@ class ESP8266SimulatorEngine {
         store.addSimLog('info', `Сформирована строка ➔ "${formatted}"`);
       }
 
-      // 14. Random Number
       else if (defId === 'core:random') {
         const minEdge = edges.find((e) => e.target === currentNode.id && e.targetHandle === 'min');
         const maxEdge = edges.find((e) => e.target === currentNode.id && e.targetHandle === 'max');
@@ -818,28 +758,24 @@ class ESP8266SimulatorEngine {
         store.addSimLog('info', `urandom.randint(${minVal}, ${maxVal}) ➔ ${rnd}`);
       }
 
-      // 15. Comment
       else if (defId === 'core:comment') {
         if (props.text) {
           store.addSimLog('info', `# ${props.text}`);
         }
       }
 
-      // 16. PWM Set Duty
       else if (defId === 'machine:pwm_set') {
         const dutyEdge = edges.find((e) => e.target === currentNode.id && e.targetHandle === 'duty');
         const duty = dutyEdge ? Number(this.resolveNodeOutputValue(dutyEdge.source, dutyEdge.sourceHandle || 'val', nodes, edges)) : Number(props.default_duty ?? 512);
         store.addSimLog('gpio', `PWM Duty установлен: ${duty} / 1023`);
       }
 
-      // 17. PWM Set Frequency
       else if (defId === 'machine:pwm_freq') {
         const freqEdge = edges.find((e) => e.target === currentNode.id && e.targetHandle === 'freq');
         const freq = freqEdge ? Number(this.resolveNodeOutputValue(freqEdge.source, freqEdge.sourceHandle || 'val', nodes, edges)) : Number(props.freq ?? 1000);
         store.addSimLog('gpio', `PWM Частота установлена: ${freq} Гц`);
       }
 
-      // 18. Play Tone (Buzzer)
       else if (defId === 'machine:tone') {
         const freqEdge = edges.find((e) => e.target === currentNode.id && e.targetHandle === 'freq');
         const freq = freqEdge ? Number(this.resolveNodeOutputValue(freqEdge.source, freqEdge.sourceHandle || 'val', nodes, edges)) : Number(props.freq ?? 440);
@@ -847,42 +783,36 @@ class ESP8266SimulatorEngine {
         store.addSimLog('gpio', `Зуммер / Тон: ${freq} Гц (${state === 'ON' ? '🔊 ЗВУЧИТ' : '🔇 ТИШИНА'})`);
       }
 
-      // 19. ADC Read U16
       else if (defId === 'machine:adc_read') {
         const adcVal = Math.round(28000 + Math.sin(Date.now() / 2000) * 8000);
         this.nodeOutputs.set(currentNode.id, { val: adcVal });
         store.addSimLog('gpio', `АЦП read_u16() ➔ ${adcVal} (~${((adcVal / 65535) * 3.3).toFixed(2)}V)`);
       }
 
-      // 20. Machine Reset
       else if (defId === 'machine:reset') {
         store.addSimLog('boot', 'machine.reset() ➔ Перезагрузка контроллера...');
         this.stop();
         return;
       }
 
-      // 21. WLAN Connect
       else if (defId === 'network:wlan_connect') {
         const ssid = props.ssid || 'WiFi';
         store.addSimLog('boot', `Wi-Fi: Подключение к "${ssid}"... Подключено! (IP: 192.168.1.105)`);
         this.virtualVariables['wlan_connected'] = true;
       }
 
-      // 22. WLAN Is Connected
       else if (defId === 'network:is_connected') {
         const connected = this.virtualVariables['wlan_connected'] ?? true;
         this.nodeOutputs.set(currentNode.id, { status: connected });
         store.addSimLog('info', `Wi-Fi isconnected() ➔ ${connected ? 'True' : 'False'}`);
       }
 
-      // 23. WLAN IP Config
       else if (defId === 'network:ifconfig') {
         const ip = '192.168.1.105';
         this.nodeOutputs.set(currentNode.id, { ip, subnet: '255.255.255.0', gateway: '192.168.1.1', dns: '8.8.8.8' });
         store.addSimLog('info', `wlan.ifconfig() ➔ IP: ${ip}, Mask: 255.255.255.0, GW: 192.168.1.1`);
       }
 
-      // 24. DHT Read
       else if (defId === 'dht:read') {
         const temp = Math.round((23.0 + Math.sin(Date.now() / 5000) * 3.5) * 10) / 10;
         const hum = Math.round((50.0 + Math.cos(Date.now() / 6000) * 8.0) * 10) / 10;
@@ -890,7 +820,6 @@ class ESP8266SimulatorEngine {
         store.addSimLog('info', `DHT sensor.measure() ➔ Температура: ${temp}°C, Влажность: ${hum}%`);
       }
 
-      // 25. BMP280 Read
       else if (defId === 'bmp280:read') {
         const temp = Math.round((24.2 + Math.sin(Date.now() / 7000) * 2.0) * 10) / 10;
         const press = Math.round(1013.25 + Math.sin(Date.now() / 10000) * 5.0);
@@ -899,12 +828,10 @@ class ESP8266SimulatorEngine {
         store.addSimLog('info', `BMP280 ➔ ${temp}°C, ${press} гПа, ${alt} м`);
       }
 
-      // 26. SSD1306 OLED Clear
       else if (defId === 'ssd1306:clear') {
         store.addSimLog('print', 'OLED: Буфер очищен (fill 0)');
       }
 
-      // 27. SSD1306 OLED Text
       else if (defId === 'ssd1306:text') {
         const textEdge = edges.find((e) => e.target === currentNode.id && e.targetHandle === 'text');
         const textVal = textEdge ? this.resolveNodeOutputValue(textEdge.source, textEdge.sourceHandle || 'val', nodes, edges) : (props.def_text ?? 'Node-MPY');
@@ -913,46 +840,38 @@ class ESP8266SimulatorEngine {
         store.addSimLog('print', `OLED.text("${textVal}", ${x}, ${y})`);
       }
 
-      // 28. SSD1306 OLED Fill Rect
       else if (defId === 'ssd1306:rect') {
         store.addSimLog('print', `OLED.fill_rect(${props.x ?? 0}, ${props.y ?? 0}, ${props.w ?? 32}, ${props.h ?? 16}, ${props.fill ?? 1})`);
       }
 
-      // 29. SSD1306 OLED Show
       else if (defId === 'ssd1306:show') {
         store.addSimLog('print', 'OLED: Данные отправлены на дисплей (oled.show())');
       }
 
-      // 30. LCD 1602 Put String
       else if (defId === 'i2c_lcd:put_str') {
         const textEdge = edges.find((e) => e.target === currentNode.id && e.targetHandle === 'text');
         const textVal = textEdge ? this.resolveNodeOutputValue(textEdge.source, textEdge.sourceHandle || 'val', nodes, edges) : (props.def_text ?? 'Hello');
         store.addSimLog('print', `LCD 1602: "${textVal}"`);
       }
 
-      // 31. LCD 1602 Move Cursor
       else if (defId === 'i2c_lcd:move_to') {
         store.addSimLog('print', `LCD 1602: move_to(колонка: ${props.col ?? 0}, строка: ${props.row ?? 0})`);
       }
 
-      // 32. LCD 1602 Clear
       else if (defId === 'i2c_lcd:clear') {
         store.addSimLog('print', 'LCD 1602: Экран очищен (clear)');
       }
 
-      // 33. Servo Write Angle
       else if (defId === 'servo:write_angle') {
         const angleEdge = edges.find((e) => e.target === currentNode.id && e.targetHandle === 'angle');
         const angleVal = angleEdge ? Number(this.resolveNodeOutputValue(angleEdge.source, angleEdge.sourceHandle || 'val', nodes, edges)) : Number(props.def_angle ?? 90);
         store.addSimLog('gpio', `Сервопривод: Поворот вала на ${angleVal}°`);
       }
 
-      // 34. Servo Detach
       else if (defId === 'servo:detach') {
         store.addSimLog('gpio', 'Сервопривод: Сигнал ШИМ отключен (detach)');
       }
 
-      // 35. NeoPixel Set Pixel
       else if (defId === 'neopixel:set_pixel') {
         const idx = props.def_index ?? 0;
         const r = props.def_r ?? 255;
@@ -961,7 +880,6 @@ class ESP8266SimulatorEngine {
         store.addSimLog('gpio', `NeoPixel: [${idx}] = RGB(${r}, ${g}, ${b})`);
       }
 
-      // 36. NeoPixel Fill
       else if (defId === 'neopixel:fill') {
         const r = props.def_r ?? 0;
         const g = props.def_g ?? 255;
@@ -969,34 +887,28 @@ class ESP8266SimulatorEngine {
         store.addSimLog('gpio', `NeoPixel: Заливка ленты RGB(${r}, ${g}, ${b})`);
       }
 
-      // 37. NeoPixel Clear
       else if (defId === 'neopixel:clear') {
         store.addSimLog('gpio', 'NeoPixel: Лента погашена (0, 0, 0)');
       }
 
-      // 38. NeoPixel Write
       else if (defId === 'neopixel:write') {
         store.addSimLog('gpio', 'NeoPixel: Кадр отправлен на ленту (write)');
       }
 
-      // 39. MAX7219 Text
       else if (defId === 'max7219:text') {
         const textEdge = edges.find((e) => e.target === currentNode.id && e.targetHandle === 'text');
         const textVal = textEdge ? this.resolveNodeOutputValue(textEdge.source, textEdge.sourceHandle || 'val', nodes, edges) : (props.def_text ?? 'MPY');
         store.addSimLog('print', `MAX7219 Матрица: Вывод "${textVal}" (яркость ${props.brightness ?? 5})`);
       }
 
-      // 40. MAX7219 Clear
       else if (defId === 'max7219:clear') {
         store.addSimLog('print', 'MAX7219 Матрица: Очистка (fill 0)');
       }
 
-      // 41. PWM Deinit
       else if (defId === 'machine:pwm_deinit') {
         store.addSimLog('gpio', 'PWM / Зуммер отключен (pwm.deinit())');
       }
 
-      // 42. Machine Timer
       else if (defId === 'machine:timer') {
         const period = Number(props.period ?? 1000);
         const mode = props.mode || 'PERIODIC';
@@ -1004,19 +916,16 @@ class ESP8266SimulatorEngine {
         store.addSimLog('time', `machine.Timer(-1) инициализирован: ${period} мс (${mode}), callback='${cb}'`);
       }
 
-      // 43. Machine Timer Deinit
       else if (defId === 'machine:timer_deinit') {
         store.addSimLog('time', 'machine.Timer(-1) остановлен (deinit)');
       }
 
-      // 44. I2C Bus Scan
       else if (defId === 'machine:i2c_scan') {
         const addrs = ['0x3c', '0x68', '0x76'];
         this.nodeOutputs.set(currentNode.id, { devices: addrs });
         store.addSimLog('gpio', `i2c.scan() ➔ Найдено устройств: ${addrs.join(', ')}`);
       }
 
-      // 45. Deep Sleep
       else if (defId === 'machine:deep_sleep') {
         const ms = Number(props.duration ?? 10000);
         store.addSimLog('boot', `machine.deepsleep(${ms} мс) ➔ Контроллер перешел в режим глубокого сна.`);
@@ -1024,7 +933,6 @@ class ESP8266SimulatorEngine {
         return;
       }
 
-      // 46. Time Ticks Add
       else if (defId === 'time:ticks_add') {
         const tEdge = edges.find((e) => e.target === currentNode.id && e.targetHandle === 'ticks');
         const dEdge = edges.find((e) => e.target === currentNode.id && e.targetHandle === 'delta');
@@ -1035,18 +943,15 @@ class ESP8266SimulatorEngine {
         store.addSimLog('time', `time.ticks_add(${base}, ${delta}) ➔ ${res} мс`);
       }
 
-      // 47. Network AP Active
       else if (defId === 'network:ap_active') {
         const ssid = props.ssid || 'ESP-AccessPoint';
         store.addSimLog('boot', `Точка доступа Wi-Fi AP запущена: SSID="${ssid}" (IP: 192.168.4.1)`);
       }
 
-      // 48. Network Disconnect
       else if (defId === 'network:disconnect') {
         store.addSimLog('info', 'Wi-Fi отключен (wlan.disconnect())');
       }
 
-      // 53. Network HTTP GET
       else if (defId === 'network:http_get') {
         const urlEdge = edges.find((e) => e.target === currentNode.id && e.targetHandle === 'url');
         const urlVal = urlEdge ? String(this.resolveNodeOutputValue(urlEdge.source, urlEdge.sourceHandle || 'val', nodes, edges)) : (props.url || 'http://192.168.1.100:1880/api');
@@ -1055,7 +960,6 @@ class ESP8266SimulatorEngine {
         store.addSimLog('info', `HTTP GET ${urlVal} ➔ 200 OK (${simulatedText})`);
       }
 
-      // 54. Network HTTP POST (Node-RED reverse polling)
       else if (defId === 'network:http_post') {
         const urlEdge = edges.find((e) => e.target === currentNode.id && e.targetHandle === 'url');
         const dataEdge = edges.find((e) => e.target === currentNode.id && e.targetHandle === 'data');
@@ -1064,20 +968,17 @@ class ESP8266SimulatorEngine {
         const isHigh = Number(dataVal) > 500;
         const simulatedResponse = isHigh ? '/on' : '/off';
         this.nodeOutputs.set(currentNode.id, { response: simulatedResponse, status_code: 200 });
-        store.addSimLog('info', `HTTP POST ${urlVal} [Data: ${dataVal}] ➔ Node-RED Ответ: "${simulatedResponse}" (200 OK)`);
+        store.addSimLog('info', `HTTP POST ${urlVal} [Data: ${dataVal}] ➔ Ответ сервера: "${simulatedResponse}" (200 OK)`);
       }
 
-      // 49. SSD1306 Line
       else if (defId === 'ssd1306:line') {
         store.addSimLog('print', `OLED.line(${props.x0 ?? 0}, ${props.y0 ?? 0}, ${props.x1 ?? 127}, ${props.y1 ?? 63}, ${props.color ?? 1})`);
       }
 
-      // 50. SSD1306 Pixel
       else if (defId === 'ssd1306:pixel') {
         store.addSimLog('print', `OLED.pixel(${props.x ?? 64}, ${props.y ?? 32}, ${props.color ?? 1})`);
       }
 
-      // 51. Custom Function
       else if (defId === 'core:custom_function') {
         const fnName = props.name || 'custom_fn';
         const params = props.params || '';
@@ -1094,7 +995,6 @@ class ESP8266SimulatorEngine {
         }
       }
 
-      // 52. Universal Fallback: guarantees no custom or unknown node ever crashes
       else {
         const label = currentNode.data.label || defId;
         const def = LibraryRegistry.getNodeDefinition(defId);
@@ -1110,21 +1010,25 @@ class ESP8266SimulatorEngine {
         store.addSimLog('info', `Исполнение [${label}]`);
       }
 
-      // Find the outgoing edge
       const outEdge = edges.find(
         (e) => e.source === currentNode.id && (!e.sourceHandle || e.sourceHandle === nextHandle || e.sourceHandle === 'flow_out')
       );
 
       if (outEdge) {
         targetNodeId = outEdge.target;
+
+        const siblings = edges.filter((e) => e !== outEdge && e.source === currentNode.id && e.sourceHandle === outEdge.sourceHandle && outEdge.sourceHandle === nextHandle);
+        siblings.reverse().forEach((e) => this.continuationStack.push(e.target));
+
+        if (this.continuationStack[this.continuationStack.length - 1] === targetNodeId) {
+          this.continuationStack.pop();
+        }
       } else {
-        // Check if there is an outer continuation waiting (flow_next of enclosing if/else or try/except)
         if (this.continuationStack.length > 0) {
           targetNodeId = this.continuationStack.pop()!;
           nextHandle = 'flow_in';
           store.addSimLog('info', 'Продолжение потока [Далее (После)]');
         } else {
-          // Check if an active for_range loop is running
           const activeForRangeId = Array.from(this.forLoopCounters.keys()).pop();
           const activeForRangeNode = activeForRangeId ? nodes.find((n) => n.id === activeForRangeId) : null;
 
@@ -1132,7 +1036,6 @@ class ESP8266SimulatorEngine {
             targetNodeId = activeForRangeNode.id;
             nextHandle = 'loop_body';
           } else {
-            // If we reached the end of while_loop body, loop back to while_loop!
             const loopNode = nodes.find((n) => n.data.definitionId === 'core:while_loop');
             if (loopNode && loopNode.id !== currentNode.id) {
               targetNodeId = loopNode.id;

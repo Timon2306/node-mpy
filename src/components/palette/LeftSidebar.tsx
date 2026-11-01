@@ -142,7 +142,6 @@ export const LeftSidebar: React.FC = () => {
 
   return (
     <aside className="w-[270px] h-full flex flex-col bg-slate-panel border-r border-slate-border select-none z-10 flex-shrink-0">
-      {/* Search Bar */}
       <div className="p-3 border-b border-slate-border">
         <div className="relative">
           <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -156,7 +155,6 @@ export const LeftSidebar: React.FC = () => {
         </div>
       </div>
 
-      {/* Dynamic modules banner */}
       <div className="px-3 py-2 bg-slate-panelHeader border-b border-slate-border flex items-center justify-between">
         <div className="flex items-center gap-1.5 text-[11px] text-gray-400">
           <Layers className="w-3.5 h-3.5 text-teal-brand" />
@@ -167,7 +165,6 @@ export const LeftSidebar: React.FC = () => {
         </div>
       </div>
 
-      {/* Categories Accordion */}
       <div className="flex-1 overflow-y-auto p-2 space-y-2">
         {filteredCategories.map((cat) => {
           const isCollapsed = !!collapsedCategories[cat.id];
@@ -176,7 +173,6 @@ export const LeftSidebar: React.FC = () => {
 
           return (
             <div key={cat.id} className="rounded-md overflow-hidden border border-slate-border">
-              {/* Category Header */}
               <button
                 onClick={() => toggleCategory(cat.id)}
                 className="w-full flex items-center justify-between px-2.5 py-1.5 bg-slate-panelHeader hover:bg-slate-hover transition-colors text-left"
@@ -200,7 +196,6 @@ export const LeftSidebar: React.FC = () => {
                 )}
               </button>
 
-              {/* Nodes list inside category */}
               {!isCollapsed && (
                 <div className="p-1.5 bg-[#181B20] space-y-1">
                   {cat.nodes.map((node) => {
@@ -217,7 +212,6 @@ export const LeftSidebar: React.FC = () => {
                         className="group relative flex items-center justify-between h-[30px] rounded-[4px] bg-[#22272E] border border-[#374151] hover:border-gray-400 cursor-grab active:cursor-grabbing transition-colors overflow-hidden select-none"
                         title={node.description}
                       >
-                        {/* Left icon badge */}
                         <div
                           className="w-7 h-full flex items-center justify-center bg-[#1A1D24] border-r border-[#374151] flex-shrink-0 pointer-events-none"
                           style={{
@@ -230,14 +224,12 @@ export const LeftSidebar: React.FC = () => {
                           />
                         </div>
 
-                        {/* Node Label */}
                         <div className="flex-1 px-2 truncate pointer-events-none">
                           <span className="text-[11px] text-gray-300 group-hover:text-white font-medium truncate leading-tight">
                             {node.label}
                           </span>
                         </div>
 
-                        {/* Plus button to add directly to canvas */}
                         <button
                           type="button"
                           onClick={(e) => {
@@ -250,7 +242,6 @@ export const LeftSidebar: React.FC = () => {
                           <Plus className="w-3.5 h-3.5" />
                         </button>
 
-                        {/* Right Socket Tab indicator (like Node-RED palette) */}
                         {hasOutputs && (
                           <div
                             className="w-1.5 h-2.5 rounded-l-[2px] bg-slate-500 group-hover:bg-slate-300 flex-shrink-0 transition-colors mr-0.5 pointer-events-none"

@@ -34,7 +34,6 @@ export const AboutModal: React.FC = () => {
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-[390px] bg-[#1A1D24] border border-[#2E3544] rounded-xl shadow-2xl overflow-hidden flex flex-col text-xs select-none"
       >
-        {/* Title Bar (Windows window header style) */}
         <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-[#2E3544] bg-[#14171E]">
           <div className="flex items-center gap-2">
             <NodeMpyLogo size={18} />
@@ -44,7 +43,6 @@ export const AboutModal: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-1">
-            {/* Help / Shortcuts (?) */}
             <button
               onClick={() => {
                 setAboutModalOpen(false);
@@ -56,7 +54,6 @@ export const AboutModal: React.FC = () => {
               <HelpCircle className="w-3.5 h-3.5" />
             </button>
 
-            {/* Close Button (X) */}
             <button
               onClick={() => setAboutModalOpen(false)}
               className="p-1 text-gray-400 hover:text-white rounded hover:bg-[#252B38] transition-colors"
@@ -66,9 +63,7 @@ export const AboutModal: React.FC = () => {
           </div>
         </div>
 
-        {/* Content Body */}
         <div className="p-5 space-y-4 text-gray-300">
-          {/* Main Title & Subtitle */}
           <div>
             <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-1.5">
               Node<span className="text-teal-400">-MPY</span>
@@ -80,15 +75,13 @@ export const AboutModal: React.FC = () => {
             </p>
           </div>
 
-          {/* Version */}
           <div>
             <span className="text-[12px] font-semibold text-gray-200">
               {isRu ? 'Версия: ' : 'Version: '}
             </span>
-            <span className="font-mono text-teal-300 font-bold text-[12px]">1.1.1</span>
+            <span className="font-mono text-teal-300 font-bold text-[12px]">1.2.0</span>
           </div>
 
-          {/* Author & Student Group Attribution */}
           <div className="space-y-0.5 text-[12px] text-gray-300 border-l-2 border-teal-500/50 pl-3 py-0.5">
             <p className="font-semibold text-gray-100">
               {isRu ? 'Создатель: ' : 'Creator: '}
@@ -106,7 +99,6 @@ export const AboutModal: React.FC = () => {
             <p className="text-gray-400">им. Кучерявенко Т.А.</p>
           </div>
 
-          {/* Telegram Support Link */}
           <div>
             <a
               href="https://t.me/Timon2306"
@@ -120,9 +112,7 @@ export const AboutModal: React.FC = () => {
           </div>
         </div>
 
-        {/* Footer Buttons */}
         <div className="px-5 py-3 border-t border-[#2E3544] bg-[#14171E] flex items-center justify-between">
-          {/* Patchlog / What's New Button */}
           <button
             onClick={() => {
               setAboutModalOpen(false);
@@ -134,7 +124,6 @@ export const AboutModal: React.FC = () => {
             <span>{isRu ? 'Что нового' : "What's New"}</span>
           </button>
 
-          {/* OK Button */}
           <button
             onClick={() => setAboutModalOpen(false)}
             className="px-5 py-1.5 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs transition-colors shadow-sm"

@@ -38,13 +38,11 @@ for (const file of files) {
       process.exit(1);
     }
 
-    // Check codeTemplate.template
     if (typeof node.codeTemplate.template !== 'string') {
       console.error(`Node ${node.id} codeTemplate.template is not a string`);
       process.exit(1);
     }
 
-    // Check if outputVariables is present and maps existing outputs
     if (node.codeTemplate.outputVariables) {
       for (const [outPort, varPattern] of Object.entries(node.codeTemplate.outputVariables)) {
         const portExists = node.outputs.some(o => o.id === outPort);

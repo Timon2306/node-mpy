@@ -4,9 +4,6 @@ import { extractImportsFromNode } from '../types/nodes';
 import { LibraryRegistry } from '../registry/registryLoader';
 import { LUCIDE_ICON_PATHS } from './lucideIconPaths';
 
-/**
- * Result of a file save operation
- */
 export interface SaveResult {
   success: boolean;
   canceled?: boolean;
@@ -14,11 +11,6 @@ export interface SaveResult {
   error?: string;
 }
 
-/**
- * Robust Cross-Platform File Saver
- * Uses Tauri native dialog + Rust filesystem in desktop app (Linux, Windows, macOS).
- * Falls back to standard browser Blob download in Web environment.
- */
 export async function saveFileCrossPlatform(options: {
   filename: string;
   title?: string;
@@ -29,7 +21,6 @@ export async function saveFileCrossPlatform(options: {
 }): Promise<SaveResult> {
   const { filename, title, content, filterName, extensions, mimeType } = options;
 
-  // 1. Desktop Mode (Tauri)
   const isDesktop =
     typeof window !== 'undefined' &&
     (Boolean((window as any).__TAURI_INTERNALS__) ||
@@ -47,7 +38,6 @@ export async function saveFileCrossPlatform(options: {
         filters: [{ name: filterName, extensions }],
       });
 
-      // User clicked "Cancel" in the native GTK / Windows / Cocoa file dialog
       if (!filePath) {
         return { success: false, canceled: true };
       }
@@ -56,7 +46,6 @@ export async function saveFileCrossPlatform(options: {
         try {
           await invoke('save_file_content', { content, path: filePath });
         } catch {
-          // Fallback to save_project or plugin-fs
           try {
             await invoke('save_project', { json: content, path: filePath });
           } catch {
@@ -65,7 +54,6 @@ export async function saveFileCrossPlatform(options: {
           }
         }
       } else {
-        // Binary content (PNG / Images)
         try {
           await invoke('save_file_bytes', { bytes: Array.from(content), path: filePath });
         } catch {
@@ -80,7 +68,6 @@ export async function saveFileCrossPlatform(options: {
     }
   }
 
-  // 2. Web Mode (Browser fallback)
   try {
     const blob =
       typeof content === 'string'
@@ -103,9 +90,6 @@ export async function saveFileCrossPlatform(options: {
   }
 }
 
-/**
- * Escapes XML/SVG special characters
- */
 function escapeXml(unsafe: string): string {
   return (unsafe || '')
     .replace(/&/g, '&amp;')
@@ -115,18 +99,11 @@ function escapeXml(unsafe: string): string {
     .replace(/'/g, '&apos;');
 }
 
-/**
- * Returns crisp Lucide SVG element matching application icons
- */
 function getLucideIconSvg(iconName: string, color: string, x: number, y: number, size = 16): string {
   const inner = LUCIDE_ICON_PATHS[iconName] || LUCIDE_ICON_PATHS['Cpu'] || '';
   return `<svg x="${x}" y="${y}" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
 }
 
-/**
- * Extract node labels, subtitles, import statements, ports, and layout dimensions
- * identical to how NodeMpyNode renders inside the application canvas.
- */
 export function getNodeVisualDetails(node: any) {
   const def = LibraryRegistry.getNodeDefinition(node.data?.definitionId);
   const nodeData = node.data || {};
@@ -296,7 +273,6 @@ export function getNodeVisualDetails(node: any) {
   const isMultiPort = inputs.length > 1 || outputs.length > 1;
   const maxPorts = Math.max(inputs.length, outputs.length);
 
-  // Exact sizing calculation matching application canvas
   let width = 190;
   let height = 38;
 
@@ -336,11 +312,6 @@ export function getNodeVisualDetails(node: any) {
   };
 }
 
-/**
- * Generates clean, crisp, standalone Vector SVG of the current flow canvas.
- * - 100% Transparent background (NO background rect, NO grid, NO watermark)
- * - Identical visual appearance to the application canvas (dark node box, Lucide icons, exact subtitles & multi-line imports, dashed flow wires, colored handles)
- */
 export function generateFlowSvg(flow: FlowTab): { svg: string; width: number; height: number } {
   const nodes = flow.nodes || [];
   const edges = flow.edges || [];
@@ -357,7 +328,6 @@ export function generateFlowSvg(flow: FlowTab): { svg: string; width: number; he
     return { svg: emptySvg, width, height };
   }
 
-  // 1. Calculate node layout and bounding box
   const nodeLayoutMap = new Map<
     string,
     ReturnType<typeof getNodeVisualDetails> & { x: number; y: number }
@@ -393,7 +363,6 @@ export function generateFlowSvg(flow: FlowTab): { svg: string; width: number; he
     });
   });
 
-  // 2. Build SVG: NO background rectangle, 100% transparent root
   let svgContent = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}">
   <defs>
@@ -403,7 +372,6 @@ export function generateFlowSvg(flow: FlowTab): { svg: string; width: number; he
   </defs>
 `;
 
-  // 3. Render Wires (Edges)
   svgContent += `  <!-- Wires (Edges) -->\n  <g class="edges">\n`;
 
   edges.forEach((edge) => {
@@ -411,7 +379,6 @@ export function generateFlowSvg(flow: FlowTab): { svg: string; width: number; he
     const tgt = nodeLayoutMap.get(edge.target);
     if (!src || !tgt) return;
 
-    // Calculate source handle coordinate
     let srcX = src.x + src.width;
     let srcY = src.y + src.height / 2;
     let outPort: any = null;
@@ -425,7 +392,6 @@ export function generateFlowSvg(flow: FlowTab): { svg: string; width: number; he
       outPort = src.outputs[0];
     }
 
-    // Calculate target handle coordinate
     let tgtX = tgt.x;
     let tgtY = tgt.y + tgt.height / 2;
 
@@ -443,7 +409,6 @@ export function generateFlowSvg(flow: FlowTab): { svg: string; width: number; he
     const offset = Math.max(dx * 0.45, 36);
     const pathD = `M ${srcX} ${srcY} C ${srcX + offset} ${srcY}, ${tgtX - offset} ${tgtY}, ${tgtX} ${tgtY}`;
 
-    // Under-layer shadow for crisp separation
     svgContent += `    <path d="${pathD}" fill="none" stroke="#12161F" stroke-width="4.5" stroke-opacity="0.6" stroke-linecap="round" />\n`;
     if (isFlow) {
       svgContent += `    <path d="${pathD}" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-dasharray="6, 4" stroke-linecap="round" />\n`;
@@ -454,7 +419,6 @@ export function generateFlowSvg(flow: FlowTab): { svg: string; width: number; he
 
   svgContent += `  </g>\n`;
 
-  // 4. Render Nodes
   svgContent += `\n  <!-- Nodes -->\n  <g class="nodes">\n`;
 
   nodes.forEach((node) => {
@@ -480,21 +444,17 @@ export function generateFlowSvg(flow: FlowTab): { svg: string; width: number; he
     svgContent += `    <g transform="translate(${x}, ${y})" filter="url(#nodeShadow)">\n`;
 
     if (isMultiPort) {
-      // Multi-port Node (Header + Port Rows)
       svgContent += `      <!-- Multi-port Container -->\n`;
       svgContent += `      <rect width="${width}" height="${height}" rx="6" fill="#242832" stroke="#374151" stroke-width="1" />\n`;
 
-      // Header Background
       svgContent += `      <path d="M 0 6 A 6 6 0 0 1 6 0 L ${width - 6} 0 A 6 6 0 0 1 ${width} 6 L ${width} 34 L 0 34 Z" fill="#1C2027" />\n`;
       svgContent += `      <line x1="0" y1="34" x2="${width}" y2="34" stroke="#374151" stroke-width="1" />\n`;
 
-      // Header Left Icon Square
       svgContent += `      <path d="M 0 6 A 6 6 0 0 1 6 0 L 32 0 L 32 34 L 0 34 Z" fill="#181B21" />\n`;
       svgContent += `      <line x1="32" y1="0" x2="32" y2="34" stroke="#374151" stroke-width="1" />\n`;
       svgContent += `      <line x1="1.75" y1="3" x2="1.75" y2="31" stroke="${nodeColor}" stroke-width="3.5" stroke-linecap="round" />\n`;
       svgContent += `      ${getLucideIconSvg(icon, nodeColor, 8, 9, 16)}\n`;
 
-      // Header Title & Subtitle
       if (subtitle) {
         svgContent += `      <text x="40" y="16" fill="#F3F4F6" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="12" font-weight="600">${escapeXml(displayLabel)}</text>\n`;
         svgContent += `      <text x="40" y="28" fill="#9CA3AF" font-family="'Fira Code', monospace" font-size="9.5">${escapeXml(subtitle)}</text>\n`;
@@ -502,10 +462,8 @@ export function generateFlowSvg(flow: FlowTab): { svg: string; width: number; he
         svgContent += `      <text x="40" y="21" fill="#F3F4F6" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="12" font-weight="600">${escapeXml(displayLabel)}</text>\n`;
       }
 
-      // Header Right Accent Dot
       svgContent += `      <circle cx="${width - 12}" cy="17" r="3.5" fill="${nodeColor}" />\n`;
 
-      // Port Rows
       for (let idx = 0; idx < maxPorts; idx++) {
         const inp = inputs[idx];
         const out = outputs[idx];
@@ -526,11 +484,9 @@ export function generateFlowSvg(flow: FlowTab): { svg: string; width: number; he
         }
       }
     } else {
-      // Compact Single-Port Node
       svgContent += `      <!-- Compact Node Container -->\n`;
       svgContent += `      <rect width="${width}" height="${height}" rx="6" fill="#242832" stroke="#374151" stroke-width="1" />\n`;
 
-      // Left Column with Colored Accent Line
       svgContent += `      <path d="M 0 6 A 6 6 0 0 1 6 0 L 32 0 L 32 ${height} L 6 ${height} A 6 6 0 0 1 0 ${height - 6} Z" fill="#1C2027" />\n`;
       svgContent += `      <line x1="32" y1="0" x2="32" y2="${height}" stroke="#374151" stroke-width="1" />\n`;
       svgContent += `      <line x1="1.75" y1="3" x2="1.75" y2="${height - 3}" stroke="${nodeColor}" stroke-width="3.5" stroke-linecap="round" />\n`;
@@ -538,7 +494,6 @@ export function generateFlowSvg(flow: FlowTab): { svg: string; width: number; he
       const iconY = Math.round((height - 16) / 2);
       svgContent += `      ${getLucideIconSvg(icon, nodeColor, 8, iconY, 16)}\n`;
 
-      // Content Area: Multi-line Imports OR Subtitle OR Centered Title
       if (importLines.length > 0) {
         svgContent += `      <text x="40" y="16" fill="#F3F4F6" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="12" font-weight="600">${escapeXml(displayLabel)}</text>\n`;
         importLines.forEach((line, i) => {
@@ -552,13 +507,11 @@ export function generateFlowSvg(flow: FlowTab): { svg: string; width: number; he
         svgContent += `      <text x="40" y="${Math.round(height / 2 + 4)}" fill="#F3F4F6" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="12" font-weight="600">${escapeXml(displayLabel)}</text>\n`;
       }
 
-      // Input Port Handle (if any)
       if (inputs.length === 1) {
         const portColor = PORT_COLORS[inputs[0].type as PortType] || '#FFFFFF';
         svgContent += `      <circle cx="0" cy="${height / 2}" r="4" fill="${portColor}" stroke="#242832" stroke-width="1.5" />\n`;
       }
 
-      // Output Port Handle (if any)
       if (outputs.length === 1) {
         const portColor = PORT_COLORS[outputs[0].type as PortType] || '#FFFFFF';
         svgContent += `      <circle cx="${width}" cy="${height / 2}" r="4" fill="${portColor}" stroke="#242832" stroke-width="1.5" />\n`;
@@ -574,9 +527,6 @@ export function generateFlowSvg(flow: FlowTab): { svg: string; width: number; he
   return { svg: svgContent, width: svgWidth, height: svgHeight };
 }
 
-/**
- * Renders an SVG string into high-resolution 2x PNG binary bytes with 100% transparent background
- */
 export async function generateFlowPng(
   svgString: string,
   width: number,
@@ -590,7 +540,7 @@ export async function generateFlowPng(
     img.onload = () => {
       URL.revokeObjectURL(url);
       const canvas = document.createElement('canvas');
-      const scale = 2; // 2x retina clarity
+      const scale = 2;
       canvas.width = width * scale;
       canvas.height = height * scale;
 
@@ -600,7 +550,6 @@ export async function generateFlowPng(
         return;
       }
 
-      // 100% Transparent background (no fillRect)
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.scale(scale, scale);
       ctx.drawImage(img, 0, 0);
@@ -628,9 +577,6 @@ export async function generateFlowPng(
   });
 }
 
-/**
- * Saves Project as .nodempy.json
- */
 export async function exportProjectSchema(
   project: NodeMpyProject,
   defaultName = 'project',
@@ -650,9 +596,6 @@ export async function exportProjectSchema(
   });
 }
 
-/**
- * Saves Vector Diagram as .svg
- */
 export async function exportFlowAsSvg(
   flow: FlowTab,
   defaultName = 'flow',
@@ -672,9 +615,6 @@ export async function exportFlowAsSvg(
   });
 }
 
-/**
- * Saves Flow Snapshot as .png
- */
 export async function exportFlowAsPng(
   flow: FlowTab,
   defaultName = 'flow',
@@ -695,9 +635,6 @@ export async function exportFlowAsPng(
   });
 }
 
-/**
- * Saves MicroPython source code as main.py
- */
 export async function exportMainPyCode(code: string, title?: string): Promise<SaveResult> {
   return saveFileCrossPlatform({
     filename: 'main.py',
@@ -709,9 +646,6 @@ export async function exportMainPyCode(code: string, title?: string): Promise<Sa
   });
 }
 
-/**
- * Saves complete Dashboard Bundle: server.ts + dashboard.html in one operation!
- */
 export async function exportDashboardBundle(options: {
   serverCode: string;
   htmlCode: string;
@@ -736,10 +670,8 @@ export async function exportDashboardBundle(options: {
 
       if (!serverPath) return { success: false, canceled: true };
 
-      // Save server.ts
       await invoke('save_file_content', { content: options.serverCode, path: serverPath });
 
-      // Automatically save dashboard.html alongside server.ts
       const dirSeparator = serverPath.includes('\\') ? '\\' : '/';
       const lastSlash = serverPath.lastIndexOf(dirSeparator);
       const dir = lastSlash !== -1 ? serverPath.substring(0, lastSlash) : '';
@@ -753,7 +685,6 @@ export async function exportDashboardBundle(options: {
     }
   }
 
-  // Web Browser fallback
   await saveFileCrossPlatform({
     filename: 'server.ts',
     content: options.serverCode,
@@ -773,9 +704,6 @@ export async function exportDashboardBundle(options: {
   return { success: true, path: 'server.ts + dashboard.html' };
 }
 
-/**
- * Saves Dashboard TypeScript Server source code as server.ts
- */
 export async function exportDashboardServer(code: string, title?: string): Promise<SaveResult> {
   return saveFileCrossPlatform({
     filename: 'server.ts',
@@ -787,9 +715,6 @@ export async function exportDashboardServer(code: string, title?: string): Promi
   });
 }
 
-/**
- * Saves Dashboard Standalone HTML file as dashboard.html
- */
 export async function exportDashboardHtml(html: string, title?: string): Promise<SaveResult> {
   return saveFileCrossPlatform({
     filename: 'dashboard.html',
@@ -801,9 +726,6 @@ export async function exportDashboardHtml(html: string, title?: string): Promise
   });
 }
 
-/**
- * Copies Project JSON to system clipboard
- */
 export async function copyProjectToClipboard(project: NodeMpyProject): Promise<boolean> {
   try {
     const jsonStr = JSON.stringify(project, null, 2);

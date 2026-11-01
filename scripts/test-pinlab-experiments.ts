@@ -32,9 +32,6 @@ function createEdge(source: string, sourceHandle: string, target: string, target
   };
 }
 
-// ==========================================
-// TEST 1: Basic GPIO & Button Toggle (Exp1 - Exp6)
-// ==========================================
 console.log('--- TEST 1: PinLab GPIO & Button (Exp1-Exp6) ---');
 {
   const nodes = [
@@ -58,9 +55,6 @@ console.log('--- TEST 1: PinLab GPIO & Button (Exp1-Exp6) ---');
   console.log('✓ Exp1-6 GPIO & Button compiles cleanly.');
 }
 
-// ==========================================
-// TEST 2: PWM & Buzzer Tone (Exp7-13, Exp22)
-// ==========================================
 console.log('\n--- TEST 2: PinLab PWM & Buzzer Tone (Exp7-13, Exp22) ---');
 {
   const nodes = [
@@ -81,9 +75,6 @@ console.log('\n--- TEST 2: PinLab PWM & Buzzer Tone (Exp7-13, Exp22) ---');
   console.log('✓ Exp7-13 & Exp22 PWM & Buzzer Tone compiles cleanly.');
 }
 
-// ==========================================
-// TEST 3: ADC + Map Range + PWM LED (Exp14-Exp21)
-// ==========================================
 console.log('\n--- TEST 3: PinLab ADC & Map Range (Exp14-Exp21) ---');
 {
   const nodes = [
@@ -109,9 +100,6 @@ console.log('\n--- TEST 3: PinLab ADC & Map Range (Exp14-Exp21) ---');
   console.log('✓ Exp14-21 ADC & Map Range compiles cleanly.');
 }
 
-// ==========================================
-// TEST 4: I2C LCD 1602 Custom Char & Backlight (Exp29-Exp36)
-// ==========================================
 console.log('\n--- TEST 4: PinLab I2C LCD 1602 (Exp29-Exp36) ---');
 {
   const nodes = [
@@ -138,9 +126,6 @@ console.log('\n--- TEST 4: PinLab I2C LCD 1602 (Exp29-Exp36) ---');
   console.log('✓ Exp29-36 I2C LCD1602 Custom Char & Backlight compiles cleanly.');
 }
 
-// ==========================================
-// TEST 5: DS18B20 1-Wire Temperature Reading (Exp39-Exp42)
-// ==========================================
 console.log('\n--- TEST 5: PinLab DS18B20 1-Wire Sensor (Exp39-Exp42) ---');
 {
   const nodes = [
@@ -164,9 +149,6 @@ console.log('\n--- TEST 5: PinLab DS18B20 1-Wire Sensor (Exp39-Exp42) ---');
   console.log('✓ Exp39-42 DS18B20 1-Wire Sensor compiles cleanly.');
 }
 
-// ==========================================
-// TEST 6: RFID MFRC522 Card Reading (Exp37-Exp38)
-// ==========================================
 console.log('\n--- TEST 6: PinLab RFID MFRC522 (Exp37-Exp38) ---');
 {
   const nodes = [
@@ -191,9 +173,6 @@ console.log('\n--- TEST 6: PinLab RFID MFRC522 (Exp37-Exp38) ---');
   console.log('✓ Exp37-38 RFID MFRC522 compiles cleanly.');
 }
 
-// ==========================================
-// TEST 7: ST7735 TFT Graphics & Draw BMP (Exp46-Exp55)
-// ==========================================
 console.log('\n--- TEST 7: PinLab ST7735 TFT Graphics & BMP (Exp46-Exp55) ---');
 {
   const nodes = [
@@ -220,9 +199,6 @@ console.log('\n--- TEST 7: PinLab ST7735 TFT Graphics & BMP (Exp46-Exp55) ---');
   console.log('✓ Exp46-55 ST7735 TFT Graphics & Draw BMP compiles cleanly.');
 }
 
-// ==========================================
-// TEST 8: MicroPyServer Web Server (Exp57-Exp66)
-// ==========================================
 console.log('\n--- TEST 8: PinLab MicroPyServer Web Server (Exp57-Exp66) ---');
 {
   const nodes = [
@@ -248,9 +224,6 @@ console.log('\n--- TEST 8: PinLab MicroPyServer Web Server (Exp57-Exp66) ---');
   console.log('✓ Exp57-66 MicroPyServer Web Server compiles cleanly.');
 }
 
-// ==========================================
-// TEST 9: HTTP GET & JSON Parse Weather (Exp67, 69, 71)
-// ==========================================
 console.log('\n--- TEST 9: PinLab HTTP GET & JSON Parse (Exp67, 69, 71) ---');
 {
   const nodes = [

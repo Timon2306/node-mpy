@@ -1,6 +1,5 @@
-// GitHub Release and Cross-Platform Update Service for Node-MPY
 
-export const APP_CURRENT_VERSION = '1.1.1';
+export const APP_CURRENT_VERSION = '1.2.0';
 export const GITHUB_REPO = 'Timon2306/node-mpy';
 
 export interface ReleaseAsset {
@@ -22,9 +21,6 @@ export interface UpdateInfo {
   detectedPlatform: 'windows' | 'linux' | 'macos' | 'unknown';
 }
 
-/**
- * Detect the current operating system
- */
 export function detectPlatform(): 'windows' | 'linux' | 'macos' | 'unknown' {
   if (typeof navigator === 'undefined') return 'unknown';
   const ua = navigator.userAgent.toLowerCase();
@@ -34,10 +30,6 @@ export function detectPlatform(): 'windows' | 'linux' | 'macos' | 'unknown' {
   return 'unknown';
 }
 
-/**
- * Compare two semver strings (e.g. "v1.0.1" vs "v1.0.0").
- * Returns > 0 if v1 > v2, < 0 if v1 < v2, 0 if equal.
- */
 export function compareSemver(v1: string, v2: string): number {
   const parse = (v: string) =>
     v
@@ -57,9 +49,6 @@ export function compareSemver(v1: string, v2: string): number {
   return 0;
 }
 
-/**
- * Pick the best matching binary asset for the current OS from GitHub release assets
- */
 function findMatchingAsset(
   assets: any[],
   platform: 'windows' | 'linux' | 'macos' | 'unknown'
@@ -67,7 +56,6 @@ function findMatchingAsset(
   if (!assets || assets.length === 0) return null;
 
   if (platform === 'windows') {
-    // Prefer setup .exe or standalone .exe, strictly never .msi
     const exe = assets.find(
       (a: any) =>
         typeof a.name === 'string' &&
@@ -84,7 +72,6 @@ function findMatchingAsset(
   }
 
   if (platform === 'linux') {
-    // Prefer .AppImage, then .deb
     const appImage = assets.find(
       (a: any) => typeof a.name === 'string' && a.name.toLowerCase().endsWith('.appimage')
     );
@@ -108,7 +95,6 @@ function findMatchingAsset(
   }
 
   if (platform === 'macos') {
-    // Prefer .dmg
     const dmg = assets.find(
       (a: any) => typeof a.name === 'string' && a.name.toLowerCase().endsWith('.dmg')
     );
@@ -121,7 +107,6 @@ function findMatchingAsset(
     }
   }
 
-  // Fallback: pick the first non-msi asset
   const first = assets.find(
     (a: any) => typeof a.name === 'string' && !a.name.toLowerCase().endsWith('.msi')
   );
@@ -136,9 +121,6 @@ function findMatchingAsset(
   return null;
 }
 
-/**
- * Check GitHub Releases API for the latest version of Node-MPY
- */
 export async function checkForUpdates(): Promise<UpdateInfo> {
   const currentVersion = APP_CURRENT_VERSION;
   const platform = detectPlatform();
@@ -150,7 +132,6 @@ export async function checkForUpdates(): Promise<UpdateInfo> {
   });
 
   if (response.status === 404) {
-    // No published releases yet
     return {
       hasUpdate: false,
       currentVersion,
@@ -199,9 +180,6 @@ export async function checkForUpdates(): Promise<UpdateInfo> {
   };
 }
 
-/**
- * Open external URL in user's default browser (cross-platform)
- */
 export async function openExternalUrl(url: string): Promise<void> {
   try {
     if (typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__) {

@@ -1,18 +1,44 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { X, Play, RefreshCw, Send, Radio, Check, Copy, ExternalLink, Zap, Plus } from 'lucide-react';
 import { useFlowStore } from '../../store/useFlowStore';
+import { DashboardCodeGenerator } from '../../compiler/dashboardCodeGenerator';
+import { createDashboardEngine } from '../../compiler/dashboardEngine';
+import { DASHBOARD_PORT, isDesktopApp, runAction, startDashboardServer, stopDashboardServer, useDashboardServer } from '../../services/dashboardServer';
 
 export const DashboardModal: React.FC = () => {
-  const { isDashboardModalOpen, setDashboardModalOpen, nodes, flows, activeFlowId, loadDashboardTemplate } = useFlowStore();
+  const { isDashboardModalOpen, setDashboardModalOpen, nodes, edges, flows, activeFlowId, loadDashboardTemplate } = useFlowStore();
   const activeFlow = flows.find(f => f.id === activeFlowId);
 
-  const [activeCommand, setActiveCommand] = useState<string>('CMD_OFF');
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [testValue, setTestValue] = useState<number>(512);
+  const [lastReply, setLastReply] = useState<string>('');
+  const [, setRevision] = useState(0);
 
-  // Widget values
-  const [widgetValues, setWidgetValues] = useState<Record<string, any>>({});
-  const [chartHistories, setChartHistories] = useState<Record<string, Array<{ time: string; value: number }>>>({});
+  const configJson = JSON.stringify(DashboardCodeGenerator.buildConfig(nodes, edges));
+  const localEngine = useMemo(() => createDashboardEngine(JSON.parse(configJson)), [configJson]);
+  const server = useDashboardServer();
+  const engine = server.running && server.engine ? server.engine : localEngine;
+  const refresh = () => {
+    setLastReply(JSON.stringify(engine.state.channels));
+    setRevision(r => r + 1);
+  };
+  const act = (id: string, value?: unknown) => {
+    if (server.running) runAction(id, value);
+    else {
+      localEngine.action(id, value);
+      refresh();
+    }
+  };
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    if (!server.running) return;
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [server.running]);
+  const espOnline = server.running && engine.state.lastSeen !== null && now - engine.state.lastSeen < 10000;
+  const widgetValues = engine.state.widgets;
+  const chartHistories = engine.state.history;
+
   const canvasRefs = useRef<Record<string, HTMLCanvasElement | null>>({});
 
   const dashboardNodes = nodes.filter(n => n.data?.definitionId?.startsWith('dashboard:'));
@@ -23,13 +49,21 @@ export const DashboardModal: React.FC = () => {
   const sliders = dashboardNodes.filter(n => n.data?.definitionId === 'dashboard:slider');
   const texts = dashboardNodes.filter(n => n.data?.definitionId === 'dashboard:text_display');
   const leds = dashboardNodes.filter(n => n.data?.definitionId === 'dashboard:led_indicator');
-  const endpoint = dashboardNodes.find(n => n.data?.definitionId === 'dashboard:http_endpoint');
+  const endpoints = dashboardNodes.filter(n => n.data?.definitionId === 'dashboard:http_endpoint');
+  const [testEndpointId, setTestEndpointId] = useState<string>('');
+  const endpoint = endpoints.find(n => n.id === testEndpointId) || endpoints[0];
 
   const endpointPath = endpoint?.data?.properties?.path || '/light';
   const endpointParam = endpoint?.data?.properties?.param_name || 'value';
-  const sampleUrl = `http://192.168.1.100:1880${endpointPath.startsWith('/') ? endpointPath : '/' + endpointPath}?${endpointParam}=512`;
+  const normalizedPath = endpointPath.startsWith('/') ? endpointPath : '/' + endpointPath;
+  const host = server.running && server.ip ? server.ip : '<IP_ЭТОГО_ПК>';
+  const pageUrl = `http://${host}:${DASHBOARD_PORT}`;
+  const sampleUrl = `${pageUrl}${normalizedPath}?${endpointParam}=512`;
 
-  // Draw charts when histories change
+  useEffect(() => {
+    setLastReply(JSON.stringify(engine.state.channels));
+  }, [engine, server.revision]);
+
   useEffect(() => {
     charts.forEach(ch => {
       const canvas = canvasRefs.current[ch.id];
@@ -41,7 +75,6 @@ export const DashboardModal: React.FC = () => {
       const h = canvas.height;
       ctx.clearRect(0, 0, w, h);
 
-      // Grid lines
       ctx.strokeStyle = '#232936';
       ctx.lineWidth = 1;
       for (let y = 30; y < h; y += 30) {
@@ -54,11 +87,9 @@ export const DashboardModal: React.FC = () => {
       const points = chartHistories[ch.id] || [];
       if (points.length < 2) return;
 
-      const vals = points.map(p => p.value);
-      const min = Math.min(...vals, 0);
-      const max = Math.max(...vals, 1024);
+      const min = Math.min(...points);
+      const max = Math.max(...points);
 
-      // Gradient fill under curve
       const grad = ctx.createLinearGradient(0, 0, 0, h);
       grad.addColorStop(0, 'rgba(0, 212, 178, 0.25)');
       grad.addColorStop(1, 'rgba(0, 212, 178, 0.0)');
@@ -66,7 +97,7 @@ export const DashboardModal: React.FC = () => {
       ctx.beginPath();
       points.forEach((p, i) => {
         const x = (i / (points.length - 1)) * (w - 20) + 10;
-        const y = h - 15 - ((p.value - min) / (max - min || 1)) * (h - 30);
+        const y = h - 15 - ((p - min) / (max - min || 1)) * (h - 30);
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       });
@@ -74,42 +105,20 @@ export const DashboardModal: React.FC = () => {
       ctx.lineWidth = 2.5;
       ctx.stroke();
 
-      // Close path for area
       ctx.lineTo((w - 20) + 10, h);
       ctx.lineTo(10, h);
       ctx.closePath();
       ctx.fillStyle = grad;
       ctx.fill();
     });
-  }, [chartHistories, charts]);
+  });
 
   if (!isDashboardModalOpen) return null;
 
   const handleSimulateTelemetry = (val: number) => {
     setTestValue(val);
-    const nowTime = new Date().toLocaleTimeString('ru-RU', { hour12: false });
-
-    // Update gauge & text
-    const newVals = { ...widgetValues };
-    gauges.forEach(g => {
-      newVals[g.id] = val;
-    });
-    texts.forEach(t => {
-      newVals[t.id] = val;
-    });
-    setWidgetValues(newVals);
-
-    // Update charts
-    setChartHistories(prev => {
-      const next = { ...prev };
-      charts.forEach(c => {
-        const list = next[c.id] ? [...next[c.id]] : [];
-        list.push({ time: nowTime, value: val });
-        if (list.length > 30) list.shift();
-        next[c.id] = list;
-      });
-      return next;
-    });
+    engine.request(normalizedPath, { [endpointParam]: String(val) });
+    refresh();
   };
 
   const copyUrl = () => {
@@ -121,7 +130,6 @@ export const DashboardModal: React.FC = () => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in fade-in duration-150">
       <div className="bg-[#12161F] border border-[#2D3748] rounded-xl shadow-2xl w-full max-w-5xl h-[88vh] flex flex-col overflow-hidden text-gray-200">
-        {/* Top Header */}
         <div className="h-14 px-6 border-b border-[#2D3748] bg-[#181C24] flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center font-bold">
@@ -135,16 +143,31 @@ export const DashboardModal: React.FC = () => {
                 </span>
               </h2>
               <p className="text-[11px] text-gray-400">
-                Интерактивный дашборд в реальном времени • Порт 1880
+                {server.running
+                  ? 'Сервер запущен: плата и телефон подключаются по адресу ниже'
+                  : 'Проверка схемы без платы. Чтобы подключить плату, запустите сервер'}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>ONLINE</span>
-            </div>
+            {server.running ? (
+              <div
+                title="Плата считается подключённой, если выходила на связь за последние 10 секунд"
+                className={`flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-mono ${
+                  espOnline ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-gray-500/10 border-gray-500/20 text-gray-400'
+                }`}
+              >
+                <span>{espOnline ? 'ESP НА СВЯЗИ' : 'ЖДЁМ ESP'}</span>
+              </div>
+            ) : (
+              <div
+                title="Это проверка схемы внутри приложения. Настоящая плата сюда не подключена."
+                className="flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-mono"
+              >
+                <span>СИМУЛЯЦИЯ</span>
+              </div>
+            )}
 
             <button
               onClick={() => setDashboardModalOpen(false)}
@@ -155,7 +178,6 @@ export const DashboardModal: React.FC = () => {
           </div>
         </div>
 
-        {/* Connection Bar for Students */}
         <div className="px-6 py-2.5 bg-[#161A22] border-b border-[#252B38] flex items-center justify-between text-xs font-mono">
           <div className="flex items-center gap-2 text-gray-300 overflow-hidden">
             <Radio className="w-3.5 h-3.5 text-teal-400 flex-shrink-0" />
@@ -173,14 +195,35 @@ export const DashboardModal: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-gray-400">Текущий ответ контроллеру:</span>
+            <button
+              onClick={() => (server.running ? stopDashboardServer() : startDashboardServer())}
+              disabled={!isDesktopApp()}
+              title={isDesktopApp() ? '' : 'Сервер работает только в приложении, а не в браузере'}
+              className={`px-3 py-1 rounded font-semibold border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                server.running
+                  ? 'bg-rose-500/20 text-rose-300 border-rose-500/30 hover:bg-rose-500/30'
+                  : 'bg-teal-500/20 text-teal-300 border-teal-500/30 hover:bg-teal-500/30'
+              }`}
+            >
+              {server.running ? 'Остановить сервер' : 'Запустить сервер'}
+            </button>
+            <span className="text-gray-400">Ответ контроллеру:</span>
             <span className="px-2 py-0.5 rounded bg-teal-500/20 text-teal-300 font-bold border border-teal-500/30">
-              {activeCommand}
+              {lastReply}
             </span>
           </div>
         </div>
 
-        {/* Dashboard Widgets Grid */}
+        {server.error && (
+          <div className="px-6 py-2 bg-rose-500/10 border-b border-rose-500/20 text-rose-300 text-xs">{server.error}</div>
+        )}
+        {server.running && (
+          <div className="px-6 py-2 bg-[#161A22] border-b border-[#252B38] text-xs text-gray-300">
+            Страница дашборда для телефона: <code className="text-teal-300">{pageUrl}</code>
+            {!server.ip && ' (адрес компьютера определить не удалось, возьмите его из настроек сети)'}. Телефон и компьютер должны быть в одной сети Wi-Fi.
+          </div>
+        )}
+
         <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-gray-700">
           {dashboardNodes.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center text-gray-300 space-y-4 max-w-lg mx-auto p-4">
@@ -224,9 +267,8 @@ export const DashboardModal: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {/* Gauges */}
               {gauges.map(g => {
-                const val = widgetValues[g.id] ?? 0;
+                const val = Number(widgetValues[g.id] ?? 0) || 0;
                 const min = Number(g.data?.properties?.min ?? 0);
                 const max = Number(g.data?.properties?.max ?? 1024);
                 const units = g.data?.properties?.units || 'лк';
@@ -259,7 +301,6 @@ export const DashboardModal: React.FC = () => {
                 );
               })}
 
-              {/* Charts */}
               {charts.map(c => {
                 const label = c.data?.properties?.label || 'График во времени';
                 const count = (chartHistories[c.id] || []).length;
@@ -279,16 +320,14 @@ export const DashboardModal: React.FC = () => {
                 );
               })}
 
-              {/* Switches */}
               {switches.map(sw => {
                 const label = sw.data?.properties?.label || 'Тумблер';
                 const onPayload = sw.data?.properties?.on_payload || 'CMD_ON';
                 const offPayload = sw.data?.properties?.off_payload || 'CMD_OFF';
-                const isChecked = widgetValues[sw.id] ?? false;
+                const isChecked = widgetValues[sw.id] === true;
 
                 const handleToggle = (checked: boolean) => {
-                  setWidgetValues(v => ({ ...v, [sw.id]: checked }));
-                  setActiveCommand(checked ? onPayload : offPayload);
+                  act(sw.id, checked);
                 };
 
                 return (
@@ -313,7 +352,6 @@ export const DashboardModal: React.FC = () => {
                 );
               })}
 
-              {/* Buttons */}
               {buttons.map(b => {
                 const label = b.data?.properties?.label || 'Отправить команду';
                 const payload = b.data?.properties?.payload || 'CMD_ON';
@@ -332,7 +370,9 @@ export const DashboardModal: React.FC = () => {
                       Действие
                     </div>
                     <button
-                      onClick={() => setActiveCommand(payload)}
+                      onClick={() => {
+                        act(b.id);
+                      }}
                       className={`w-full py-3 px-4 rounded-lg font-semibold text-white shadow-lg transition-all transform active:scale-95 ${btnClasses}`}
                     >
                       {label}
@@ -344,7 +384,6 @@ export const DashboardModal: React.FC = () => {
                 );
               })}
 
-              {/* Sliders */}
               {sliders.map(s => {
                 const label = s.data?.properties?.label || 'Регулятор';
                 const min = Number(s.data?.properties?.min ?? 0);
@@ -365,9 +404,7 @@ export const DashboardModal: React.FC = () => {
                       step={step}
                       value={val}
                       onChange={e => {
-                        const v = Number(e.target.value);
-                        setWidgetValues(prev => ({ ...prev, [s.id]: v }));
-                        setActiveCommand(String(v));
+                        act(s.id, Number(e.target.value));
                       }}
                       className="w-full accent-teal-400 cursor-pointer"
                     />
@@ -379,11 +416,11 @@ export const DashboardModal: React.FC = () => {
                 );
               })}
 
-              {/* LEDs */}
               {leds.map(l => {
                 const label = l.data?.properties?.label || 'Индикатор';
                 const colorOn = l.data?.properties?.color_on || '#10B981';
-                const isOn = activeCommand === 'CMD_ON';
+                const raw = widgetValues[l.id];
+                const isOn = raw === true || (typeof raw === 'number' && raw !== 0) || (typeof raw === 'string' && /ON$|^1$|^true$/i.test(raw));
 
                 return (
                   <div key={l.id} className="bg-[#1C2027] border border-[#2D3748] rounded-xl p-5 shadow-lg flex items-center gap-4">
@@ -405,11 +442,10 @@ export const DashboardModal: React.FC = () => {
                 );
               })}
 
-              {/* Texts */}
               {texts.map(t => {
                 const label = t.data?.properties?.label || 'Инфо';
                 const prefix = t.data?.properties?.prefix || 'Статус: ';
-                const val = widgetValues[t.id] ?? 'В сети';
+                const val = widgetValues[t.id] ?? 'Ожидание данных...';
 
                 return (
                   <div key={t.id} className="bg-[#1C2027] border border-[#2D3748] rounded-xl p-5 shadow-lg flex flex-col justify-between">
@@ -426,13 +462,25 @@ export const DashboardModal: React.FC = () => {
           )}
         </div>
 
-        {/* Bottom Test Simulator Bar (For Students to test without hardware) */}
         <div className="px-6 py-4 bg-[#141820] border-t border-[#2D3748] flex flex-wrap items-center justify-between gap-4 flex-shrink-0">
           <div className="flex items-center gap-3">
             <span className="text-xs font-bold uppercase tracking-wider text-teal-400 flex items-center gap-1.5">
               <RefreshCw className="w-3.5 h-3.5" />
               Тест датчика (ESP Simulator):
             </span>
+            {endpoints.length > 1 && (
+              <select
+                value={endpoint?.id}
+                onChange={e => setTestEndpointId(e.target.value)}
+                className="bg-[#1C2027] border border-[#2D3748] rounded px-2 py-1 text-xs font-mono text-white"
+              >
+                {endpoints.map(ep => (
+                  <option key={ep.id} value={ep.id}>
+                    {ep.data?.properties?.path} ({ep.data?.properties?.param_name || 'value'})
+                  </option>
+                ))}
+              </select>
+            )}
             <input
               type="range"
               min={0}
@@ -454,7 +502,7 @@ export const DashboardModal: React.FC = () => {
           </div>
 
           <div className="text-xs text-gray-400">
-            Двигайте ползунок, чтобы шкала и график реагировали как от реального ESP!
+            Значение идёт по проводам схемы, как от настоящей ESP
           </div>
         </div>
       </div>
